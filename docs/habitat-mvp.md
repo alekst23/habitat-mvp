@@ -1,178 +1,323 @@
 # Habitat hackathon MVP
 
-Date: October 4, 2026  
-Status: Current MVP scope and delivery proposal. This document describes intended behavior, not completed implementation.
+Date: October 5, 2026  
+Status: Current MVP scope and design proposal. This document describes intended behavior, not completed implementation. It replaces the October 4 bring-your-own-agent scope, which remains in git history.
 
-Habitat lets an owner bring an existing AI agent, run it in a controlled environment, fund its resource use, and inspect its spending. The owner keeps the agent's framework, planning loop, tools, and application logic. Habitat supplies the runtime integration, authorization, payment proxy, budgeting, and accounting.
+Habitat lets a small business owner set up a trustworthy AI agent that does real work for them, within a budget they control. The owner describes what they want in plain language. Habitat's onboarding agent configures the account and the working agent while the page updates in front of them. The owner never sees infrastructure; they see what the agent is doing, what it costs, and what it is waiting for them to approve.
 
-Onboarding is delivered through a documented package contract, a preparation skill, examples, and a validator. The user's existing coding assistant follows those instructions. We do not build a separate AI onboarding or migration product.
-
-This is the current hackathon scope. It refines the [earlier project plan](habitat-project-plan.md), especially onboarding and deployment choices. The [economic loop outline](habitat-plan-outline.md) remains the longer-term vision.
+Trust is the product. Every model call, data read, external action, and dollar passes through Habitat-controlled proxies that authorize, meter, and log it. The agent itself holds no credentials, no payment rails, and no direct network access.
 
 ## Value proposition
 
-**Bring your agent. Package it for Habitat. Run useful work within an authorized budget.**
+**Tell Habitat what you need done. Set a budget. Watch a trustworthy agent do it, and stop it any time.**
 
-The initial audience hypothesis is developers and small teams with an agent that already works locally. They need a repeatable way to run it with controlled credentials, resource access, and spending without rewriting its behavior. Willingness to pay remains to be validated.
+The target user is a small business owner without an engineering team. They want results, such as more installs for their app, but cannot evaluate agent frameworks, cloud hosting, or API keys, and will not hand an unknown program their ad account and credit card without guarantees.
 
-The prototype proves integration and control: two different agents use the same Habitat contract, complete useful work, and encounter enforceable spending limits. It does not prove profitability, independent agent finances, or support for every agent framework.
+The MVP use case is **"Help me market my mobile app."** We demonstrate it by marketing the team's own existing app with real ad spend.
+
+The prototype proves control and trust: a non-technical owner configures an agent through conversation, the agent performs real marketing actions including paid ones, and every cost and action stays within explicit authorization and hard limits. It does not prove marketing ROI, broad platform coverage, or production-grade security certification.
 
 ## Product vocabulary
 
 | Term | Meaning in this MVP |
 |---|---|
-| HATAH | The packaged agent unit: existing project, dependency and startup instructions, workspace definition, and Habitat configuration. It is a packaging contract, not necessarily a VM image. |
-| Habitat | The application that runs or manages a HATAH and governs its access to supported paid resources. |
-| Preparation skill | Instructions the user's coding assistant follows to inspect and adapt a project to the package contract. |
-| Validator | A deterministic command that checks the package and performs bounded integration checks. |
-| Resource gateway | The enforced route for Habitat-funded model requests and any supported paid tools. |
+| Habitat | The hosted web application and the control plane behind it. |
+| Owner | The business owner who funds, configures, and supervises an agent. |
+| Onboarding agent | The conversational agent on the Habitat site that sets up the account and the working agent through the tool interface. |
+| Marketing agent | The working agent that plans and proposes marketing work for one owner. |
+| Proxy | A Habitat service that performs a category of access on the agent's behalf: inference, payments, secrets, actions, web research, data, provisioning. |
+| Action broker | The proxy that executes typed external actions after policy checks, approvals, and cost reservation. |
+| Connection | An owner-authorized link to an external account (for example Reddit Ads), held by Habitat as an encrypted secret. |
+| Budget | The owner's USD allowance, split across inference, compute, and spending. |
+| Approval | An owner decision required before an action proceeds. |
+| Activity log | The owner-visible, append-only record of actions, data reads, secret uses, costs, and approvals. |
+| HATAH | Internal name for one owner's agent deployment: configuration, connections, policy, and provisioned resources. Not shown to owners. |
 
-The assistant preparing a package and the agent being packaged can be different programs. The runtime agent does not need to edit itself or understand the preparation skill.
+## Owner journey
 
-## User journey
+1. The owner visits the Habitat site and starts a conversation with the onboarding agent.
+2. The onboarding agent asks about the business and goal ("Help me market my mobile app"), then creates the account, the marketing agent, and its plan through the tool interface. The page renders each change as it happens: profile, goals, channels, policy, budget.
+3. The owner connects accounts (app store listing, Reddit Ads). Each connection shows in plain language what Habitat can and cannot do with it. Logins and two-factor steps are completed by the owner directly.
+4. The onboarding agent proposes a USD budget split across inference, compute, and spending, plus approval rules. The owner adjusts it and authorizes funding through PayPal. It also guides the owner to set an account-level spend limit on each ad platform as an independent backstop.
+5. Habitat provisions the agent's resources on Render. The owner sees "Your agent is running," not service types.
+6. The marketing agent researches, drafts, and proposes actions. Low-risk actions within policy proceed; others wait in the approval queue.
+7. The control panel shows costs by category, the activity log with evidence, pending approvals, live campaigns, and results.
+8. The owner can pause, change limits, revoke a connection, or press the hard stop at any time.
 
-1. The owner opens an existing agent project in their preferred coding assistant.
-2. Habitat's setup page provides the preparation skill, integration documentation, and example packages.
-3. The assistant inspects startup, dependencies, model calls, storage, and credential requirements. It generates reviewable packaging and configuration changes and identifies unsupported requirements.
-4. The owner runs Habitat's validator. It reports package errors, missing configuration, and the results of a representative execution check.
-5. The owner sets the agent's permitted services, runtime limits, and spending allocation, then funds the allowance through PayPal Sandbox.
-6. Habitat launches the agent. Authorized model calls pass through the gateway and are attributed to the agent and run.
-7. The dashboard shows status, outputs, costs, reservations, and blocked requests. The owner can stop access or explicitly change authority.
-8. If the optional hosted target is included, the same package contract feeds a Render deployment recipe, followed by validation on that target.
+## Trust model
+
+Trust is the central requirement. The owner must be able to trust both the agent and Habitat itself.
+
+| Commitment | Mechanism |
+|---|---|
+| The agent cannot act outside its authority | No direct network egress or credentials; every capability goes through a proxy that checks policy. |
+| Nothing costs money without authorization | Every billable request reserves USD from the budget first; amounts over the approval threshold require an explicit owner decision. |
+| Hard stops work | Habitat policy, platform-side caps on every campaign, an owner-set ad account limit, and a kill switch that pauses live campaigns as well as the agent. |
+| Secrets stay secret | Per-tenant envelope encryption; secrets decrypted only inside proxies at call time; never placed in prompts, agent memory, or logs. The agent references connections by handle. |
+| Least privilege | Minimal OAuth scopes, read and write access separated, plain-language scope descriptions on every connection. |
+| Data use is visible | Every private data read records its purpose and appears in the activity log next to costs and actions. |
+| Data flows are disclosed | Owners are told that data sent for inference reaches the model provider. Prefer a provider and settings with no data retention; send summaries rather than raw private data where possible. |
+| The record is reliable | Append-only, hash-chained activity log that owners can view and export. |
+| Revocation is real | Disconnecting revokes the token at the provider and deletes the stored secret. Revoking does not undo charges already incurred, and the UI says so. |
+| Claims are verifiable | The complete source is public, as the hackathon requires. Trust claims can be checked against the code. |
+
+**The honest limit.** In the MVP the Habitat operator holds the encryption keys and could technically access tenant secrets. We state this plainly instead of implying zero trust in the operator. Customer-managed keys and confidential computing are roadmap items.
+
+## Architecture
 
 ```mermaid
 flowchart LR
-    P["Existing agent project"] --> S["User's coding assistant<br/>Habitat skill and documentation"]
-    S --> H["HATAH package<br/>Reviewable configuration"]
-    H --> V["Habitat validator"]
-    V --> L["Local Habitat<br/>Required reference path"]
-    V -. Optional deployment recipe .-> R["Hosted Habitat on Render"]
-    L --> C["Authorization, payment proxy,<br/>budget and accounting"]
-    R --> C
+    O["Owner<br/>web app"] --> UI["Habitat site<br/>chat, control panel"]
+    UI <--> T["Tool interface<br/>state change events"]
+    OA["Onboarding agent"] --> T
+    MA["Marketing agent<br/>Render worker or Workflow task"] --> T
+    T --> P["Proxies"]
+    P --> I["Inference proxy"]
+    P --> PP["PayPal proxy"]
+    P --> A["Action broker"]
+    P --> W["Web research proxy"]
+    P --> D["Data proxy"]
+    P --> R["Provisioning proxy"]
+    A --> S["Secrets service"]
+    D --> S
+    R --> S
+    P --> L["Ledger and activity log"]
 ```
 
-The final box represents shared responsibilities, not a requirement for local and hosted deployments to contact one central server or share one database.
+Habitat's own services (site, tool interface, proxies, secrets service, ledger) are separate deployables. Only proxies can call the secrets service. Agent runtimes can reach only the tool interface and proxies.
 
-## Required delivery
+### Proxy layer
 
-| Deliverable | Minimum content |
+| Proxy | The agent asks for | Habitat holds and enforces |
+|---|---|---|
+| Inference | A model call | Provider keys, maximum output tokens, USD metering, data-handling rules |
+| PayPal | Funding status, a request for more funding | PayPal credentials, owner authorization, ledger entries |
+| Secrets | Nothing directly; used by other proxies | Encrypted connection tokens, injected at request time |
+| Action broker | A typed action, such as `create_reddit_campaign` | Policy, reservation, approval, execution, platform-side caps, evidence |
+| Web research | Read-only browsing and search | A browser with no credentials, rate limits, no purchasing |
+| Data | Reads of the owner's app and marketing data | Scoped read connectors, purpose tags, access log |
+| Provisioning | "Deploy the landing page," "start the agent" | Render API key, resource caps, cost estimates |
+
+### Action broker
+
+The agent proposes; the broker executes. Actions are typed so they can be validated, priced, approved, and logged. For each action the broker:
+
+1. Validates the action type and parameters against the agent's policy.
+2. Estimates and reserves the maximum USD cost.
+3. Requests owner approval when policy requires it.
+4. Executes through a connector, injecting credentials from the secrets service.
+5. Records the result and evidence, then reconciles actual cost.
+
+Connectors, in order of preference:
+
+1. **Official API with OAuth.** Deterministic, auditable, and easiest to cap.
+2. **Browser recipe.** A parameterized, Habitat-authored Playwright flow running in a cloud browser with the owner's stored session, used only where no suitable API exists. Screenshots or recordings become evidence in the activity log. The agent never drives a logged-in browser free-form.
+3. **Human handoff.** For login, two-factor, payment method setup, or anything a platform requires a person to do. The broker pauses, gives the owner a live browser or link, and resumes afterward.
+
+Free-form browsing is allowed only through the web research proxy, which has no credentials and cannot buy anything.
+
+### Agent runtime
+
+The marketing agent is a long-running loop: plan, propose actions, wait for approvals or results, report. It runs on Render as a per-owner background worker or as Workflow tasks triggered by Habitat. Workflows do not provide native timed scheduling, so Habitat's controller owns timing. The agent stays simple because risk lives in the broker and proxies. [Background workers](https://render.com/docs/background-workers), [Workflows](https://render.com/docs/workflows)
+
+## Tool interface
+
+The tool interface is the single way to read and change Habitat state. The onboarding agent, the marketing agent, and the web UI use the same tools, subject to different permissions. Every successful mutation emits a state change event; the UI subscribes and renders it live, which produces the page that updates while the onboarding agent works.
+
+Initial tool groups:
+
+| Group | Examples | Used by |
+|---|---|---|
+| Account | create profile, set business details | Onboarding agent, UI |
+| Agent | create agent, set goals, set channels, set cadence, pause, resume | Onboarding agent, UI |
+| Policy | set allowed actions, approval thresholds, category limits | Onboarding agent proposes; owner confirms |
+| Budget | propose split, request funding, read balance | Onboarding and marketing agents, UI |
+| Connections | start connection, list scopes, revoke | Onboarding agent starts; owner completes |
+| Actions | propose action, read action status | Marketing agent |
+| Approvals | list pending, approve, reject | Owner only |
+| Activity | read log, read costs, export | All, scoped to the owner |
+| Provisioning | deploy resource, read status, stop | Onboarding agent, Habitat controller |
+
+Rules:
+
+- Agents can propose policy and budget changes; only the owner can confirm increases in authority or funding.
+- No agent can approve its own actions, change its schedule, or create another agent.
+- The tenant for every call is derived from authentication, never from tool arguments.
+- Provisioning tools stay open-ended for now. Habitat's instructions and skills direct the agents toward the Render resources each project needs; the provisioning proxy enforces resource types, caps, and costs. Exposing the tool interface as an MCP server is optional. [MCP architecture](https://modelcontextprotocol.io/docs/learn/architecture)
+
+Exact tool names and schemas are the subject of a follow-up specification.
+
+## Budget and cost model
+
+Owners see and set budgets in **USD only**. Internally, each category is tracked in its native unit and converted using a published price table, so every cost shown to the owner can be traced to a measured quantity and a rate.
+
+| Category | Internal unit | USD conversion | Reservation before use |
+|---|---|---|---|
+| Inference | Input and output tokens per model | Provider price per token plus any Habitat margin | Maximum cost from input size and enforced output token cap |
+| Compute | Render instance time and Workflow compute time | Render pricing per instance type and duration | Time-bounded lease, renewed against the budget; stop the resource if renewal fails |
+| Spending | USD charged by the external platform | Already USD | Exact authorized amount; campaign lifetime budget set to the reserved amount |
+
+The ledger distinguishes confirmed funding, available allocation by category, outstanding reservations, actual charges, and adjustments. Measured charges and estimates are labeled differently. A timeout with an unknown outcome keeps its reservation until reconciliation. Payment events are verified and deduplicated.
+
+### Hard stops for real ad spend
+
+Ad platforms bill ad spend to the payment method on the owner's ad account, outside Habitat's payment path. Habitat therefore cannot be the only control and layers its stops:
+
+1. **Habitat policy:** the broker refuses actions beyond the remaining spending allocation and requires approval above the threshold.
+2. **Platform-side caps:** every campaign is created with a lifetime budget equal to its reservation.
+3. **Account limit:** the owner sets an account-level spend limit on the ad platform, guided by onboarding, independent of Habitat.
+4. **Reconciliation:** the broker pulls platform spend reports and posts actual charges, releasing or adjusting reservations.
+5. **Kill switch:** pauses the agent, pauses every live campaign through the platform API, and freezes new reservations.
+
+### PayPal: authorized and metered payments
+
+PayPal is how the owner authorizes the budget and how Habitat-provided services are paid for. The owner approves a USD amount through PayPal; Habitat meters inference and compute against it and captures what is actually used. External ad spend counts against the same budget but is settled between the owner and the platform.
+
+A candidate implementation is a PayPal order with authorize intent, followed by captures for metered usage. Authorization validity and partial or multiple capture behavior must be confirmed for the account type before committing. [PayPal Orders API](https://developer.paypal.com/docs/api/orders/v2/)
+
+Sandbox funding must never raise the team's real provider, hosting, or ad spending ceilings. Real costs are capped by operator-level limits independent of any owner funding.
+
+## Deployment on Render
+
+Everything runs server-side; there is no local product.
+
+- **Habitat platform:** the site, tool interface, proxies, secrets service, and ledger run as Habitat-owned Render services with a managed database. A Blueprint describes them. [Blueprints](https://render.com/docs/infrastructure-as-code)
+- **Per-owner resources:** the marketing agent runtime and any project resources it needs, such as a landing page site, created through the Render API by the provisioning proxy. [Render API](https://render.com/docs/api)
+
+Which resources each owner gets, and the isolation between owners, stays open until the tool interface and the first use case are proven. Two constraints are fixed: owner resources never receive Habitat's Render, PayPal, or provider credentials, and a global cap limits the total resources and cost across all tenants.
+
+## Data scope
+
+In scope: the owner's app and marketing data, such as the store listing, reviews, basic analytics, and ad performance.
+
+Out of scope: personal data of the owner's customers, such as email lists or user records. That brings privacy-law obligations beyond the hackathon.
+
+## Security requirements
+
+These requirements turn the trust model into rules the implementation must follow. Several come from failures observed in an earlier agent product of ours, where sound designs were undermined by checks that failed open or ran after the money was spent.
+
+**Fail closed everywhere.** An error, timeout, missing configuration, unknown price, unknown action type, missing handler, or invalid session denies the request. Nothing defaults to "allow," "all tools," "unlimited," or "$0."
+
+### Secrets and encryption
+
+- Envelope encryption: a KMS master key wraps a data key per connection, and AES-256-GCM encrypts each secret. KMS calls carry an encryption context with tenant and purpose; the AES associated data binds tenant, connection, and field, so ciphertext cannot be moved between tenants or rows.
+- Creating a data key and fetching one are separate operations. A missing key is an error, never a silent new key.
+- Decrypted data keys may be cached only inside the secrets service, briefly, with a size cap and invalidation on revoke across instances.
+- No plaintext shadow copies of encrypted fields. Fields needed for lookup use a keyed hash (HMAC blind index).
+- Production uses KMS only; there is no local-key fallback mode. Key re-wrapping is a versioned job, never part of a schema migration.
+- Secrets never appear in prompts, agent memory, logs, traces, message buses, or session state.
+
+### Connections and OAuth
+
+- Authorization code flow with PKCE. The OAuth state is stored server-side and bound to the owner and tenant. Scopes are the minimum for each connection, requested per connection rather than at login, and granted scopes are recorded.
+- Tokens enter Habitat only through the broker's own OAuth callback, never through an API request body.
+- Token refresh happens ahead of expiry under a per-connection lock, so concurrent refreshes cannot invalidate a rotated refresh token.
+- Revocation order: revoke at the provider, delete the connection's data key and ciphertext, invalidate caches, append an activity log event. Revoking one connection never affects other data.
+
+### Action broker and approvals
+
+- Actions follow an explicit state machine: proposed, policy checked, budget reserved, pending approval, executing, then succeeded, failed, rejected, or expired. Terminal states are final.
+- Every transition is a conditional update on the expected current state; concurrent approvals or executions cannot both succeed.
+- An action found in executing after a restart is reconciled against the platform (using an idempotency key or external reference), never advanced or retried blindly.
+- Approvals are stored server-side, scoped to one action, and expire. Each records the approver, time, and a hash of the exact action payload; execution refuses if the payload no longer matches.
+- Standing allowances, such as auto-approval up to an amount per day, are server-side policy set by the owner. The client never sends permissions.
+- The broker always injects credentials itself and rejects any credential field supplied by an agent.
+- Tools that change budget, policy, schedule, connections, or approvals are owner-only. No agent tool can widen any agent's authority or create another agent.
+- Tools are allow-listed per tenant and capability. An unknown tool is denied.
+
+### Untrusted content
+
+- Web pages, platform data, reviews, and other external content are marked as untrusted data when placed in agent context.
+- Once untrusted content is in context, spending actions require owner approval regardless of the standing allowance.
+- Safety rests on typed actions and broker policy, not on prompt wording.
+
+### Ledger and metering
+
+- Money is stored as integers in micro-dollars, or as exact decimals, never floats. Prices are versioned with effective dates.
+- Every billable step reserves before it runs and settles after, including every iteration of an agent loop, not just its final response.
+- Each ledger entry records the raw cost, the charged cost, the price version, and any margin applied.
+- Ledger writes are awaited and transactional, never fire-and-forget.
+- A budget of zero means nothing may be spent, never unlimited.
+
+### PayPal webhooks
+
+- Verify every webhook with PayPal's signature verification against the configured webhook ID. A missing webhook configuration fails closed.
+- Re-fetch the order or capture from PayPal before crediting.
+- Deduplicate by inserting the PayPal event ID with a uniqueness constraint in the same database transaction as the ledger credit, and key the credit on the capture ID as well.
+- Events that cannot be attributed to an owner return success to PayPal and are held for review rather than retried indefinitely.
+
+### Platform and service boundaries
+
+- Sessions use opaque random identifiers backed by server-side records. Cookies are Secure, HttpOnly, and SameSite.
+- CORS uses an explicit origin allow-list. Post-login redirects accept relative paths only.
+- Each proxy runs as a separate service with its own credentials, scoped to the keys and data it needs. Agent runtimes receive no secrets, no database access, and no provider or platform keys.
+- Each service uses its own least-privilege database role over TLS. The activity log table is append-only at the database permission level.
+- Internal requests are authenticated; the tenant is derived from authentication, never from caller-supplied fields.
+- Startup fails if required keys, webhook configuration, or telemetry are missing.
+- Credentials and secrets are never committed to the repository or written into documentation; a secret scanner runs before every push.
+
+## Sponsor fit
+
+We pursue both sponsor tracks so that one is a backup for the other. A project can win at most one sponsor prize. [Rules, section 8](https://paypalaihackathon.devpost.com/rules)
+
+| Sponsor | Role in Habitat |
 |---|---|
-| Integration specification | Supported runtime, dependency installation, startup command, persistent workspace, runtime identity, model gateway configuration, and declared capabilities. |
-| One preparation skill | A repeatable inspect, configure, validate workflow with examples and clear unsupported cases. |
-| Package validator | Structural checks, startup check, workspace persistence check, gateway connectivity, and a bounded representative task. |
-| Local Habitat runtime | One supported isolation backend, startup and stop controls, persistent files, and host-enforced resource and network restrictions. |
-| Inference gateway | One provider and one supported API format, with authorization and budget reservation before billable requests. |
-| Payment and accounting | PayPal Sandbox funding, verified payment records, allocations, reservations, usage charges, releases, and adjustments. |
-| Small MCP interface | Budget and usage visibility, permitted capabilities, and a request for owner funding. |
-| Owner dashboard | Setup instructions, policy and funding controls, run status, costs, blocked requests, and outputs. |
-| Two example integrations | Different agent projects using the same contract without changes to Habitat's core. |
-| Submission package | Complete public source, license, setup instructions, working demonstration, and video. |
+| PayPal (required) | Owner authorization and metered capture of the agent budget. Central to the trust story, not a checkout bolt-on. |
+| AG Grid | The owner control panel: cost ledger grouped by category and run, activity log with evidence, approval queue, campaign performance. Sponsor guidance favors a full dashboard with custom widgets and agent integration over standalone grids; evaluate AG Studio. [Sponsor guidance](https://paypalaihackathon.devpost.com/details/aggrid) |
+| Render | Hosts the whole platform and per-owner agent resources provisioned by Habitat's agents, with Workflows as the agent task runtime. [Sponsor guidance](https://paypalaihackathon.devpost.com/details/render) |
 
-Limit the release to one owner, one active agent environment at a time, one inference provider, and one currency. The two examples can run sequentially. A proposed first compatibility target is headless Python agents using one configurable model API; confirm this before implementation.
+## Demo and judge access
 
-## Skills and documentation
+The video follows one owner (the team, marketing its own app): conversational onboarding with the page building itself, connecting Reddit Ads, authorizing a budget through PayPal, the agent proposing a paid campaign, the owner approving it, live costs by category, and the hard stop pausing everything. It must stay under three minutes; the storyboard is written before the build and drives the acceptance criteria.
 
-The app exposes preparation guidance as copyable instructions or downloadable files. Users invoke the skill through their existing assistant. The assistant produces configuration and small adapters where required; it must make changes to agent behavior explicit.
+Judges need free working access throughout judging. They get invite-coded accounts on the hosted site in a judge mode: PayPal Sandbox funding, real inference within a global cap, and spending actions that run through policy and approval but are executed as drafts or paused campaigns rather than live spend.
 
-The skill should explain how to:
+## Acceptance criteria
 
-- Find the entry point, dependencies, writable paths, and required external services.
-- Configure a scoped Habitat credential and the supported inference endpoint.
-- Describe persistent state, permitted tools, and runtime requirements.
-- Keep long-lived provider, payment, and deployment credentials out of the package.
-- Generate the startup and packaging configuration using the documented example.
-- Run the validator and explain any remaining incompatibility.
+The MVP is complete when:
 
-**Skills help configure the agent; Habitat enforces the rules.** Instructions to use a proxy cannot replace runtime enforcement. The validator reports evidence from its checks; a passing sample task is not proof of universal compatibility or complete security.
-
-Exact manifest fields and command names are implementation decisions. Deliver one simple documented format before adding framework-specific variants.
-
-## Runtime and trust boundary
-
-Run the owner-supplied agent in a supported VM or sandbox. Keep the controller, authoritative ledger, provider credentials, and PayPal credentials outside the guest. The owner chooses policy; the guest receives only delegated access.
-
-Host-side controls limit CPU, memory, disk, execution duration, and outbound routes. Habitat-funded provider access must pass through the gateway. The agent cannot increase its own spending authority, edit accounting records, obtain the operator's provider keys, or reach host management interfaces.
-
-MCP is optional for an agent. An agent that only supports ordinary model API calls can use the gateway without adopting Habitat's tools. MCP-aware agents can additionally inspect their remaining allocation and request intervention. Both interfaces use the same authorization and accounting rules. [MCP architecture](https://modelcontextprotocol.io/docs/learn/architecture)
-
-Firecracker remains a candidate, not a confirmed implementation choice. It requires a suitable Linux/KVM host. If selected, document that host requirement clearly rather than promising native execution on every developer laptop. Prove one backend early and avoid building multiple isolation systems. [Firecracker documentation](https://firecracker-microvm.github.io/)
-
-Preserve workspace files across restart. Resuming unfinished work depends on the agent's checkpoint and recovery behavior; generic memory migration and transparent recovery are outside scope. A paused process can still occupy billable resources.
-
-## Payment proxy and accounting
-
-The owner funds an agent allowance through PayPal Sandbox. Habitat mediates use of the operator's configured inference account. This is an internal allocation and service-access model, not an independently owned agent bank account or a general payout system.
-
-For a supported billable request, Habitat authenticates the runtime, checks permission, atomically reserves a bounded maximum cost, dispatches the request, records measured usage, and releases the unused reservation. Limits include runtime consumption as well as model usage.
-
-The ledger distinguishes confirmed funding, available allocation, outstanding commitments, actual charges, and adjustments. Payment events are verified and deduplicated. A timeout with an unknown provider outcome retains its reservation until reconciliation. Revoking access blocks new calls but does not undo charges already incurred.
-
-Keep sandbox accounting separate from real operating costs. Simulated PayPal receipts must not automatically raise the team's real provider spending ceiling. Display hosting and storage estimates as estimates, and distinguish them from measured charges. Owner funding and an increase in a policy cap are separate actions when both constraints apply.
-
-The preparation assistant's own usage is outside Habitat accounting unless it is explicitly integrated; the demo must not imply that wrapping an agent captures every expense involved in development.
-
-## Local and hosted deployment
-
-**Local Habitat is the required reference path.** One installation contains the controller, gateway, dashboard service, persistent records, and the supported agent environment. PayPal and inference remain external services. This is not an offline product.
-
-**Render hosting is an optional deployment extension.** A supported project can use the same package contract with target-specific configuration. A Render Blueprint can describe the services and configuration; a continuously running agent may fit a background worker, while an agent exposing an HTTP interface needs an appropriate service type. These mappings require validation against the chosen examples. [Blueprints](https://render.com/docs/infrastructure-as-code), [Background workers](https://render.com/docs/background-workers)
-
-A local VM and a Render service do not automatically provide equivalent isolation, network enforcement, storage, or lifecycle behavior. Document and verify the supported guarantees for each target. Hosting also moves project code and selected runtime data to the hosting operator; local wrapping and cloud upload are distinct steps.
-
-Each independent deployment has one authoritative ledger. The MVP does not synchronize balances across local and cloud installations, migrate live processes, or provide seamless failover. It also does not require a separate local Habitat plus a central hosted service to operate the local reference path.
-
-## Where Render Workflows fits
-
-Workflows can provide optional task execution for an agent. They are not the mandatory agent runtime, and packaging must not require rewriting an agent's planning loop into workflow functions.
-
-If included, use one useful, explicitly integrated capability:
-
-**Local or hosted agent → Habitat gateway → authorization and budget reservation → Render Workflow → result and accounting.**
-
-No direct MCP route should bypass the gateway. Keep Render deployment credentials outside the agent. Configure retries and task limits so cloud execution cannot create unbounded resource commitments or duplicate paid operations. Workflows execute registered tasks and do not currently provide native timed scheduling. [Workflows documentation](https://render.com/docs/workflows)
-
-The Render sponsor page encourages deployment on Render and use of Workflows. A Render-specific recipe and a real workflow capability can strengthen that submission if the core is already complete. They are optional extensions, not reasons to compromise BYOA or expand into automatic workflow extraction. [Sponsor guidance](https://paypalaihackathon.devpost.com/details/render)
-
-## Demo and acceptance criteria
-
-The primary demo starts with an existing supported agent project. The user's coding assistant follows the preparation skill, produces reviewable changes, and passes the validator. The owner funds an allowance, runs useful work, inspects the accounting, and sees an over-budget request rejected. A second agent proves that the integration is reusable.
-
-The core is complete when:
-
-- Both example agents use the published contract without modifications to Habitat's core.
-- Packaging preserves the demonstrated agent behavior; any required adapters are visible.
-- The documented setup reproduces a successful bounded run on the supported local host.
-- Model calls and supported paid tools pass through enforced authorization and budget checks.
-- Concurrent requests cannot spend the same allocation twice, and duplicate payment events cannot create duplicate funding.
-- Owner revocation stops new resource access and the controlled execution environment.
-- Persistent workspace files and accounting records survive the relevant restarts.
-- The dashboard links useful outputs and costs to the correct agent and run.
-- Real costs remain capped independently of sandbox funding.
-
-If Render is included, demonstrate the packaged agent actually running there. If Workflows is included, demonstrate a real authorized task and its result. Generated deployment files alone do not establish successful hosting.
+- A new owner can go from first visit to a running marketing agent through the onboarding conversation alone, with the page reflecting each change as it happens.
+- The marketing agent performs at least one real organic action (such as a deployed landing page or published listing copy) and one real paid action through the broker.
+- No agent runtime holds a provider key, PayPal credential, Render key, or connection token.
+- Every model call, compute lease, and paid action reserves USD before execution, and concurrent requests cannot spend the same allocation twice.
+- Actions over the approval threshold do not execute without an owner approval, and no agent can approve its own action.
+- Every created campaign carries a platform-side budget equal to its reservation.
+- The kill switch stops the agent, pauses live campaigns, and blocks new reservations, verified against the platform.
+- Revoking a connection invalidates the token at the provider and deletes the stored secret.
+- The activity log records every action, data read, secret use, cost, and approval, and its hash chain verifies.
+- Costs in the control panel reconcile to measured usage, price tables, and platform reports.
+- Duplicate PayPal events cannot create duplicate funding, and real costs stay capped independently of sandbox funding.
+- Fault-injection tests show that errors in policy, pricing, quota, and approval checks deny the request.
+- An approved action whose payload is altered after approval does not execute.
+- No agent-facing tool can change budget, policy, schedule, connections, or approvals.
+- Ciphertext copied to another tenant's or connection's record fails to decrypt.
+- Every iteration of an agent loop appears in the ledger, and an unknown model price blocks the call.
+- A secret scan of the repository and its history finds no credentials.
+- Judges can sign up and use the product without paying.
 
 ## Build sequence
 
-1. **Contract and feasibility:** select the first runtime, model API, provider, and two examples; prove an example can start and persist files under the required controls.
-2. **Gateway and economics:** implement authorization, bounded resource access, payment verification, and the ledger.
-3. **BYOA experience:** publish the preparation skill and examples, build the validator, and integrate the second agent.
-4. **Owner interface and demo:** expose setup guidance, funding, controls, activity, outputs, and cost records; verify the complete flow.
-5. **Optional Render extension:** add and validate one deployment recipe and, if justified, one workflow-backed capability.
-6. **Submission:** publish the complete small implementation and reproducible instructions, and record the working demo.
+1. **Feasibility spikes:** Reddit Ads API access, PayPal authorize-and-capture behavior, Render API provisioning, and a cloud browser option.
+2. **Trust core:** secrets service, inference proxy, ledger with reservations, activity log, and global caps.
+3. **Tool interface and onboarding:** tools, state change events, the live-updating onboarding page, and the onboarding agent.
+4. **Marketing agent and broker:** agent loop, action broker, first connectors, approvals, hard stops, and reconciliation.
+5. **Funding and control panel:** PayPal authorization and capture, the AG Grid control panel, and judge mode.
+6. **Demo and submission:** the real campaign run, the video, public source with license, and setup instructions.
 
-The hackathon requires central PayPal integration, AI, a functional build, public open-source code, and a demo video under three minutes. The AI contribution includes preparation by the user's assistant and useful agent execution; PayPal enables the demonstrated funded resource-access flow. [Official rules](https://paypalaihackathon.devpost.com/rules)
+The hackathon requires central PayPal integration, AI, a functional build, public open-source code, and a demo video under three minutes. Submission deadline is November 12, 2026. [Official rules](https://paypalaihackathon.devpost.com/rules)
+
+## Risks and open decisions
+
+| Item | Notes |
+|---|---|
+| Reddit Ads API access | Secondary sources report that Ads API access is approved separately from a Reddit developer app and may require contact with Reddit sales. Confirm with Reddit's official documentation first; a browser recipe on the ads site is the fallback. |
+| Organic posting rules | Reddit's self-promotion and automation rules could get the account restricted, which would damage the trust story. Decide which organic actions are safe. |
+| Live or sandbox funding for the team's own run | Real ad spend is settled by the platform either way. Decide whether the demo's PayPal authorization is live or sandbox, and say so clearly in the video. |
+| Model provider and data retention | Choose a provider and settings that support the data-flow disclosure. |
+| Cloud browser service | Needed only for browser recipes and handoffs; avoid running browsers on Render if a hosted option is simpler. |
+| Per-owner isolation on Render | Decide resource layout and tenant isolation after the first end-to-end path works. |
+| Habitat margin | Decide whether price tables include a Habitat fee or pass through costs. |
 
 ## Explicitly deferred
 
-A standalone onboarding agent, universal project migration, automatic workflow extraction, a provider marketplace, arbitrary uploaded cloud workloads, multiple owners or production multitenancy, distributed account synchronization, scheduled agent operation, autonomous customer acquisition, revenue-funded self-sufficiency, agent spawning, confidential hosting, and portable memory snapshots are outside the required MVP.
-
-The next implementation decisions are the reference host and isolation backend, the exact package contract, the supported model API, and the two examples. Decide whether to include Render after the core path is proven.
-
-## Related designs
-
-- [Local and remote design sketch](diagrams/diagram-local-remote.png)
-- [Earlier C4 Excalidraw diagram](diagrams/habitat-c4.excalidraw)
-- [Earlier implementation plan](habitat-project-plan.md)
-- [Prize inventory](hackathon-prizes.md)
-
-The earlier C4 diagram describes the single-host runtime structure. It does not yet show the preparation skill, validator, or optional Render deployment path.
+Bring-your-own-agent packaging, local Habitat, additional marketing channels beyond the first, multiple agents per owner, team accounts, customer personal data, customer-managed keys, confidential hosting, autonomous funding without owner authorization, revenue-funded agents, agent spawning, and a provider marketplace are outside the MVP.
