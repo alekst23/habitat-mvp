@@ -8,7 +8,9 @@ Include unbuilt infrastructure as explicit dependencies.
 
 ## Features and scenarios
 
-Give each Given/When/Then scenario a stable ID and test mapping.
+Give each Given/When/Then scenario a stable ID and evidence mapping. Cover the
+actual behavior and material risks, not speculative permutations. Multiple criteria
+can share one lean test; do not create a test-count quota from the scenario count.
 
 ## Edge cases and failure behavior
 

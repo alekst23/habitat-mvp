@@ -8,22 +8,26 @@ human outcome approval and no real-payment/ad side effects in development tests.
 
 ## Current state
 
-Native flow definitions and workflow CI foundation are implemented locally.
-GitLab catalog registration, remote execution and application adapters are pending.
-No epics, ticket sessions, deployment or nine-stage completion are claimed here.
+Planning has run successfully through GitLab Duo with `/flow:ctx-planning`, as
+confirmed by the user. This is not an outstanding registration/execution blocker.
+The revised planning/development/delivery definitions, 30 shared repo skills,
+AC validator and browser CI harness are local changes awaiting publication and
+live validation. Application/deployment adapters remain unconfigured; no end-to-end
+release or nine-stage completion is claimed. Existing remote plans must be reconciled
+on resume rather than recreated. Add the planning session URL when available.
 
 ## Ready next work
 
-1. Publish this foundation to the intended GitLab project and validate/register
-   the planning and ticket flows with mention triggers.
-2. Use planning intake for the application foundation: current hosted MVP,
-   contracts, test harness and runtime commands before the budget-denial demo.
-3. Enable required application checks once real commands/evidence adapters exist.
+1. Review/publish this revision; update the existing planning catalog version and
+   enable development/delivery. Validate the new versions in Duo.
+2. Reconcile the existing epic/tickets and stable numbering. Develop the foundation
+   ticket with the minimum tests, real app/CI commands and browser startup contract.
+3. Run current-SHA AC validation and separate ticket/epic review. Enable required
+   application checks before implementation merges; then connect delivery adapters.
 
 ## Blockers and decisions
 
-- GitLab Managed Agents currently asks for credits; resolve Duo access/credits
-  and runner availability before live execution. The remote repository is empty.
+- The app, test startup, Playwright tests and application command adapters are missing.
 - Establish protected branches, mandatory checks and release approver controls.
 - Hosting/configuration/secrets adapters are not implemented; no deployment permitted.
 - Public repository/MIT license and hackathon submission setup remain separate work.

@@ -14,7 +14,7 @@ default:
     - python -m pip install --disable-pip-version-check -r requirements-workflow.txt
   interruptible: true
 
-stages: [workflow, verify, source-security, package, artifact-security, configure]
+stages: [workflow, verify, acceptance, source-security, package, artifact-security, configure]
 
 ctx:workflow-validate:
   stage: workflow

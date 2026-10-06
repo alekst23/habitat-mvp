@@ -1,7 +1,8 @@
 # CTX workflow contract
 
-Status: agreed design; native workflow foundation implemented locally. Catalog/CI
-validation and live execution remain pending. See [implementation status](gitlab-workflow.md).
+Status: planning has run successfully in Duo via `/flow:ctx-planning`, confirmed
+by the user. The revised three-flow implementation and shared skills need publication
+and live validation. See [implementation status](gitlab-workflow.md).
 
 Preserve the original development process under the `ctx-` prefix and extend it
 with six delivery operations. The nine prize stages are a coverage map over this
@@ -11,6 +12,8 @@ The [operation catalog](../hackathon-gitlab-workflows.md#ctx-operations-and-hand
 defines the preserved operations and additions. Native definitions are under
 `.gitlab/duo/flows/`, with deterministic helpers and CI jobs. The mistaken local
 stage-named Claude skills have been removed; the original global skills are untouched.
+Reusable GitLab procedures now live in `skills/ctx-*/SKILL.md` and are explicitly
+loaded by the three flow entry points, not individually registered as flows.
 
 ## Behavior to preserve
 
@@ -69,15 +72,49 @@ Preserve the original hierarchy:
 - `docs/plan/project.md`: objective, active work, backlog, blockers, decisions, handoff.
 - `docs/design/<feature>/spec.md`: behavioral specification.
 - `docs/design/<feature>/technical.md`: technical design and contracts when needed.
-- `docs/plan/EPIC-<id>/_epic.md`: epic scope, ticket dependencies and wave plan.
+- `docs/plan/E<epic issue IID>/_epic.md`: epic scope, ticket dependencies and wave plan.
 - Ticket files within the epic directory: criteria, Design pointer, solution approach,
   test references, dependencies, and status.
+- `docs/plan/E<epic issue IID>/acceptance.json`: stable criterion IDs, statements,
+  UI classification and required verification methods, committed before evidence.
 
-Small changes can follow the original hotfix or single-ticket path. The adapter uses
-`EPIC-I<source issue IID>` and `T-I<ticket issue IID>`, paired with project identity.
-Each ticket has a GitLab issue; the parent epic can be represented by a regular
-issue on GitLab Free. No numeric offsets or premium epic objects are required.
-Branches are `ctx/epic-i<iid>` and `ctx/ticket-i<iid>`.
+Small changes can follow the original hotfix or single-ticket path. Each ticket
+has a GitLab issue; the parent epic can be represented by a regular issue on
+GitLab Free. No premium epic objects are required.
+
+### Epic-local numbering
+
+Use `E<epic issue IID>` for the epic and `E<epic issue IID>-<ticket number>` for
+its tickets, scoped to the project. `E2-1` means the first ticket in epic issue
+`#2`; it does NOT mean GitLab issue `#1`. The intake request may be a different
+issue: resolve/create the actual parent epic before allocating ticket IDs.
+
+- Issue titles and document headings: `E2-1: Feasibility spikes`.
+- Files: `docs/plan/E2/_epic.md`, `state.json`, `E2-1.md`, `E2-2.md`, etc.
+- Version-2 state explicitly stores `epic: E2`, `epic_issue_iid: 2`,
+  `source_issue_iid: 1`, and each ticket's separate `issue_iid` (for example `3`).
+- `depends_on` contains epic-local ticket IDs, never GitLab issue numbers.
+- Assign ticket numbers starting at 1 in the initial plan order. Persist the
+  next unused number in `next_ticket_number`; additions consume that number
+  and increment it. Never derive ordinals by subtracting issue IIDs.
+- Resume reuses the recorded ID-to-issue mapping. Closing, cancelling, reordering,
+  or inserting work never renumbers existing tickets. Retain records of retired
+  numbers; represent cancelled work as blocked with a reason until reconciled.
+  Cancellation is not successful integration and cannot unlock dependencies.
+- Use one planning writer per epic. Reconcile remote state and existing issues
+  before allocating. Persist allocations before dispatch; uncertain issue writes
+  must be read back before retrying. The local helper is not a distributed lock.
+
+Branches remain `ctx/epic-i<epic issue IID>` and `ctx/ticket-i<ticket issue IID>`
+to preserve existing branches/MRs. A ticket operation still uses its real GitLab
+IID: `ctx-ticket-design issue=3` for `E2-1`, not `issue=1`.
+
+Legacy version-1 plans remain readable by the wave helper. Do not silently
+reallocate their IDs, recreate issues or change branch/MR identities. Use the
+explicit migration procedure in `gitlab-workflow.md` to update state, filenames,
+references and visible titles together, preserving evidence and dependencies.
+
+### Execution and reporting
 
 Use an isolated runner checkout or worktree per active ticket. Ticket branches
 integrate into their epic after the required checks; the epic MR targets the
@@ -107,6 +144,32 @@ then require an explicit reconciled resume. Automatic bounded retries are future
 orchestration work, not an implicit allowance per new commit. New commits invalidate
 candidate evidence; rerun applicable checks and rebuild/rescan artifacts.
 
+## Lean-testing policy
+
+Write the absolute minimum meaningful tests for the changed behavior and material
+risks. Inspect existing tests first; reuse or extend them before adding another.
+One test can validate multiple ACs. Choose the lowest sufficient layer and avoid
+duplicating the same assertion across unit, integration and browser suites.
+Use small fixtures, deterministic inputs and direct observable assertions. No
+test-count/coverage quotas, tests for every function or AC, speculative permutations,
+implementation-mirroring mocks, or assertion-free tests. Preserve unrelated coverage.
+
+Behavior changes require a collectible test that fails for the intended behavior
+before implementation, then passes on the candidate. Import/collection/runner errors
+are not a red baseline. Existing sufficient coverage may be reused with justification;
+documentation or reversible low-risk configuration edits can use a validator or
+recorded inspection. Do not invent tests to satisfy ceremony.
+
+Independent review maps EVERY AC to code/document references and current evidence,
+with passed, failed, blocked or justified not-applicable verdicts. Browser requirements
+cannot be waived merely because the runner is missing. A green test count alone is
+not AC validation. The committed manifest declares required methods; the acceptance
+job checks complete coverage for the requested ticket/epic and exact project, SHA,
+pipeline and manifest hash. An epic requires epic-wide evidence, not just the final
+ticket's report. See [acceptance evidence](acceptance-evidence.md) and
+[browser checks](browser-checks.md). Reviewers still judge whether tests actually
+prove the statements; the validator does not understand product intent.
+
 ## Delivery extension
 
 1. `ctx-epic-close` prepares the verified epic MR. Follow the repository merge
@@ -132,12 +195,17 @@ approval. Recovery follows the documented deployment and migration procedure.
 
 ## Implementation boundary
 
-Five native flow definitions encode operation prompts, tools, routing and persisted
-handoffs: planning, ticket, epic, project and delivery. CI runs workflow checks now;
-opt-in application jobs validate adapter evidence through configuration readiness.
-Application adapters, automatic cross-flow dispatch, staging/promotion and enforced
-release approval are not implemented. See the implementation guide for exact gaps.
+Three native flows encode the interaction points: planning, development and delivery.
+Their 30 reusable skills preserve the finer-grained operations. Development processes
+one ticket per run, then persists a handoff; it does not automatically dispatch
+parallel sessions or retrigger itself. Ticket review and whole-epic review are separate
+read-only agent components. Review is tool-separated, not a GitLab approval grant.
 
-Next, register and validate the development path through one reviewed epic MR,
-then connect the six delivery operations as the application becomes runnable.
-Local definitions and tests do not establish executed nine-stage coverage.
+Workflow CI is opt-in. The application lane includes verify, optional browser checks,
+AC validation, scans, packaging and configuration readiness. Only the AC adapter is
+implemented; app adapters and the browser startup/test prerequisites remain missing.
+Staging/promotion and enforced release approval are not implemented.
+
+Next, publish the revised planning version, enable development/delivery, and exercise
+one foundation ticket through development. Connect delivery as the app becomes runnable.
+Local definitions/tests and the successful planning run do not establish nine-stage coverage.

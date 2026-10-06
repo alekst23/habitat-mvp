@@ -6,6 +6,9 @@ commands:
   verify:
     argv: null
     timeout_seconds: 900
+  acceptance:
+    argv: ["python", "scripts/ctx_acceptance.py"]
+    timeout_seconds: 30
   source-security:
     argv: null
     timeout_seconds: 900

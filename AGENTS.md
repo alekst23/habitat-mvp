@@ -17,10 +17,27 @@ and close operations under the `ctx-` prefix. Add the six delivery operations
 listed there. Lifecycle stages classify evidence; they do not define agent or
 operation boundaries.
 
-The mistaken stage-named Claude skills have been removed. Native GitLab Duo
-definitions live in `.gitlab/duo/flows/`, with operation mapping in
-`.gitlab/ctx/catalog.json`. Read `docs/development/gitlab-workflow.md` for actual
-implementation boundaries, activation and commands. These are not Claude skills.
+The three native GitLab Duo entry points are `ctx-planning`, `ctx-development`,
+and `ctx-delivery` in `.gitlab/duo/flows/`. Reusable operation instructions live
+in `skills/ctx-*/SKILL.md`; `.gitlab/ctx/catalog.json` maps operations to skills
+and flows. Read the named skills before acting. Register flows, not every skill.
+Superseded ticket/epic/project definitions are retained in `.gitlab/duo/legacy/`.
+Read `docs/development/gitlab-workflow.md` for activation and implementation limits.
+
+## Lean testing and acceptance
+
+Write the absolute minimum meaningful tests needed to prove the changed behavior
+and its material risks. Reuse existing coverage; one test may prove several ACs.
+Prefer a focused test at the lowest sufficient layer, small fixtures and direct
+observable assertions. No test-per-function/AC quotas, coverage-percentage targets,
+duplicated test layers, speculative matrices or assertion-free smoke tests.
+Do not delete unrelated tests. Documentation-only changes can use justified
+inspection; behavioral changes need a valid red baseline and final passing evidence.
+
+Review every AC against its committed acceptance manifest, current SHA and actual
+evidence. UI criteria need real browser evidence, not just code inspection or a
+green unit-test job. Missing/skipped/stale checks block completion. See
+`docs/development/acceptance-evidence.md` and `docs/development/browser-checks.md`.
 
 ## Product invariants
 
@@ -37,9 +54,10 @@ implementation boundaries, activation and commands. These are not Claude skills.
 
 ## Current implementation status
 
-Native flow definitions, workflow CI validation/tests, dependency-wave planning,
-and fail-closed CI command/evidence adapters are implemented locally. Catalog
-registration, GitLab CI lint and live flow execution are not yet verified.
+The user has successfully executed planning through Duo with `/flow:ctx-planning`.
+That live milestone is established. The revised three-flow definitions and shared
+skills in this change have not yet been published or live-validated. Local workflow
+validation, dependency-wave planning and fail-closed evidence adapters are provided.
 
 Workflow development commands (Python 3.12):
 
@@ -47,14 +65,17 @@ Workflow development commands (Python 3.12):
 python -m pip install -r requirements-workflow.txt
 python scripts/ctx_workflow.py validate
 python -m unittest discover -s tests/workflow -v
-python scripts/ctx_workflow.py waves docs/plan/EPIC-I<issue>/state.json
+python scripts/ctx_workflow.py waves docs/plan/E<epic-issue-iid>/state.json
 ```
 
-There are no application install/test/build/scan/deployment commands yet.
+Application install/test/build/scan/deployment adapters are not configured yet.
+The acceptance validator and browser CI harness exist; the latter still needs the
+application, its pinned Playwright dependency, startup command and real UI tests.
 Establish reviewed argument arrays and evidence writers in `.gitlab/ctx/commands.yml`
 as part of the application foundation. `python scripts/ctx_workflow.py run verify`
 currently returns blocked (exit 2), correctly. Workflow self-tests are not application
-tests. Set `CTX_APPLICATION_CHECKS=1` for the application CI lane; until configured,
+tests. Workflow self-checks remain opt-in with `CTX_WORKFLOW_CHECKS=1`. Set
+`CTX_APPLICATION_CHECKS=1` for the application CI lane; until configured,
 its first job fails closed. Make the lane mandatory before implementation MRs merge.
 
 Agents may edit scoped planning/application files on ticket/epic branches, create

@@ -2,20 +2,24 @@
 
 ## Status and boundaries
 
-This is a locally implemented/tested workflow foundation, not a live GitLab run.
-No Claude skill installation or external Claude runner is used. GitLab Duo runs
+Planning has already run successfully in GitLab Duo through `/flow:ctx-planning`,
+as confirmed by the user. The three-flow revision described here is local and has
+not yet been published or live-validated. No external Claude runner is used. Duo runs
 the native flow definitions in its CI execution environment. Normal GitLab CI jobs
 run deterministic workflow checks and, once configured, application adapters.
 
 | Native flow | Preserved process | Current boundary |
 |---|---|---|
-| `.gitlab/duo/flows/ctx-planning.yml` | Project routing, issue intake/triage, intent interview, spec, epic/ticket decomposition | Native prompts/tool routing; needs catalog registration and live validation |
-| `.gitlab/duo/flows/ctx-ticket.yml` | Design → collectible red tests → implementation → independent ticket review → closure | Resume entry points retain prerequisites; closure waits for verified epic integration |
-| `.gitlab/duo/flows/ctx-epic.yml` | Dependency waves, integration, separate whole-epic review, docs/merge order, epic MR | Wave calculation works locally; cross-flow dispatch is an explicit handoff, not automatic |
-| `.gitlab/duo/flows/ctx-project.yml` | Project-go / project-sleep state and durable handoff | Records/coordinates work; no autonomous retriggering or periodic scheduler |
+| `.gitlab/duo/flows/ctx-planning.yml` | Route → intake/intent → spec → epic/tickets and acceptance manifest | Prior planning version ran live; publish this revised version |
+| `.gitlab/duo/flows/ctx-development.yml` | Coordinate → design → minimal tests → implementation → browser/AC checks → independent ticket review → integration → whole-epic review/close | One ticket per run; resumable handoffs, no autonomous retriggering or parallel dispatcher |
 | `.gitlab/duo/flows/ctx-delivery.yml` | Six delivery operations, stage evidence and candidate readiness review | Read/comment only; application adapters and deployment/approval integration are missing |
 
-The exact operation-to-flow mapping is `.gitlab/ctx/catalog.json`. Stages classify
+Each of the 30 procedures is a repo skill at `skills/ctx-*/SKILL.md`, explicitly
+referenced by its flow prompt. Skills supply instructions; flow components supply
+tool permissions and routing. Only the three flows need catalog registration.
+The superseded ticket/epic/project YAML is preserved under `.gitlab/duo/legacy/`
+for reference, not registration. The operation-to-flow mapping is
+`.gitlab/ctx/catalog.json`. Stages classify
 evidence; they do not determine agent boundaries. Read the full contract in
 `ctx-contract.md` and the prize coverage plan in `../hackathon-gitlab-workflows.md`.
 
@@ -36,7 +40,7 @@ tool separation, catalog coverage and CI evidence dependencies. It is not a copy
 of GitLab's server-side schema and cannot prove tool availability or authorization.
 Official catalog validation and GitLab CI lint remain required.
 
-The five flow graphs terminate on unknown or blocked results. Agents post detailed
+The three flow graphs terminate on unknown or blocked results. Agents post detailed
 operation reports to the source issue before returning a routing token. A GitLab
 session ending in `abort` can mean a documented missing prerequisite, not a crash.
 Resume with the explicit operation after resolving that blocker. There are no
@@ -46,12 +50,15 @@ automatic flow-retrigger or repair loops in this version.
 
 Use the templates under `.gitlab/ctx/templates/`. The project state starts at
 `docs/plan/project.md`; specs live in `docs/design/<feature>/`; epics and tickets
-live in `docs/plan/EPIC-I<source-issue-iid>/`. Every ticket gets its own issue and
-`T-I<ticket-issue-iid>.md`. All IIDs are scoped to the platform project ID.
+live in `docs/plan/E<epic-issue-iid>/`. Ticket IDs are `E2-1`, `E2-2`, etc.,
+where `2` is the actual parent epic issue IID, not the intake request IID. Each
+ticket has a separate GitLab issue, mapped by `issue_iid` in version-2 state,
+and a matching `E2-1.md` file. Use the ID in its issue title and document heading.
+All identities are scoped to the platform project ID.
 The example state template contains placeholders and must be populated before use.
 
 ```sh
-python scripts/ctx_workflow.py waves docs/plan/EPIC-I12/state.json
+python scripts/ctx_workflow.py waves docs/plan/E2/state.json
 ```
 
 The wave helper rejects cycles, unknown dependencies, unsupported status, duplicate
@@ -62,22 +69,88 @@ must reconcile them against remote commit ancestry, review and pipeline state fi
 It does not start sessions or lock concurrent coordinators; use one coordinator per
 epic until a transactional dispatch/lease adapter is implemented.
 
-Distinct tickets can run in separate Duo CI sessions. Each gets its own branch and
-checkout. Integration uses ordinary non-force Git pushes, rechecks target movement,
+The development coordinator selects one ready ticket per invocation and stops after
+its integration, unless the epic is ready for final review/close. Distinct tickets
+can be started in separate human-triggered sessions with separate branches/checkouts;
+do not run competing coordinators for the same epic. Integration uses ordinary
+non-force Git pushes, rechecks target movement,
 and reruns integration checks. A ticket MR is not a closed ticket; a closed epic is
 not an approved deployment. Default-branch merges follow repository policy.
 
+### Stable numbering and additions
+
+For epic issue `#2`, the first ticket is `E2-1` even if GitLab assigned it issue
+`#3` or `#103`. Invocations still use the actual ticket IID, for example
+`ctx-ticket-design issue=3`. Do not pass `issue=1` based on the ticket ordinal.
+Version-2 state validates the parent prefix, unique issue mappings, and a
+`next_ticket_number` greater than every allocated number. Waves sort numerically,
+so `E2-2` comes before `E2-10`.
+
+After verifying the GitLab issue for an added ticket, preview its allocation:
+
+```sh
+python scripts/ctx_workflow.py add-ticket docs/plan/E2/state.json --issue-iid 9 --depends-on E2-3
+```
+
+This prints updated JSON; it does not write files or contact GitLab. Review and
+persist the returned state, ticket file and issue title together before dispatch.
+Repeated allocation for the same issue preserves its ID and does not consume
+another number. Reordering/closing tickets never renumbers them; keep retired
+records and never decrement the counter. Run only one planning writer per epic.
+The helper is not an atomic remote allocator or concurrency lock.
+
+### Migrating an existing plan
+
+The wave helper accepts legacy version-1 states without modifying them. Migration
+is explicit: verify the actual parent and intake issue, pause planning writers,
+and work on the existing epic branch. Never infer the parent from the old prefix:
+earlier definitions sometimes used the intake issue IID for that prefix.
+
+For the observed `ctx/epic-i2` plan (epic `#2`, source request `#1`):
+
+```sh
+python scripts/ctx_workflow.py migrate-numbering docs/plan/EPIC-I2/state.json --epic-issue-iid 2 --source-issue-iid 1
+```
+
+This is a read-only preview. It assigns numbers in stored ticket order, rewrites
+dependency IDs, preserves statuses/evidence/other metadata, and retains old IDs
+as `legacy_id` / `legacy_epic_id`. Repeating it on migrated state is idempotent;
+conflicting parent/source identity is rejected. It does not rename any file or
+GitLab issue. The expected mapping for the existing six-ticket plan is:
+
+| Existing ID | New ID | GitLab issue (unchanged) |
+|---|---|---|
+| T-I3 | E2-1 | #3 |
+| T-I4 | E2-2 | #4 |
+| T-I5 | E2-3 | #5 |
+| T-I6 | E2-4 | #6 |
+| T-I7 | E2-5 | #7 |
+| T-I8 | E2-6 | #8 |
+
+Apply the preview in a reviewed change: move `docs/plan/EPIC-I2/` to
+`docs/plan/E2/`, rename ticket files/headings, and update project/spec/epic/ticket
+references and dependency tables. Preserve issue URLs, branch names, MR targets,
+evidence and actual issue numbers. Then rename the existing issue title prefixes
+to match; do not recreate issues or rewrite historical comments. Verify waves
+and all links, then record the migration commit and issue-title readback before
+resuming. The next new ticket is `E2-7`, regardless of its GitLab issue IID.
+
+Publish the revised repository definitions and update the registered AI Catalog
+flow versions (including the enabled project versions) before using new numbering.
+Changing local YAML alone does not update the already registered CTX Planning flow.
+
 ## Application command and evidence contract
 
-`.gitlab-ci.yml` always runs workflow validation and self-tests. Set
+Workflow validation/self-tests remain opt-in with `CTX_WORKFLOW_CHECKS=1`. Set
 `CTX_APPLICATION_CHECKS=1` in a pipeline to include `.gitlab/ci/delivery.yml`:
 
 ```text
-verify → source-security → package → artifact-security → configure (validation only)
+verify + browser (when required) → acceptance → source-security → package → artifact-security → configure
 ```
 
-All command entries in `.gitlab/ctx/commands.yml` are intentionally `null` until
-the application foundation provides real tools. `run verify` currently exits 2
+The `acceptance` command is implemented. Application command entries in
+`.gitlab/ctx/commands.yml` remain `null` until the foundation provides real tools.
+The browser harness needs app startup and actual tests. `run verify` currently exits 2
 with a retained blocked report. There are no success placeholders. Do not interpret
 a green workflow-only pipeline as a tested application. Once the foundation exists,
 make these checks unconditional/required through a reviewed CI change before
@@ -100,6 +173,7 @@ All output evidence requires `source_sha` matching the checkout and an HTTPS
 | Command | Required evidence |
 |---|---|
 | `verify` | `passed: true`, positive integer `tests_total` for actual application tests |
+| `acceptance` | `passed: true`, positive `criteria_total`, ticket/epic `scope`, 64-hex `manifest_sha256`; validates per-AC evidence from verify/browser artifacts |
 | `source-security` | `checks` containing `source`, `dependency`, `secrets`, each `passed`; integer `blocking_findings: 0` |
 | `package` | `artifact_digest` as `sha256:<64 hex>`, HTTPS `artifact_url`, HTTPS `sbom_url` |
 | `artifact-security` | Same `artifact_digest`, `passed: true`, integer `blocking_findings: 0` |
@@ -109,7 +183,12 @@ The runner writes `.ctx/reports/<step>.json` with project ID, source SHA, pipeli
 ID and observed status. Each downstream job requires every preceding report from
 that same identity and checks artifact consistency. Job artifacts retain reports
 for 30 days. Commands returning zero without fresh valid evidence are blocked.
-`configure` validates only; it does not apply settings or migrations.
+`configure` validates only; it does not apply settings or migrations. Configure
+`CTX_AC_MANIFEST` and `CTX_AC_SCOPE` for the candidate. UI criteria additionally
+require `CTX_BROWSER_CHECKS=1`; skipping the browser job does not waive them.
+See [the exact evidence schema](acceptance-evidence.md) and
+[browser setup](browser-checks.md). The verify adapter publishes `.ctx/acceptance.json`;
+the browser job independently publishes `.ctx/browser/acceptance.json`.
 
 These checks establish consistency, not cryptographic provenance or complete test
 coverage. A malicious adapter can invent evidence. Trust comes from independently
@@ -118,45 +197,41 @@ Never give a task agent deployment credentials or permission to weaken those con
 
 ## GitLab activation checklist
 
-Observed on October 5, 2026: `creocortex-group1/hackathon-paypal` (project 87271414)
-is private, on Free, and its repository is empty. AI → Agents → Managed says to
-buy credits to start using agents. The local repository has no remote configured.
-No billing, permissions, service accounts or remote repository content were changed.
-Resolve Duo access/credits (including any organizer-provided entitlement) before
-attempting a live flow run; this observation does not establish which grant is available.
+The earlier empty-repository/credits observation is superseded by the successful
+planning run. Origin is configured for `creocortex-group1/hackathon-paypal`.
+This change does not push files or modify the remote catalog.
 
-1. Publish the foundation to the intended project default branch. No remote or push
-   has been configured by this implementation. Preserve existing project history.
-2. Run GitLab CI lint and the workflow pipeline. Confirm Duo entitlement/credits
-   and supported runners. Static local checks do not prove availability.
-3. Configure `.gitlab/duo/agent-config.yml` on default; GitLab ignores the version
-   from a task branch. The setup installs only a pinned dependency, not task-branch
-   scripts. Review runner network/secret exposure before enabling agents.
-4. In GitLab AI Catalog, create one private custom flow per YAML file. Paste the
-   corresponding full YAML and resolve server-side validation before enabling.
-   Do not create nine stage-named skills or a separate external Claude executor.
-5. Review the service-account permissions and enable the flows for this project.
-   Initially enable **mention triggers only**. These definitions reject bare-IID
-   assignment triggers and have not been adapted to pipeline event payloads.
-6. Configure default-branch protection and merge controls. Confirm which controls
-   the project tier actually supports. Never assume a manual CI button restricts
-   who may approve a deployment. No production job is included yet.
-7. On a real issue, mention the actual generated planning service account with
-   `ctx-project-design issue=<iid>` and a scoped objective. Observe spec questions,
-   persisted artifacts and the next handoff. Use a fixture-safe foundation change.
-8. Start a ticket with `ctx-ticket-design issue=<ticket-iid>`. It proceeds through
-   tests, implementation and review when prerequisites exist. If CI is still
-   pending, resume with `ctx-ticket-review issue=<ticket-iid>` after completion.
-9. Use `ctx-epic-run issue=<epic-iid>` to reconcile/integrate checked results.
-   Resume `ctx-ticket-close`, `ctx-epic-review` and `ctx-epic-close` as directed.
-   Record actual session/MR/pipeline URLs in the project plan.
+1. Review and publish this revision, including `skills/`, templates and CI helpers.
+   Preserve the existing numbering migration and remote history.
+2. Run GitLab CI lint and set `CTX_WORKFLOW_CHECKS=1` for a workflow-check pipeline.
+   Static checks are not GitLab server-side schema validation.
+3. Keep `.gitlab/duo/agent-config.yml` on default; GitLab reads that version. It is
+   currently a Python environment, not a preinstalled browser environment. The
+   browser CI job has its own Playwright image; see the browser guide for the distinction.
+4. Update the existing CTX Planning catalog version; do not create a duplicate.
+   Create/enable `ctx-development` and `ctx-delivery` from their YAML, then select
+   the updated enabled versions. Do not register legacy YAML or individual skills.
+5. Review service-account permissions and begin with human-invoked flows on issues
+   or MRs. These definitions do not implement automatic pipeline-event triggering.
+6. Verify branch/merge protections for the project's tier. Optional CI variables
+   are not merge protection. No production job or enforced release approval exists yet.
+7. Re-run `/flow:ctx-planning` for a scoped plan update; retain the successful
+   session URL and confirm skill loading, numbering and acceptance-manifest creation.
+8. Once enabled, invoke `/flow:ctx-development` on the selected issue, e.g. with
+   `ctx-ticket-design issue=<actual-ticket-iid>`. It handles the internal operations.
+   If CI is pending or a prerequisite is missing, resolve it and invoke the same flow
+   with the recorded resume operation. Browser evidence precedes independent review.
+9. Reconcile the epic through the same development flow. Record session/MR/pipeline
+   URLs, review all epic criteria and prepare its MR. Use `/flow:ctx-delivery` for
+   release readiness; absent deploy/monitor adapters must remain explicitly blocked.
 
 The service-account handle is assigned by GitLab; do not use a guessed @handle.
 Committing these files alone does not register or activate catalog flows.
 
 ## Remaining implementation for the full objective
 
-- Live catalog and runner smoke test, tool compatibility and state persistence.
+- Live validation of the revised three-flow versions, skill loading and handoffs;
+  the earlier planning execution is already confirmed.
 - Automatic cross-flow ticket dispatch, concurrency leases and bounded repair
   accounting; current explicit handoffs are not end-to-end autonomous orchestration.
 - The hosted app foundation and real test/security/build/SBOM/configuration adapters.
