@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "project_id": "87271414",
+  "epic": "EPIC-I2",
+  "tickets": [
+    {"id": "T-I3", "depends_on": [], "status": "pending"},
+    {"id": "T-I4", "depends_on": ["T-I3"], "status": "pending"},
+    {"id": "T-I5", "depends_on": ["T-I4"], "status": "pending"},
+    {"id": "T-I6", "depends_on": ["T-I5"], "status": "pending"},
+    {"id": "T-I7", "depends_on": ["T-I5"], "status": "pending"},
+    {"id": "T-I8", "depends_on": ["T-I6", "T-I7"], "status": "pending"}
+  ]
+}

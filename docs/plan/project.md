@@ -12,23 +12,48 @@ Native flow definitions and workflow CI foundation are implemented locally.
 GitLab catalog registration, remote execution and application adapters are pending.
 No epics, ticket sessions, deployment or nine-stage completion are claimed here.
 
+## Active work
+
+| Epic | Issue | Branch | State |
+|---|---|---|---|
+| EPIC-I2: Habitat MVP — First Runnable Foundation | #2 | ctx/epic-i2 | planning |
+
+## Ticket backlog
+
+| Ticket | Issue | Wave | State |
+|---|---|---|---|
+| T-I3: Feasibility spikes | #3 | 1 | pending |
+| T-I4: Trust core | #4 | 2 | pending |
+| T-I5: Tool interface and onboarding | #5 | 3 | pending |
+| T-I6: Marketing agent and action broker | #6 | 4 | pending |
+| T-I7: Funding and control panel | #7 | 4 | pending |
+| T-I8: Demo and submission | #8 | 5 | pending |
+
 ## Ready next work
 
-1. Publish this foundation to the intended GitLab project and validate/register
-   the planning and ticket flows with mention triggers.
-2. Use planning intake for the application foundation: current hosted MVP,
-   contracts, test harness and runtime commands before the budget-denial demo.
-3. Enable required application checks once real commands/evidence adapters exist.
+1. Resolve Duo access/credits and runner availability for live flow execution.
+2. Configure protected branches and mandatory CI checks.
+3. Run `ctx-epic-design issue=2` to write technical design and reconcile tickets.
+4. Run `ctx-ticket-design issue=3` to start T-I3 (feasibility spikes, Wave 1).
+5. Enable required application checks once real commands/evidence adapters exist.
 
 ## Blockers and decisions
 
-- GitLab Managed Agents currently asks for credits; resolve Duo access/credits
-  and runner availability before live execution. The remote repository is empty.
-- Establish protected branches, mandatory checks and release approver controls.
-- Hosting/configuration/secrets adapters are not implemented; no deployment permitted.
-- Public repository/MIT license and hackathon submission setup remain separate work.
+- GitLab Duo access/credits: resolve before live flow execution.
+- Protected branches and mandatory CI checks: must be configured before implementation MRs merge.
+- Hosting/configuration/secrets adapters: not implemented; no deployment permitted yet.
+- Public repository/MIT license and hackathon submission: T-I8 scope.
+- Reddit Ads API access: may require separate approval; T-I3 spike resolves.
+- PayPal authorize-and-capture behavior: must be confirmed for account type; T-I3 spike resolves.
+- Open decisions: live vs. sandbox PayPal for demo, model provider, cloud browser, per-owner isolation, Habitat margin.
 
 ## Durable handoff
 
-See ../development/gitlab-workflow.md for activation, commands and current gaps.
-Record issue/session/branch/MR links here as actual work begins.
+Source issue: #1  
+Epic issue: #2 (EPIC-I2)  
+Epic branch: ctx/epic-i2  
+Spec: docs/design/habitat-foundation/spec.md  
+Epic plan: docs/plan/EPIC-I2/_epic.md  
+State: docs/plan/EPIC-I2/state.json  
+Source SHA: 4198664fc2bc917ee722146553b27fa41f0918c9  
+Next operation: ctx-epic-design issue=2
