@@ -1,13 +1,85 @@
 {
-  "version": 1,
+  "version": 2,
   "project_id": "87271414",
-  "epic": "EPIC-I2",
+  "epic": "E2",
+  "epic_issue_iid": 2,
+  "source_issue_iid": 1,
+  "epic_branch": "ctx/epic-i2",
+  "next_ticket_number": 8,
   "tickets": [
-    {"id": "T-I3", "depends_on": [], "status": "pending"},
-    {"id": "T-I4", "depends_on": ["T-I3"], "status": "pending"},
-    {"id": "T-I5", "depends_on": ["T-I4"], "status": "pending"},
-    {"id": "T-I6", "depends_on": ["T-I5"], "status": "pending"},
-    {"id": "T-I7", "depends_on": ["T-I5"], "status": "pending"},
-    {"id": "T-I8", "depends_on": ["T-I6", "T-I7"], "status": "pending"}
-  ]
+    {
+      "id": "E2-1",
+      "issue_iid": 3,
+      "legacy_id": "T-I3",
+      "title": "Feasibility spikes",
+      "depends_on": [],
+      "wave": 1,
+      "status": "in_progress",
+      "branch": "ctx/ticket-i3"
+    },
+    {
+      "id": "E2-2",
+      "issue_iid": 4,
+      "legacy_id": "T-I4",
+      "title": "Trust core",
+      "depends_on": ["E2-1"],
+      "wave": 2,
+      "status": "pending",
+      "branch": "ctx/ticket-i4"
+    },
+    {
+      "id": "E2-3",
+      "issue_iid": 5,
+      "legacy_id": "T-I5",
+      "title": "Tool interface and onboarding",
+      "depends_on": ["E2-2"],
+      "wave": 3,
+      "status": "pending",
+      "branch": "ctx/ticket-i5"
+    },
+    {
+      "id": "E2-4",
+      "issue_iid": 6,
+      "legacy_id": "T-I6",
+      "title": "Marketing agent and action broker",
+      "depends_on": ["E2-3"],
+      "wave": 4,
+      "status": "pending",
+      "branch": "ctx/ticket-i6"
+    },
+    {
+      "id": "E2-5",
+      "issue_iid": 7,
+      "legacy_id": "T-I7",
+      "title": "Funding and control panel",
+      "depends_on": ["E2-3"],
+      "wave": 4,
+      "status": "pending",
+      "branch": "ctx/ticket-i7"
+    },
+    {
+      "id": "E2-6",
+      "issue_iid": 8,
+      "legacy_id": "T-I8",
+      "title": "Demo and submission",
+      "depends_on": ["E2-4", "E2-5", "E2-7"],
+      "wave": 5,
+      "status": "pending",
+      "branch": "ctx/ticket-i8"
+    },
+    {
+      "id": "E2-7",
+      "issue_iid": 9,
+      "legacy_id": null,
+      "title": "Generic action execution platform",
+      "depends_on": ["E2-2", "E2-3"],
+      "wave": 4,
+      "status": "pending",
+      "branch": "ctx/ticket-i9"
+    }
+  ],
+  "coordinator": "ctx-development",
+  "last_operation": "ctx-project-go",
+  "last_selected": "E2-1",
+  "last_updated": "2026-10-06"
 }
