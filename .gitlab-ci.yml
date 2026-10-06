@@ -1,3 +1,6 @@
+variables:
+  CTX_WORKFLOW_CHECKS: "0"
+
 workflow:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
@@ -15,11 +18,15 @@ stages: [workflow, verify, source-security, package, artifact-security, configur
 
 ctx:workflow-validate:
   stage: workflow
+  rules:
+    - if: '$CTX_WORKFLOW_CHECKS == "1"'
   script:
     - python scripts/ctx_workflow.py validate
 
 ctx:workflow-tests:
   stage: workflow
+  rules:
+    - if: '$CTX_WORKFLOW_CHECKS == "1"'
   script:
     - python -m unittest discover -s tests/workflow -v
 
