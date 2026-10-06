@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "flows": {
+    ".gitlab/duo/flows/ctx-planning.yml": {
+      "operations": [
+        "ctx-project-design",
+        "ctx-issue-new",
+        "ctx-issue-triage",
+        "ctx-spec-interview",
+        "ctx-epic-new",
+        "ctx-ticket-new",
+        "ctx-epic-design"
+      ],
+      "read_only_components": []
+    },
+    ".gitlab/duo/flows/ctx-ticket.yml": {
+      "operations": [
+        "ctx-ticket-design",
+        "ctx-ticket-tests",
+        "ctx-ticket-start",
+        "ctx-branch-agent",
+        "ctx-hotfix",
+        "ctx-project-fix",
+        "ctx-ci-check",
+        "ctx-browser-check",
+        "ctx-ticket-review",
+        "ctx-ticket-close"
+      ],
+      "read_only_components": [
+        "dispatch",
+        "review"
+      ]
+    },
+    ".gitlab/duo/flows/ctx-epic.yml": {
+      "operations": [
+        "ctx-epic-run",
+        "ctx-epic-review",
+        "ctx-epic-docs",
+        "ctx-merge-queue",
+        "ctx-epic-close"
+      ],
+      "read_only_components": [
+        "dispatch",
+        "review"
+      ]
+    },
+    ".gitlab/duo/flows/ctx-project.yml": {
+      "operations": [
+        "ctx-project-go",
+        "ctx-project-sleep"
+      ],
+      "read_only_components": []
+    },
+    ".gitlab/duo/flows/ctx-delivery.yml": {
+      "operations": [
+        "ctx-security-check",
+        "ctx-package",
+        "ctx-environment-configure",
+        "ctx-release",
+        "ctx-monitor",
+        "ctx-release-review"
+      ],
+      "read_only_components": [
+        "assess"
+      ]
+    }
+  }
+}

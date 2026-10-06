@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "project_id": "REPLACE_WITH_PROJECT_ID",
+  "epic": "EPIC-I1",
+  "tickets": [
+    {"id": "T-I2", "depends_on": [], "status": "pending"},
+    {"id": "T-I3", "depends_on": ["T-I2"], "status": "pending"}
+  ]
+}

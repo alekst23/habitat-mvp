@@ -1,0 +1,20 @@
+version: 1
+# Replace null argv with reviewed argument arrays when the application exists.
+# No shell expansion, prompt-provided commands or echo-success placeholders.
+# Each command must write its evidence to CTX_OUTPUT (see the implementation guide).
+commands:
+  verify:
+    argv: null
+    timeout_seconds: 900
+  source-security:
+    argv: null
+    timeout_seconds: 900
+  package:
+    argv: null
+    timeout_seconds: 900
+  artifact-security:
+    argv: null
+    timeout_seconds: 900
+  configure:
+    argv: null
+    timeout_seconds: 900
