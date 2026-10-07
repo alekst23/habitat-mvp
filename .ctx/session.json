@@ -1,0 +1,95 @@
+{
+  "project_id": 87271414,
+  "source_issue_iid": 3,
+  "epic_issue_iid": 2,
+  "ticket_issue_iid": 3,
+  "epic": "E2",
+  "ticket": "E2-1",
+  "scope": "ctx-epic-run",
+  "operation": "ctx-epic-run",
+  "branch": "ctx/ticket-i3",
+  "epic_branch": "ctx/epic-i2",
+  "candidate_sha": "d674db6c1e1d7b5fbdcdcfb8af16da6f3a030c4f",
+  "epic_sha": "bcc641c5c011fc1585d76020434638f6ce06aa42",
+  "mr_iid": 2,
+  "mr_url": "https://gitlab.com/creocortex-group1/hackathon-paypal/-/merge_requests/2",
+  "status": "pending_review",
+  "acceptance_manifest": {
+    "ticket": "E2-1",
+    "criteria": [
+      {
+        "id": "E2-1-AC1",
+        "statement": "Reddit Ads API: confirm whether API access requires separate approval beyond a developer app",
+        "method": "inspection",
+        "evidence": "docs/plan/EPIC-I2/spikes/reddit-ads-api.md#1-api-access-requirements",
+        "verdict": "passed"
+      },
+      {
+        "id": "E2-1-AC2",
+        "statement": "Reddit Ads API: document the exact OAuth scopes available",
+        "method": "inspection",
+        "evidence": "docs/plan/EPIC-I2/spikes/reddit-ads-api.md#2-oauth-scopes-available",
+        "verdict": "passed"
+      },
+      {
+        "id": "E2-1-AC3",
+        "statement": "Reddit Ads API: confirm whether campaign creation and budget-setting are available via API; if not, document browser-recipe fallback",
+        "method": "inspection",
+        "evidence": "docs/plan/EPIC-I2/spikes/reddit-ads-api.md#3-campaign-creation-and-budget-setting-via-api",
+        "verdict": "passed"
+      },
+      {
+        "id": "E2-1-AC4",
+        "statement": "PayPal: confirm authorize intent + partial/multiple captures works for the team's account type",
+        "method": "inspection",
+        "evidence": "docs/plan/EPIC-I2/spikes/paypal-authorize-capture.md#2-partial-and-multiple-captures",
+        "verdict": "passed"
+      },
+      {
+        "id": "E2-1-AC5",
+        "statement": "PayPal: document the authorization validity window",
+        "method": "inspection",
+        "evidence": "docs/plan/EPIC-I2/spikes/paypal-authorize-capture.md#3-authorization-validity-window",
+        "verdict": "passed"
+      },
+      {
+        "id": "E2-1-AC6",
+        "statement": "PayPal: confirm sandbox behavior matches production behavior for the flows we need",
+        "method": "inspection",
+        "evidence": "docs/plan/EPIC-I2/spikes/paypal-authorize-capture.md#4-sandbox-behavior",
+        "verdict": "passed"
+      },
+      {
+        "id": "E2-1-AC7",
+        "statement": "Render API: confirm background workers and Workflow tasks can be provisioned via API",
+        "method": "inspection",
+        "evidence": "docs/plan/EPIC-I2/spikes/render-api.md#1-api-driven-provisioning",
+        "verdict": "passed"
+      },
+      {
+        "id": "E2-1-AC8",
+        "statement": "Render API: document resource types, cost estimates, and isolation model",
+        "method": "inspection",
+        "evidence": "docs/plan/EPIC-I2/spikes/render-api.md#3-resource-types-available",
+        "verdict": "passed"
+      },
+      {
+        "id": "E2-1-AC9",
+        "statement": "Render API: confirm Blueprint support",
+        "method": "inspection",
+        "evidence": "docs/plan/EPIC-I2/spikes/render-api.md#6-blueprint-support-renderyaml",
+        "verdict": "passed"
+      },
+      {
+        "id": "E2-1-AC10",
+        "statement": "Cloud browser: evaluate at least one hosted option; confirm Playwright recipes with stored sessions; document cost and rate limits",
+        "method": "inspection",
+        "evidence": "docs/plan/EPIC-I2/spikes/cloud-browser.md",
+        "verdict": "passed"
+      }
+    ]
+  },
+  "last_updated": "2026-10-06",
+  "next_operation": "ctx-ticket-review issue=3",
+  "notes": "Spike findings committed. MR !2 open for review. After review and merge to ctx/epic-i2, close issue #3 and begin E2-2 (issue #4). Decisions Q2 (model provider) and Q5 (Habitat margin) must be made before T-I4 starts."
+}
