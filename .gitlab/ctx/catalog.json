@@ -1,0 +1,87 @@
+{
+  "version": 2,
+  "flows": {
+    ".gitlab/duo/flows/ctx-planning.yml": {
+      "operations": [
+        "ctx-project-design",
+        "ctx-issue-new",
+        "ctx-issue-triage",
+        "ctx-spec-interview",
+        "ctx-epic-new",
+        "ctx-ticket-new",
+        "ctx-epic-design"
+      ],
+      "read_only_components": []
+    },
+    ".gitlab/duo/flows/ctx-development.yml": {
+      "operations": [
+        "ctx-project-go",
+        "ctx-project-sleep",
+        "ctx-epic-run",
+        "ctx-ticket-design",
+        "ctx-ticket-tests",
+        "ctx-ticket-start",
+        "ctx-branch-agent",
+        "ctx-hotfix",
+        "ctx-project-fix",
+        "ctx-ci-check",
+        "ctx-browser-check",
+        "ctx-ticket-review",
+        "ctx-ticket-close",
+        "ctx-epic-docs",
+        "ctx-epic-review",
+        "ctx-epic-close",
+        "ctx-merge-queue"
+      ],
+      "read_only_components": [
+        "review",
+        "epic_review"
+      ]
+    },
+    ".gitlab/duo/flows/ctx-delivery.yml": {
+      "operations": [
+        "ctx-security-check",
+        "ctx-package",
+        "ctx-environment-configure",
+        "ctx-release",
+        "ctx-monitor",
+        "ctx-release-review"
+      ],
+      "read_only_components": [
+        "assess"
+      ]
+    }
+  },
+  "skills": {
+    "ctx-project-design": "skills/ctx-project-design/SKILL.md",
+    "ctx-issue-new": "skills/ctx-issue-new/SKILL.md",
+    "ctx-issue-triage": "skills/ctx-issue-triage/SKILL.md",
+    "ctx-spec-interview": "skills/ctx-spec-interview/SKILL.md",
+    "ctx-epic-new": "skills/ctx-epic-new/SKILL.md",
+    "ctx-ticket-new": "skills/ctx-ticket-new/SKILL.md",
+    "ctx-epic-design": "skills/ctx-epic-design/SKILL.md",
+    "ctx-project-go": "skills/ctx-project-go/SKILL.md",
+    "ctx-project-sleep": "skills/ctx-project-sleep/SKILL.md",
+    "ctx-epic-run": "skills/ctx-epic-run/SKILL.md",
+    "ctx-ticket-design": "skills/ctx-ticket-design/SKILL.md",
+    "ctx-ticket-tests": "skills/ctx-ticket-tests/SKILL.md",
+    "ctx-ticket-start": "skills/ctx-ticket-start/SKILL.md",
+    "ctx-branch-agent": "skills/ctx-branch-agent/SKILL.md",
+    "ctx-hotfix": "skills/ctx-hotfix/SKILL.md",
+    "ctx-project-fix": "skills/ctx-project-fix/SKILL.md",
+    "ctx-ci-check": "skills/ctx-ci-check/SKILL.md",
+    "ctx-browser-check": "skills/ctx-browser-check/SKILL.md",
+    "ctx-ticket-review": "skills/ctx-ticket-review/SKILL.md",
+    "ctx-ticket-close": "skills/ctx-ticket-close/SKILL.md",
+    "ctx-epic-docs": "skills/ctx-epic-docs/SKILL.md",
+    "ctx-epic-review": "skills/ctx-epic-review/SKILL.md",
+    "ctx-epic-close": "skills/ctx-epic-close/SKILL.md",
+    "ctx-merge-queue": "skills/ctx-merge-queue/SKILL.md",
+    "ctx-security-check": "skills/ctx-security-check/SKILL.md",
+    "ctx-package": "skills/ctx-package/SKILL.md",
+    "ctx-environment-configure": "skills/ctx-environment-configure/SKILL.md",
+    "ctx-release": "skills/ctx-release/SKILL.md",
+    "ctx-monitor": "skills/ctx-monitor/SKILL.md",
+    "ctx-release-review": "skills/ctx-release-review/SKILL.md"
+  }
+}
