@@ -5,10 +5,12 @@ from __future__ import annotations
 import argparse
 from copy import deepcopy
 from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
 import re
+import shlex
 import subprocess
 import sys
 from urllib.parse import urlparse
@@ -116,6 +118,74 @@ def validate_skill_terminal_tokens(flow, skills):
                         f"skill terminal tokens differ from {prompt['prompt_id']}: {path}")
 
 
+def routing_adapter_components(name, tokens):
+    """Only fixed tools may normalize responses; model output is never executable input."""
+    terminal_token_set(tokens, name)
+    digest = hashlib.sha256((ROOT / "scripts/ctx_routing.py").read_bytes()).hexdigest()
+    bootstrap = (
+        "import hashlib,pathlib,sys; "
+        'source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); '
+        f'digest="{digest}"; '
+        "actual=hashlib.sha256(source).hexdigest(); "
+        'sys.exit("CTX routing parser digest mismatch") if actual != digest else None; '
+        'exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})'
+    )
+
+    def command(suffix, action):
+        argv = ["-I", "-c", bootstrap, action, "--component", name,
+                "--allowed", ",".join(tokens), "--token-only"]
+        return {"name": name + suffix, "type": "DeterministicStepComponent",
+                "tool_name": "run_command", "toolset": ["run_command"], "inputs": [
+                    {"from": "python3", "as": "program", "literal": True},
+                    {"from": shlex.join(argv), "as": "args", "literal": True}],
+                "ui_log_events": ["on_tool_execution_failed"]}
+
+    return [command("_routing_prepare", "prepare"),
+            {"name": name + "_routing_capture", "type": "DeterministicStepComponent",
+             "tool_name": "create_file_with_contents", "toolset": ["create_file_with_contents"],
+             "inputs": [{"from": f"context:{name}.final_answer", "as": "contents"},
+                        {"from": f"ctx-routing-{name}.input", "as": "file_path", "literal": True}],
+             "ui_log_events": ["on_tool_execution_failed"]},
+            command("_routing_token", "normalize")]
+
+
+def routing_adapter_routers(name, routes):
+    def condition(source, accepted):
+        return {"from": source, "condition": {
+            "input": f"context:{source}.tool_responses", "routes": accepted}}
+    return [{"from": name, "to": name + "_routing_prepare"},
+            condition(name + "_routing_prepare", {"absent": name + "_routing_capture",
+                                                   "default_route": "abort"}),
+            condition(name + "_routing_capture", {"File written successfully": name + "_routing_token",
+                                                   "default_route": "abort"}),
+            condition(name + "_routing_token", routes)]
+
+
+def sync_routing(root=ROOT):
+    """Mechanical regeneration of fixed adapters; preserves hand-written agent prompts."""
+    catalog = json.loads((root / ".gitlab/ctx/catalog.json").read_text())
+    for filename, registration in catalog["flows"].items():
+        path = root / filename
+        text = path.read_text()
+        flow = read_yaml(path)
+        components, routers = [], []
+        for name, tokens in registration["terminal_tokens"].items():
+            source = next(r for r in flow["routers"]
+                          if r["from"] in (name, name + "_routing_token") and "condition" in r)
+            components.extend(routing_adapter_components(name, tokens))
+            routers.extend(routing_adapter_routers(name, source["condition"]["routes"]))
+        head, prompts = text.split("prompts:\n", 1)
+        head = head.split("  # Generated routing adapters", 1)[0]
+        helpers = yaml.safe_dump(components, sort_keys=False, width=110)
+        head += "  # Generated routing adapters: python scripts/ctx_workflow.py sync-routing\n"
+        head += "".join("  " + line + "\n" for line in helpers.splitlines())
+        prompts, tail = prompts.split("routers:\n", 1)
+        tail = tail.split("flow:\n", 1)[1]
+        path.write_text(head + "prompts:\n" + prompts + yaml.safe_dump(
+            {"routers": routers}, sort_keys=False) + "flow:\n" + tail)
+    return {"flows": len(catalog["flows"]), "routing_contract": "normalized-v1"}
+
+
 def validate_flow(flow, registration):
     """Validate the intentionally small v1 subset we use, not GitLab's full schema."""
     require(isinstance(flow, dict), "flow must be a mapping")
@@ -129,13 +199,18 @@ def validate_flow(flow, registration):
     require(len(set(names)) == len(names), "duplicate component name")
     require(all(re.fullmatch(r"[a-z][a-z_]*", name) for name in names), "invalid component name")
     require(not {"end", "abort"} & set(names), "reserved component name")
+    agents = [c for c in components if c["type"] == "AgentComponent"]
+    agent_names = {c["name"] for c in agents}
     declared = registration.get("terminal_tokens")
-    require(isinstance(declared, dict) and set(declared) == set(names),
-            "catalog terminal tokens must cover every component exactly")
+    require(isinstance(declared, dict) and set(declared) == agent_names,
+            "catalog terminal tokens must cover every agent component exactly")
+    helpers = [c for c in components if c["type"] != "AgentComponent"]
+    expected_helpers = [c for name, tokens in declared.items()
+                        for c in routing_adapter_components(name, tokens)]
     prompts = {p["prompt_id"]: p for p in flow["prompts"]}
     require(len(prompts) == len(flow["prompts"]), "duplicate prompt id")
     used_prompts = set()
-    for component in components:
+    for component in agents:
         require(set(component) == {"name", "type", "prompt_id", "inputs", "toolset",
                                    "ui_log_events"}, "unsupported component fields")
         require(component["type"] == "AgentComponent", "unsupported component type")
@@ -150,6 +225,8 @@ def validate_flow(flow, registration):
         require(set(template) == {"system", "user", "placeholder"}, "invalid prompt template")
         require(template["placeholder"] == "history", "history placeholder missing")
         require("No further steps" in template["system"], "explicit stopping rule missing")
+        require("Read the saved note back" in template["system"] and
+                "return blocked" in template["system"], "verified report publication contract missing")
         inputs = component["inputs"]
         require(inputs == [{"from": "context:goal", "as": "goal"},
                            {"from": "context:project_id", "as": "project_id"}],
@@ -163,34 +240,46 @@ def validate_flow(flow, registration):
         if component["name"] in registration["read_only_components"]:
             require(not set(tools) & WRITE_TOOLS, "reviewer has execution/write tools")
     require(used_prompts == set(prompts), "orphan prompt")
-    require(set(registration["read_only_components"]) <= set(names), "unknown read-only component")
+    require(set(registration["read_only_components"]) <= agent_names, "unknown read-only component")
     prompt_text = "\n".join(p["prompt_template"]["system"] for p in prompts.values())
     for operation in registration["operations"]:
         require(operation in prompt_text, f"missing operation contract: {operation}")
 
     graph = {}
+    routers = {r["from"]: r for r in flow["routers"]}
     for router in flow["routers"]:
         source = router["from"]
         require(source in names and source not in graph, "unknown/duplicate router source")
-        require(set(router) == {"from", "condition"}, "unconditional/unsupported router")
+        if source in agent_names:
+            require(router == {"from": source, "to": source + "_routing_prepare"},
+                    "agent must route through normalization")
+            graph[source] = {router["to"]}
+            continue
+        require(set(router) == {"from", "condition"}, "unsupported adapter router")
         condition = router["condition"]
         require(set(condition) == {"input", "routes"}, "invalid router condition")
-        require(condition["input"] == f"context:{source}.final_answer", "wrong routing input")
+        require(condition["input"] == f"context:{source}.tool_responses", "wrong routing input")
         routes = condition["routes"]
-        require(routes.get("blocked") == routes.get("default_route") == "abort",
-                "blocked and unknown answers must abort")
+        require(routes.get("default_route") == "abort", "unknown answers must abort")
         require(all(target in {*names, "end", "abort"} for target in routes.values()),
                 "unknown routing target")
         require(any(v != "abort" for v in routes.values()), "no success route")
-        component = next(c for c in components if c["name"] == source)
-        documented = documented_terminal_tokens(
-            prompts[component["prompt_id"]]["prompt_template"]["system"], source)
-        expected = set(routes) - {"default_route"}
-        require(documented == expected, f"prompt terminal tokens differ from router: {source}")
-        require(terminal_token_set(declared[source], source) == expected,
-                f"catalog terminal tokens differ from router: {source}")
+        if source.endswith("_routing_token"):
+            agent = source.removesuffix("_routing_token")
+            require(routes.get("blocked") == "abort", "blocked answers must abort")
+            component = next(c for c in agents if c["name"] == agent)
+            documented = documented_terminal_tokens(
+                prompts[component["prompt_id"]]["prompt_template"]["system"], agent)
+            expected = set(routes) - {"default_route"}
+            require(documented == expected, f"prompt terminal tokens differ from router: {agent}")
+            require(terminal_token_set(declared[agent], agent) == expected,
+                    f"catalog terminal tokens differ from router: {agent}")
+            for expected_router in routing_adapter_routers(agent, routes):
+                require(routers.get(expected_router["from"]) == expected_router,
+                        "routing adapter gate differs from contract")
         graph[source] = set(routes.values())
     require(set(graph) == set(names), "component without router")
+    require(helpers == expected_helpers, "routing adapters differ from pinned contract; run sync-routing")
     require(set(flow["flow"]) == {"entry_point"}, "unsupported flow entry fields")
     entry = flow["flow"]["entry_point"]
     require(entry in names, "missing entry point")
@@ -544,6 +633,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     subs = parser.add_subparsers(dest="action", required=True)
     subs.add_parser("validate")
+    subs.add_parser("sync-routing", help="regenerate pinned deterministic routing adapters")
     subs.add_parser("waves").add_argument("state", type=Path)
     migration = subs.add_parser("migrate-numbering", help="print migrated state; no files or GitLab writes")
     migration.add_argument("state", type=Path)
@@ -560,6 +650,8 @@ def main():
             return execute_step(args.step)
         if args.action == "validate":
             result = validate_repository()
+        elif args.action == "sync-routing":
+            result = sync_routing()
         else:
             state = json.loads(args.state.read_text())
             if args.action == "migrate-numbering":

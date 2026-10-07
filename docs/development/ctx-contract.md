@@ -133,6 +133,24 @@ Each operation reports:
 | Evidence | Commands/jobs, observed results, reports, diffs and accessible URLs |
 | Handoff | Exact next operation and inputs, or the decision needed to unblock it |
 
+Publish that complete report as a note on the resolved source issue/work item,
+not in the component's final answer. Read the saved note back by its returned ID;
+verify project/source identity, full Markdown body, current SHA, evidence links
+and handoff against the intended report. Record the note ID/URL in the durable
+handoff. A write acknowledgment is not readback verification. An unresolved source,
+failed publication or mismatching readback blocks handoff; never post to a guessed
+item or repeat an uncertain write blindly.
+
+After successful publication/readback, the producer returns only its allowed
+routing token (for example `design`). On a blocker it returns `blocked`. No report,
+summary, URL or code fence belongs in the final answer. The consumer is defensive:
+the deterministic adapter extracts the last non-empty, whitespace-trimmed line
+when it is an allowed token, retaining preceding text as informational output.
+It also accepts a JSON object with `routing_token` and optional
+`informational_output`. Unknown tokens, conflicting standalone tokens, duplicate
+JSON fields and mixed JSON/plain routing signals fail closed. This normalization
+does not verify reports, evidence or approvals; the operation still must do that.
+
 Distinguish test preparation from execution, configuration validation from
 application, and a release plan from a deployment. Collectible failing tests are
 expected during test design; those acceptance tests must pass on the final
