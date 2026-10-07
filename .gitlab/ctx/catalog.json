@@ -11,7 +11,12 @@
         "ctx-ticket-new",
         "ctx-epic-design"
       ],
-      "read_only_components": []
+      "read_only_components": [],
+      "terminal_tokens": {
+        "route": ["ready", "intake_done", "blocked"],
+        "specification": ["ready", "blocked"],
+        "decomposition": ["ready", "blocked"]
+      }
     },
     ".gitlab/duo/flows/ctx-development.yml": {
       "operations": [
@@ -36,7 +41,18 @@
       "read_only_components": [
         "review",
         "epic_review"
-      ]
+      ],
+      "terminal_tokens": {
+        "coordinate": ["design", "tests", "implementation", "browser", "integrate", "epic", "checkpoint", "blocked"],
+        "design": ["ready", "blocked"],
+        "tests": ["ready", "blocked"],
+        "implementation": ["ready", "blocked"],
+        "browser": ["ready", "blocked"],
+        "review": ["ready", "blocked"],
+        "integrate": ["more", "complete", "blocked"],
+        "epic_review": ["ready", "blocked"],
+        "close": ["ready", "blocked"]
+      }
     },
     ".gitlab/duo/flows/ctx-delivery.yml": {
       "operations": [
@@ -49,7 +65,10 @@
       ],
       "read_only_components": [
         "assess"
-      ]
+      ],
+      "terminal_tokens": {
+        "assess": ["ready", "blocked"]
+      }
     }
   },
   "skills": {

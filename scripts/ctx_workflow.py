@@ -81,6 +81,41 @@ def https_url(value):
         return False
 
 
+def terminal_token_set(value, label):
+    require(isinstance(value, list) and value and
+            all(isinstance(token, str) and re.fullmatch(r"[a-z][a-z_]*", token)
+                and token != "default_route" for token in value),
+            f"invalid terminal tokens: {label}")
+    require(len(value) == len(set(value)), f"duplicate terminal tokens: {label}")
+    return set(value)
+
+
+def documented_terminal_tokens(text, label, required=True):
+    """Read the explicit contract, not a heuristic interpretation of prose."""
+    declarations = re.findall(r"(?m)^[ \t]*Terminal tokens:[ \t]*(.*)$", text)
+    if not declarations and not required:
+        return None
+    require(len(declarations) == 1, f"exactly one terminal token declaration required: {label}")
+    try:
+        value = yaml.load(declarations[0], Loader=UniqueLoader)
+    except yaml.YAMLError as exc:
+        raise Invalid(f"invalid terminal token declaration: {label}") from exc
+    return terminal_token_set(value, label)
+
+
+def validate_skill_terminal_tokens(flow, skills):
+    """A reused skill may constrain outputs, but cannot add a consuming prompt's tokens."""
+    for prompt in flow["prompts"]:
+        system = prompt["prompt_template"]["system"]
+        allowed = documented_terminal_tokens(system, prompt["prompt_id"])
+        for path in re.findall(r"(?m)^[ \t]*- (skills/ctx-[a-z-]+/SKILL\.md)[ \t]*$", system):
+            require(path in skills, f"missing required skill: {path}")
+            tokens = documented_terminal_tokens(skills[path], path, required=False)
+            if tokens is not None:
+                require(tokens <= allowed,
+                        f"skill terminal tokens differ from {prompt['prompt_id']}: {path}")
+
+
 def validate_flow(flow, registration):
     """Validate the intentionally small v1 subset we use, not GitLab's full schema."""
     require(isinstance(flow, dict), "flow must be a mapping")
@@ -94,6 +129,9 @@ def validate_flow(flow, registration):
     require(len(set(names)) == len(names), "duplicate component name")
     require(all(re.fullmatch(r"[a-z][a-z_]*", name) for name in names), "invalid component name")
     require(not {"end", "abort"} & set(names), "reserved component name")
+    declared = registration.get("terminal_tokens")
+    require(isinstance(declared, dict) and set(declared) == set(names),
+            "catalog terminal tokens must cover every component exactly")
     prompts = {p["prompt_id"]: p for p in flow["prompts"]}
     require(len(prompts) == len(flow["prompts"]), "duplicate prompt id")
     used_prompts = set()
@@ -144,6 +182,13 @@ def validate_flow(flow, registration):
         require(all(target in {*names, "end", "abort"} for target in routes.values()),
                 "unknown routing target")
         require(any(v != "abort" for v in routes.values()), "no success route")
+        component = next(c for c in components if c["name"] == source)
+        documented = documented_terminal_tokens(
+            prompts[component["prompt_id"]]["prompt_template"]["system"], source)
+        expected = set(routes) - {"default_route"}
+        require(documented == expected, f"prompt terminal tokens differ from router: {source}")
+        require(terminal_token_set(declared[source], source) == expected,
+                f"catalog terminal tokens differ from router: {source}")
         graph[source] = set(routes.values())
     require(set(graph) == set(names), "component without router")
     require(set(flow["flow"]) == {"entry_point"}, "unsupported flow entry fields")
@@ -186,9 +231,12 @@ def validate_repository(root=ROOT):
     require(catalog["version"] == 2, "unsupported catalog version")
     actual = {str(p.relative_to(root)) for p in (root / ".gitlab/duo/flows").glob("*.yml")}
     require(actual == set(catalog["flows"]), "flow catalog and files differ")
+    skill_texts = {filename: (root / filename).read_text()
+                  for filename in catalog["skills"].values() if (root / filename).is_file()}
     for filename, registration in catalog["flows"].items():
         flow = read_yaml(root / filename)
         validate_flow(flow, registration)
+        validate_skill_terminal_tokens(flow, skill_texts)
         prompt_text = "\n".join(p["prompt_template"]["system"] for p in flow["prompts"])
         for operation in registration["operations"]:
             skill = catalog["skills"].get(operation)

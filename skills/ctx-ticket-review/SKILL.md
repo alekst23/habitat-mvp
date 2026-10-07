@@ -26,3 +26,15 @@ required runtime behavior. No UI evidence is acceptable only for non-UI criteria
 Block for missing/failed/stale acceptance evidence or unresolved material findings.
 Record ready, needs changes or needs decision with precise evidence. This verdict
 is not GitLab MR approval, ticket integration or release authorization.
+
+## Final routing response
+
+Terminal tokens: [ready, blocked]
+
+Publish the review verdict, AC matrix, findings and integration/repair handoff in
+the operation report before finishing. If the review passes with current complete
+evidence and no blocking findings, the ENTIRE final response must be `ready`.
+For missing evidence, changes or a decision, the ENTIRE final response is `blocked`.
+No Markdown, explanations, verdict prefix or handoff text belongs in that response.
+Never emit `integrate`: it names the next component, not this review's result.
+The flow router maps `ready` to integration; the reviewer does not perform it.

@@ -3,8 +3,11 @@
 ## Status and boundaries
 
 Planning has already run successfully in GitLab Duo through `/flow:ctx-planning`,
-as confirmed by the user. The three-flow revision described here is local and has
-not yet been published or live-validated. No external Claude runner is used. Duo runs
+as confirmed by the user. The review-routing correction was published to Showcase's
+CTX Development catalog entry as v1.1.0 on 2026-10-07; its saved YAML was read back
+and matched the tested local definition. No execution of this corrected version
+has been verified. Other unpublished changes and implementation limits below
+remain separate from that catalog update. No external Claude runner is used. Duo runs
 the native flow definitions in its CI execution environment. Normal GitLab CI jobs
 run deterministic workflow checks and, once configured, application adapters.
 
@@ -36,7 +39,11 @@ python3.12 -m venv .venv
 
 The local validator checks our supported custom-flow subset, prompt inputs,
 restricted fields, reachable/acyclic routing, fail-closed status routes, reviewer
-tool separation, catalog coverage and CI evidence dependencies. It is not a copy
+tool separation, catalog coverage and CI evidence dependencies. It also requires
+each prompt's explicit `Terminal tokens: [...]` declaration to equal its router's
+keys (excluding `default_route`) and the component's `terminal_tokens` entry in
+the local catalog. Required skills with explicit terminal-token declarations may
+only use tokens accepted by their consuming component. It is not a copy
 of GitLab's server-side schema and cannot prove tool availability or authorization.
 Official catalog validation and GitLab CI lint remain required.
 
@@ -45,6 +52,26 @@ operation reports to the source issue before returning a routing token. A GitLab
 session ending in `abort` can mean a documented missing prerequisite, not a crash.
 Resume with the explicit operation after resolving that blocker. There are no
 automatic flow-retrigger or repair loops in this version.
+
+### Final results are not handoff destinations
+
+The final response is the entire routing value, not the last line of a report.
+Post the review verdict, evidence and handoff in the operation report first, then
+emit exactly one allowed token with no Markdown, whitespace suffix or extra prose.
+
+For ticket review, an approved review emits `ready`; the router sends that result
+to the `integrate` component. A non-passing review emits `blocked`. The reviewer
+must never emit `integrate`. That token belongs to the coordinator's router, while
+the integration component itself emits `more`, `complete` or `blocked`.
+Unknown output must still abort; do not fix this by adding an `integrate` alias
+to the review router or weakening its fallback.
+
+The terminal-token validator checks explicit contracts, not arbitrary prose or
+live model behavior. After publishing a new catalog version, verify the project's
+enabled version and run a scoped review with current evidence. Repository edits
+alone do not update the registered definition, and a historical failed run does
+not change retroactively. Reconcile its persisted review before resuming; do not
+rerun integration blindly.
 
 ## Planning, identity and handoffs
 
@@ -204,6 +231,20 @@ The migration destination is
 (project ID `87329027`). Catalog registrations are project-specific; check the
 destination registrations before invoking a flow.
 
+The checkout's `origin` fetch/push remote is
+`git@gitlab.com:gitlab-ai-hackathon/transcend-october-2026/43066631/showcase.git`;
+`main` tracks `origin/main`. The original project remains the separate `source`
+remote for historical reference, not the publication target.
+
+On 2026-10-07, the existing
+[CTX Development registration](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234)
+was updated from v1.0.0 to v1.1.0 and its enabled project page was verified.
+Private visibility, the `@ai-ctx-development-gitlab-ai-hackathon` service account,
+and active Mention/Assign/Assign reviewer triggers were preserved. No flow run,
+ticket integration or default-branch merge was triggered. The repository-side
+skill, validator and test changes still require independent review and merge;
+catalog publication does not merge those files into the checkout used by agents.
+
 1. Review and publish this revision, including `skills/`, templates and CI helpers.
    Preserve the existing numbering migration and remote history.
 2. Run GitLab CI lint and set `CTX_WORKFLOW_CHECKS=1` for a workflow-check pipeline.
@@ -211,9 +252,11 @@ destination registrations before invoking a flow.
 3. Keep `.gitlab/duo/agent-config.yml` on default; GitLab reads that version. It is
    currently a Python environment, not a preinstalled browser environment. The
    browser CI job has its own Playwright image; see the browser guide for the distinction.
-4. Update the existing CTX Planning catalog version; do not create a duplicate.
-   Create/enable `ctx-development` and `ctx-delivery` from their YAML, then select
-   the updated enabled versions. Do not register legacy YAML or individual skills.
+4. Update existing CTX Planning/Development registrations rather than creating
+   duplicates. Development v1.1.0 is published as recorded above; Planning's local
+   terminal-token declarations are not yet published. Check for a delivery
+   registration before creating/enabling it, then verify the enabled versions.
+   Do not register legacy YAML or individual skills.
 5. Review service-account permissions and begin with human-invoked flows on issues
    or MRs. These definitions do not implement automatic pipeline-event triggering.
 6. Verify branch/merge protections for the project's tier. Optional CI variables

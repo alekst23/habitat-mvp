@@ -5,6 +5,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -73,6 +74,47 @@ class FlowTests(unittest.TestCase):
     def test_unknown_response_aborts(self):
         for route in self.flow["routers"]:
             self.assertEqual(route["condition"]["routes"]["default_route"], "abort")
+
+    def test_review_terminal_contract_rejects_destination_and_missing_tokens(self):
+        for declaration in ("[integrate, blocked]", "[ready]", "[ready, blocked, default_route]", None):
+            with self.subTest(declaration=declaration):
+                flow = deepcopy(self.flow)
+                review = next(p for p in flow["prompts"] if p["prompt_id"] == "review_prompt")
+                system = re.sub(r"(?m)^\s*Terminal tokens:.*$", "", review["prompt_template"]["system"])
+                if declaration is not None:
+                    system += f"\nTerminal tokens: {declaration}\n"
+                review["prompt_template"]["system"] = system
+                with self.assertRaisesRegex(ctx.Invalid, "terminal token"):
+                    ctx.validate_flow(flow, self.registration)
+
+    def test_router_cannot_drift_from_documented_outputs(self):
+        review = next(r for r in self.flow["routers"] if r["from"] == "review")
+        review["condition"]["routes"]["integrate"] = review["condition"]["routes"].pop("ready")
+        with self.assertRaisesRegex(ctx.Invalid, "terminal token"):
+            ctx.validate_flow(self.flow, self.registration)
+
+    def test_catalog_and_review_skill_cannot_add_terminal_tokens(self):
+        registration = deepcopy(self.registration)
+        registration["terminal_tokens"]["review"].append("integrate")
+        with self.assertRaisesRegex(ctx.Invalid, "catalog terminal tokens"):
+            ctx.validate_flow(self.flow, registration)
+
+        path = "skills/ctx-ticket-review/SKILL.md"
+        text = (ROOT / path).read_text()
+        self.assertEqual(ctx.documented_terminal_tokens(text, path), {"ready", "blocked"})
+        review = next(p for p in self.flow["prompts"] if p["prompt_id"] == "review_prompt")
+        flow = {"prompts": [review]}
+        ctx.validate_skill_terminal_tokens(flow, {path: text})
+        wrong = text.replace("Terminal tokens: [ready, blocked]", "Terminal tokens: [integrate, blocked]")
+        with self.assertRaisesRegex(ctx.Invalid, "skill terminal tokens"):
+            ctx.validate_skill_terminal_tokens(flow, {path: wrong})
+
+    def test_review_verdict_uses_result_token_not_next_component(self):
+        review = next(r for r in self.flow["routers"] if r["from"] == "review")["condition"]["routes"]
+        self.assertEqual(review["ready"], "integrate")
+        self.assertEqual(review.get("integrate", review["default_route"]), "abort")
+        for token in ("ready\nMore details", "```ready```", "approved", "ready "):
+            self.assertEqual(review.get(token, review["default_route"]), "abort")
 
     def test_tests_precede_implementation(self):
         routes = {r["from"]: r["condition"]["routes"] for r in self.flow["routers"]}
