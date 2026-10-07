@@ -99,6 +99,8 @@ prompts:
     unit_primitives: []
     prompt_template:
       system: |
+        Terminal tokens: [design, tests, implementation, browser, integrate, epic, checkpoint, blocked]
+        Final output must be exactly one listed token, with no Markdown or extra text.
         Read AGENTS.md and docs/development/ctx-contract.md before acting.
         Read the required skills below from this checkout; missing skills block the operation.
         Resolve project identity from project_id and source issue from context, issue=<iid>,
@@ -149,6 +151,8 @@ prompts:
     unit_primitives: []
     prompt_template:
       system: |
+        Terminal tokens: [ready, blocked]
+        Final output must be exactly one listed token, with no Markdown or extra text.
         Read AGENTS.md and docs/development/ctx-contract.md before acting.
         Read the required skills below from this checkout; missing skills block the operation.
         Resolve project identity from project_id and source issue from context, issue=<iid>,
@@ -185,6 +189,8 @@ prompts:
     unit_primitives: []
     prompt_template:
       system: |
+        Terminal tokens: [ready, blocked]
+        Final output must be exactly one listed token, with no Markdown or extra text.
         Read AGENTS.md and docs/development/ctx-contract.md before acting.
         Read the required skills below from this checkout; missing skills block the operation.
         Resolve project identity from project_id and source issue from context, issue=<iid>,
@@ -224,6 +230,8 @@ prompts:
     unit_primitives: []
     prompt_template:
       system: |
+        Terminal tokens: [ready, blocked]
+        Final output must be exactly one listed token, with no Markdown or extra text.
         Read AGENTS.md and docs/development/ctx-contract.md before acting.
         Read the required skills below from this checkout; missing skills block the operation.
         Resolve project identity from project_id and source issue from context, issue=<iid>,
@@ -267,6 +275,8 @@ prompts:
     unit_primitives: []
     prompt_template:
       system: |
+        Terminal tokens: [ready, blocked]
+        Final output must be exactly one listed token, with no Markdown or extra text.
         Read AGENTS.md and docs/development/ctx-contract.md before acting.
         Read the required skills below from this checkout; missing skills block the operation.
         Resolve project identity from project_id and source issue from context, issue=<iid>,
@@ -310,6 +320,8 @@ prompts:
     unit_primitives: []
     prompt_template:
       system: |
+        Terminal tokens: [ready, blocked]
+        Final output must be exactly one listed token, with no Markdown or extra text.
         Read AGENTS.md and docs/development/ctx-contract.md before acting.
         Read the required skills below from this checkout; missing skills block the operation.
         Resolve project identity from project_id and source issue from context, issue=<iid>,
@@ -334,9 +346,13 @@ prompts:
         - skills/ctx-ticket-review/SKILL.md
 
         Independently inspect code, ACs and actual verify/browser/acceptance jobs for the
-        selected ticket SHA. Publish the per-AC matrix and findings. Return ready only with
-        current complete evidence and no blocking findings. Otherwise return blocked with
-        the next ctx-development repair/resume input; never edit code or self-approve.
+        selected ticket SHA. Publish the per-AC matrix, verdict, findings and next
+        integration or ctx-development repair/resume input ONLY in the operation report.
+        Never edit code or self-approve. Only with current complete evidence and no
+        blocking findings is the review approved; its ENTIRE final response is ready.
+        A non-passing review's ENTIRE final response is the single word blocked.
+        Never emit integrate: it is the next component's name, not a review result.
+        Do not append the token to a report, wrap it in Markdown, or emit extra text.
       user: |
         Project ID: {{ project_id }}
         Request and source context: {{ goal }}
@@ -348,6 +364,8 @@ prompts:
     unit_primitives: []
     prompt_template:
       system: |
+        Terminal tokens: [more, complete, blocked]
+        Final output must be exactly one listed token, with no Markdown or extra text.
         Read AGENTS.md and docs/development/ctx-contract.md before acting.
         Read the required skills below from this checkout; missing skills block the operation.
         Resolve project identity from project_id and source issue from context, issue=<iid>,
@@ -391,6 +409,8 @@ prompts:
     unit_primitives: []
     prompt_template:
       system: |
+        Terminal tokens: [ready, blocked]
+        Final output must be exactly one listed token, with no Markdown or extra text.
         Read AGENTS.md and docs/development/ctx-contract.md before acting.
         Read the required skills below from this checkout; missing skills block the operation.
         Resolve project identity from project_id and source issue from context, issue=<iid>,
@@ -429,6 +449,8 @@ prompts:
     unit_primitives: []
     prompt_template:
       system: |
+        Terminal tokens: [ready, blocked]
+        Final output must be exactly one listed token, with no Markdown or extra text.
         Read AGENTS.md and docs/development/ctx-contract.md before acting.
         Read the required skills below from this checkout; missing skills block the operation.
         Resolve project identity from project_id and source issue from context, issue=<iid>,

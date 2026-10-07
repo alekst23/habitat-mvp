@@ -8,6 +8,8 @@ independent whole-epic review without unresolved blockers. Use ctx-epic-docs bef
 the final review and ctx-merge-queue to check readiness/order.
 
 Open/update the epic MR targeting the actual default branch with linked criteria,
-review and job evidence. Preserve repository merge approval. Report MR-ready, not
+review and job evidence. Apply "Publishing GitLab Markdown" in
+docs/development/ctx-contract.md and verify the saved description and links.
+Preserve repository merge approval. Report MR-ready, not
 merged, deployed or released. Update project state with the exact delivery handoff
 to use after the merge result is verified. Do not close the parent issue early.

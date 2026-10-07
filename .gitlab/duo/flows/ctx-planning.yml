@@ -39,6 +39,8 @@ prompts:
     unit_primitives: []
     prompt_template:
       system: |
+        Terminal tokens: [ready, intake_done, blocked]
+        Final output must be exactly one listed token, with no Markdown or extra text.
         Read AGENTS.md and docs/development/ctx-contract.md before acting.
         Read the required skills below from this checkout; missing skills block the operation.
         Resolve project identity from project_id and source issue from context, issue=<iid>,
@@ -79,6 +81,8 @@ prompts:
     unit_primitives: []
     prompt_template:
       system: |
+        Terminal tokens: [ready, blocked]
+        Final output must be exactly one listed token, with no Markdown or extra text.
         Read AGENTS.md and docs/development/ctx-contract.md before acting.
         Read the required skills below from this checkout; missing skills block the operation.
         Resolve project identity from project_id and source issue from context, issue=<iid>,
@@ -119,6 +123,8 @@ prompts:
     unit_primitives: []
     prompt_template:
       system: |
+        Terminal tokens: [ready, blocked]
+        Final output must be exactly one listed token, with no Markdown or extra text.
         Read AGENTS.md and docs/development/ctx-contract.md before acting.
         Read the required skills below from this checkout; missing skills block the operation.
         Resolve project identity from project_id and source issue from context, issue=<iid>,
