@@ -16,23 +16,54 @@ live validation. Application/deployment adapters remain unconfigured; no end-to-
 release or nine-stage completion is claimed. Existing remote plans must be reconciled
 on resume rather than recreated. Add the planning session URL when available.
 
+## Active work
+
+| Epic | Issue | Branch | State |
+|---|---|---|---|
+| EPIC-I2: Habitat MVP — First Runnable Foundation | #2 | ctx/epic-i2 | planning |
+
+## Ticket backlog
+
+| Ticket | Issue | Wave | State |
+|---|---|---|---|
+| T-I3: Feasibility spikes | #3 | 1 | pending |
+| T-I4: Trust core | #4 | 2 | pending |
+| T-I5: Tool interface and onboarding | #5 | 3 | pending |
+| T-I6: Marketing agent and action broker | #6 | 4 | pending |
+| T-I7: Funding and control panel | #7 | 4 | pending |
+| T-I8: Demo and submission | #8 | 5 | pending |
+
 ## Ready next work
 
 1. Review/publish this revision; update the existing planning catalog version and
    enable development/delivery. Validate the new versions in Duo.
-2. Reconcile the existing epic/tickets and stable numbering. Develop the foundation
+2. Resolve Duo access/credits and runner availability for live flow execution.
+3. Configure protected branches and mandatory CI checks.
+4. Reconcile the existing epic/tickets and stable numbering. Develop the foundation
    ticket with the minimum tests, real app/CI commands and browser startup contract.
-3. Run current-SHA AC validation and separate ticket/epic review. Enable required
+5. Run `ctx-epic-design issue=2` to write technical design and reconcile tickets.
+6. Run `ctx-ticket-design issue=3` to start T-I3 (feasibility spikes, Wave 1).
+7. Run current-SHA AC validation and separate ticket/epic review. Enable required
    application checks before implementation merges; then connect delivery adapters.
 
 ## Blockers and decisions
 
+- GitLab Duo access/credits: resolve before live flow execution.
 - The app, test startup, Playwright tests and application command adapters are missing.
-- Establish protected branches, mandatory checks and release approver controls.
-- Hosting/configuration/secrets adapters are not implemented; no deployment permitted.
-- Public repository/MIT license and hackathon submission setup remain separate work.
+- Protected branches and mandatory CI checks: must be configured before implementation MRs merge.
+- Hosting/configuration/secrets adapters: not implemented; no deployment permitted yet.
+- Public repository/MIT license and hackathon submission: T-I8 scope.
+- Reddit Ads API access: may require separate approval; T-I3 spike resolves.
+- PayPal authorize-and-capture behavior: must be confirmed for account type; T-I3 spike resolves.
+- Open decisions: live vs. sandbox PayPal for demo, model provider, cloud browser, per-owner isolation, Habitat margin.
 
 ## Durable handoff
 
-See ../development/gitlab-workflow.md for activation, commands and current gaps.
-Record issue/session/branch/MR links here as actual work begins.
+Source issue: #10  
+Epic issue: #2 (EPIC-I2)  
+Epic branch: ctx/epic-i2  
+Spec: docs/design/habitat-foundation/spec.md  
+Epic plan: docs/plan/EPIC-I2/_epic.md  
+State: docs/plan/EPIC-I2/state.json  
+Source SHA: 4198664fc2bc917ee722146553b27fa41f0918c9  
+Next operation: ctx-epic-design issue=2
