@@ -1,7 +1,7 @@
 # T-I3: Feasibility spikes — Reddit Ads API, PayPal authorize-capture, Render API, cloud browser
 
 Project ID: 87271414  
-Source issue: #1  
+Source issue: #10  
 Epic: EPIC-I2 (#2)  
 Ticket issue: #3  
 Branch: `ctx/ticket-i3`  

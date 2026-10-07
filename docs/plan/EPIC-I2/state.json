@@ -1,9 +1,9 @@
 {
   "version": 2,
-  "project_id": "87271414",
+  "project_id": "87329027",
   "epic": "E2",
   "epic_issue_iid": 2,
-  "source_issue_iid": 1,
+  "source_issue_iid": 10,
   "epic_branch": "ctx/epic-i2",
   "next_ticket_number": 8,
   "tickets": [
@@ -22,7 +22,9 @@
       "issue_iid": 4,
       "legacy_id": "T-I4",
       "title": "Trust core",
-      "depends_on": ["E2-1"],
+      "depends_on": [
+        "E2-1"
+      ],
       "wave": 2,
       "status": "pending",
       "branch": "ctx/ticket-i4"
@@ -32,7 +34,9 @@
       "issue_iid": 5,
       "legacy_id": "T-I5",
       "title": "Tool interface and onboarding",
-      "depends_on": ["E2-2"],
+      "depends_on": [
+        "E2-2"
+      ],
       "wave": 3,
       "status": "pending",
       "branch": "ctx/ticket-i5"
@@ -42,7 +46,9 @@
       "issue_iid": 6,
       "legacy_id": "T-I6",
       "title": "Marketing agent and action broker",
-      "depends_on": ["E2-3"],
+      "depends_on": [
+        "E2-3"
+      ],
       "wave": 4,
       "status": "pending",
       "branch": "ctx/ticket-i6"
@@ -52,7 +58,9 @@
       "issue_iid": 7,
       "legacy_id": "T-I7",
       "title": "Funding and control panel",
-      "depends_on": ["E2-3"],
+      "depends_on": [
+        "E2-3"
+      ],
       "wave": 4,
       "status": "pending",
       "branch": "ctx/ticket-i7"
@@ -62,7 +70,11 @@
       "issue_iid": 8,
       "legacy_id": "T-I8",
       "title": "Demo and submission",
-      "depends_on": ["E2-4", "E2-5", "E2-7"],
+      "depends_on": [
+        "E2-4",
+        "E2-5",
+        "E2-7"
+      ],
       "wave": 5,
       "status": "pending",
       "branch": "ctx/ticket-i8"
@@ -72,7 +84,10 @@
       "issue_iid": 9,
       "legacy_id": null,
       "title": "Generic action execution platform",
-      "depends_on": ["E2-2", "E2-3"],
+      "depends_on": [
+        "E2-2",
+        "E2-3"
+      ],
       "wave": 4,
       "status": "pending",
       "branch": "ctx/ticket-i9"

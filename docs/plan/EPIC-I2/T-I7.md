@@ -1,7 +1,7 @@
 # T-I7: Funding and control panel — PayPal auth/capture, AG Grid dashboard, judge mode
 
 Project ID: 87271414  
-Source issue: #1  
+Source issue: #10  
 Epic: EPIC-I2 (#2)  
 Ticket issue: #7  
 Branch: `ctx/ticket-i7`  

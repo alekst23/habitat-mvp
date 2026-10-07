@@ -49,7 +49,7 @@ No epics, ticket sessions, deployment or nine-stage completion are claimed here.
 
 ## Durable handoff
 
-Source issue: #1  
+Source issue: #10  
 Epic issue: #2 (EPIC-I2)  
 Epic branch: ctx/epic-i2  
 Spec: docs/design/habitat-foundation/spec.md  

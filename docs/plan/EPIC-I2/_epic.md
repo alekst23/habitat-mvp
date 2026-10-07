@@ -1,7 +1,7 @@
 # EPIC-I2: Habitat MVP — First Runnable Foundation
 
 Project ID: 87271414  
-Source issue: #1  
+Source issue: #10  
 Epic issue: #2  
 Feature spec: `docs/design/habitat-foundation/spec.md`  
 Epic branch: `ctx/epic-i2`  
