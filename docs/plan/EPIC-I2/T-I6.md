@@ -1,7 +1,7 @@
 # T-I6: Marketing agent and action broker — agent loop, broker, connectors, approvals, hard stops
 
 Project ID: 87271414  
-Source issue: #1  
+Source issue: #10  
 Epic: EPIC-I2 (#2)  
 Ticket issue: #6  
 Branch: `ctx/ticket-i6`  

@@ -1,7 +1,7 @@
 # T-I4: Trust core — secrets service, inference proxy, ledger, activity log, global caps
 
 Project ID: 87271414  
-Source issue: #1  
+Source issue: #10  
 Epic: EPIC-I2 (#2)  
 Ticket issue: #4  
 Branch: `ctx/ticket-i4`  

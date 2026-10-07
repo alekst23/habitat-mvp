@@ -1,7 +1,7 @@
 # T-I8: Demo and submission — real campaign run, video, public source, setup instructions
 
 Project ID: 87271414  
-Source issue: #1  
+Source issue: #10  
 Epic: EPIC-I2 (#2)  
 Ticket issue: #8  
 Branch: `ctx/ticket-i8`  
