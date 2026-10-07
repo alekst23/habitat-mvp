@@ -55,9 +55,46 @@ automatic flow-retrigger or repair loops in this version.
 
 ### Final results are not handoff destinations
 
-The final response is the entire routing value, not the last line of a report.
-Post the review verdict, evidence and handoff in the operation report first, then
-emit exactly one allowed token with no Markdown, whitespace suffix or extra prose.
+Producer contract: post the complete operation report to the source issue/work
+item, read the saved note back by ID, verify its body/identity/SHA/links and retain
+the note URL in the durable handoff. Then emit exactly one allowed token with no
+Markdown or extra prose. Failed publication/readback requires `blocked`.
+
+Consumer contract: `scripts/ctx_routing.py` returns a structured result containing
+`routing_token` and `informational_output`. It accepts either a strict JSON object
+with those fields, or the last non-empty line of a text response. Surrounding
+whitespace is normalized; earlier prose is information, not a routing failure.
+Different standalone routing tokens outside code examples, mixed JSON/plain
+signals, duplicate JSON fields, unknown fields/tokens and trailing prose are
+rejected. The routing token itself must be outside code fences. No aliases,
+case-folding or guesses at intent are allowed.
+
+Every agent is followed by three fixed `DeterministicStepComponent` steps:
+
+1. `<agent>_routing_prepare` refuses an existing/symlinked scratch path.
+2. `<agent>_routing_capture` saves the raw final answer using the file tool. Only
+   its exact successful write acknowledgment permits normalization; a handled
+   tool-error string must not count as success.
+3. `<agent>_routing_token` runs the pinned parser, consumes the scratch file and
+   emits only the `routing_token` field, without a newline. The native router
+   reads `context:<agent>_routing_token.tool_responses`, never the raw answer.
+
+These are tool steps, not more bots or LLM prompts. Review agents still have only
+read/comment permissions. Normalizer commands and paths are fixed by the catalog
+definition; model text is passed as file contents, never shell arguments or code.
+Python runs in isolated mode and checks the parser's SHA-256 before executing the
+exact checked bytes, so editing a task-branch helper cannot change routing policy.
+Each component uses its own `ctx-routing-<agent>.input` scratch file outside the
+ignored `.ctx/` directory (GitLab file tools reject ignored paths). The parser
+rejects symlinks, non-regular files and oversized responses. Successful consumption
+removes only that scratch file; failed normalization retains it for inspection.
+Never commit these files. Reconcile a retained file before an explicit resume;
+there is no automatic overwrite, cleanup sweep or retry loop.
+
+The raw response remains in the session log. Normalization is not proof that a
+report was actually posted, evidence passed or a human approved a change; those
+remain operation responsibilities and existing gates. Missing/changed parser,
+tool errors and unknown output all fail closed.
 
 For ticket review, an approved review emits `ready`; the router sends that result
 to the `integrate` component. A non-passing review emits `blocked`. The reviewer
@@ -66,12 +103,35 @@ the integration component itself emits `more`, `complete` or `blocked`.
 Unknown output must still abort; do not fix this by adding an `integrate` alias
 to the review router or weakening its fallback.
 
-The terminal-token validator checks explicit contracts, not arbitrary prose or
-live model behavior. After publishing a new catalog version, verify the project's
-enabled version and run a scoped review with current evidence. Repository edits
-alone do not update the registered definition, and a historical failed run does
-not change retroactively. Reconcile its persisted review before resuming; do not
-rerun integration blindly.
+The validator checks prompt/catalog/normalized-router token agreement, the exact
+fixed adapter wiring and pinned command bytes. After changing the parser or token
+allowlists, regenerate the mechanical YAML sections and run the tests:
+
+```sh
+python scripts/ctx_workflow.py sync-routing
+python scripts/ctx_workflow.py validate
+python -m unittest discover -s tests/workflow -v
+```
+
+The normalization revision is locally tested, not yet published or live-validated.
+The local graph tests execute the literal commands from the YAML, including the
+hash check, and simulate the file-tool acknowledgment from GitLab's Go executor.
+They are not a substitute for catalog schema validation or a live executor test.
+The implementation follows GitLab's [deterministic component](https://docs.gitlab.com/user/duo_agent_platform/flows/claude-edit-v1-flow-registry/#deterministicstepcomponent)
+and [command executor](https://gitlab.com/gitlab-org/duo-workflow/duo-workflow-executor/-/blob/main/pkg/actions/run_command.go)
+contracts; it does not add an unsupported custom router or response-schema field.
+
+Publication order: independently review and merge the helper plus all three YAML
+definitions, ensure the approved helper exists with the matching digest on each
+execution branch, then publish new planning/development/delivery catalog versions
+and verify each project's enabled version. Test the native tool schemas and exact
+write/command response shapes with a scoped run before relying on this revision.
+Executor variants returning decorated output must fail closed, not gain permissive
+substring matching. Verify note readback and that summary-plus-token reaches the
+next component; verify blocked/unknown responses stop. Repository edits alone do
+not update registered definitions, and historical failed runs do not change
+retroactively. Reconcile persisted work before resuming; never rerun integration
+blindly. Retain the previous catalog version for rollback.
 
 ## Planning, identity and handoffs
 

@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -18,6 +19,9 @@ ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("ctx_workflow", ROOT / "scripts/ctx_workflow.py")
 ctx = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ctx)
+spec = importlib.util.spec_from_file_location("ctx_routing", ROOT / "scripts/ctx_routing.py")
+routing = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(routing)
 SHA = "a" * 40
 DIGEST = "sha256:" + "b" * 64
 IDENTITY = {"project_id": "87271414", "source_sha": SHA, "pipeline_id": "42"}
@@ -51,8 +55,101 @@ class FlowTests(unittest.TestCase):
         self.registration = catalog["flows"][path]
         self.flow = ctx.read_yaml(ROOT / path)
 
+    def route_response(self, source, response, *, stale=False, tampered=False, write_error=False):
+        """Exercise the actual YAML graph, including fixed tools, without GitLab writes."""
+        components = {c["name"]: c for c in self.flow["components"]}
+        routers = {r["from"]: r for r in self.flow["routers"]}
+        state = {source: {"final_answer": response}}
+
+        def value(key):
+            result = state
+            for part in key.removeprefix("context:").split("."):
+                result = result[part]
+            return result
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "scripts").mkdir()
+            parser = ROOT / "scripts/ctx_routing.py"
+            if parser.exists():
+                (root / "scripts/ctx_routing.py").write_bytes(parser.read_bytes())
+            if tampered:
+                (root / "scripts/ctx_routing.py").write_text('print("design", end="")')
+            if stale:
+                (root / f"ctx-routing-{source}.input").write_text("design")
+            current = source
+            for _ in range(10):
+                router = routers[current]
+                if "to" in router:
+                    target = router["to"]
+                else:
+                    condition = router["condition"]
+                    routes = condition["routes"]
+                    target = routes.get(value(condition["input"]), routes["default_route"])
+                if target in ("end", "abort") or components[target]["type"] == "AgentComponent":
+                    return target
+                component = components[target]
+                args = {i["as"]: i["from"] if i.get("literal") else value(i["from"])
+                        for i in component["inputs"]}
+                if component["tool_name"] == "create_file_with_contents":
+                    if write_error:
+                        output = "Action error: file is gitignored"
+                    else:
+                        (root / args["file_path"]).write_text(args["contents"])
+                        output = "File written successfully"
+                else:
+                    self.assertEqual(component["tool_name"], "run_command")
+                    self.assertEqual(args["program"], "python3")
+                    process = subprocess.run([sys.executable, *shlex.split(args["args"])],
+                                             cwd=root, text=True, capture_output=True, timeout=10)
+                    output = process.stdout if process.returncode == 0 else process.stderr
+                state[target] = {"tool_responses": output}
+                current = target
+            self.fail("routing adapter did not terminate")
+
+    def test_summary_then_token_reaches_next_agent(self):
+        self.assertEqual(self.route_response("coordinate", "## Operation report\nSaved and verified.\n\ndesign\n\n"),
+                         "design")
+
+    def test_routing_adapter_failures_cannot_reuse_success(self):
+        for failure in ("stale", "tampered", "write_error"):
+            with self.subTest(failure=failure):
+                self.assertEqual(self.route_response("coordinate", "design", **{failure: True}), "abort")
+
+    def test_routing_adapter_and_report_contract_cannot_be_bypassed(self):
+        for mutation in ("command", "source", "gate", "readback"):
+            with self.subTest(mutation=mutation):
+                flow = deepcopy(self.flow)
+                if mutation == "command":
+                    helper = next(c for c in flow["components"] if c["name"] == "review_routing_token")
+                    helper["inputs"][1]["from"] = "scripts/untrusted.py"
+                elif mutation == "source":
+                    next(r for r in flow["routers"] if r["from"] == "review")["to"] = "integrate"
+                elif mutation == "gate":
+                    gate = next(r for r in flow["routers"] if r["from"] == "review_routing_capture")
+                    gate["condition"]["routes"]["Action error"] = "review_routing_token"
+                else:
+                    prompt = flow["prompts"][0]["prompt_template"]
+                    prompt["system"] = prompt["system"].replace("Read the saved note back", "Assume the note exists")
+                with self.assertRaises(ctx.Invalid):
+                    ctx.validate_flow(flow, self.registration)
+
     def test_repository_contracts(self):
         self.assertEqual(ctx.validate_repository()["flows"], 3)
+        catalog_path = Path(".gitlab/ctx/catalog.json")
+        catalog = json.loads((ROOT / catalog_path).read_text())
+        tokens = {token for flow in catalog["flows"].values()
+                  for allowed in flow["terminal_tokens"].values() for token in allowed}
+        self.assertEqual(tokens, routing.TOKENS)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = [catalog_path, *(Path(path) for path in catalog["flows"])]
+            before = {path: (ROOT / path).read_bytes() for path in paths}
+            for path, contents in before.items():
+                (root / path).parent.mkdir(parents=True, exist_ok=True)
+                (root / path).write_bytes(contents)
+            ctx.sync_routing(root)
+            self.assertEqual({path: (root / path).read_bytes() for path in paths}, before)
 
     def test_all_flow_prompts_use_epic_local_numbering(self):
         for path in (ROOT / ".gitlab/duo/flows").glob("*.yml"):
@@ -73,7 +170,8 @@ class FlowTests(unittest.TestCase):
 
     def test_unknown_response_aborts(self):
         for route in self.flow["routers"]:
-            self.assertEqual(route["condition"]["routes"]["default_route"], "abort")
+            if "condition" in route:
+                self.assertEqual(route["condition"]["routes"]["default_route"], "abort")
 
     def test_review_terminal_contract_rejects_destination_and_missing_tokens(self):
         for declaration in ("[integrate, blocked]", "[ready]", "[ready, blocked, default_route]", None):
@@ -88,7 +186,7 @@ class FlowTests(unittest.TestCase):
                     ctx.validate_flow(flow, self.registration)
 
     def test_router_cannot_drift_from_documented_outputs(self):
-        review = next(r for r in self.flow["routers"] if r["from"] == "review")
+        review = next(r for r in self.flow["routers"] if r["from"] == "review_routing_token")
         review["condition"]["routes"]["integrate"] = review["condition"]["routes"].pop("ready")
         with self.assertRaisesRegex(ctx.Invalid, "terminal token"):
             ctx.validate_flow(self.flow, self.registration)
@@ -110,14 +208,14 @@ class FlowTests(unittest.TestCase):
             ctx.validate_skill_terminal_tokens(flow, {path: wrong})
 
     def test_review_verdict_uses_result_token_not_next_component(self):
-        review = next(r for r in self.flow["routers"] if r["from"] == "review")["condition"]["routes"]
-        self.assertEqual(review["ready"], "integrate")
-        self.assertEqual(review.get("integrate", review["default_route"]), "abort")
-        for token in ("ready\nMore details", "```ready```", "approved", "ready "):
-            self.assertEqual(review.get(token, review["default_route"]), "abort")
+        for response in ("ready", "Verdict: approved; note saved.\nready \n", '{"routing_token":"ready"}'):
+            self.assertEqual(self.route_response("review", response), "integrate")
+        for response in ("integrate", "ready\nMore details", "```ready```", "approved", "blocked\nready"):
+            self.assertEqual(self.route_response("review", response), "abort")
 
     def test_tests_precede_implementation(self):
-        routes = {r["from"]: r["condition"]["routes"] for r in self.flow["routers"]}
+        routes = {r["from"].removesuffix("_routing_token"): r["condition"]["routes"]
+                  for r in self.flow["routers"] if r["from"].endswith("_routing_token")}
         self.assertEqual(routes["design"]["ready"], "tests")
         self.assertEqual(routes["tests"]["ready"], "implementation")
         self.assertEqual(routes["implementation"]["ready"], "browser")
@@ -148,7 +246,7 @@ class FlowTests(unittest.TestCase):
             ctx.validate_flow(self.flow, self.registration)
 
     def test_unknown_target_rejected(self):
-        self.flow["routers"][1]["condition"]["routes"]["ready"] = "missing"
+        next(r for r in self.flow["routers"] if r["from"] == "design_routing_token")["condition"]["routes"]["ready"] = "missing"
         with self.assertRaisesRegex(ctx.Invalid, "routing target"):
             ctx.validate_flow(self.flow, self.registration)
 
@@ -158,7 +256,7 @@ class FlowTests(unittest.TestCase):
             ctx.validate_flow(self.flow, self.registration)
 
     def test_blocked_cannot_continue(self):
-        self.flow["routers"][1]["condition"]["routes"]["blocked"] = "tests"
+        next(r for r in self.flow["routers"] if r["from"] == "design_routing_token")["condition"]["routes"]["blocked"] = "tests"
         with self.assertRaisesRegex(ctx.Invalid, "abort"):
             ctx.validate_flow(self.flow, self.registration)
 
@@ -171,6 +269,48 @@ class FlowTests(unittest.TestCase):
         config["commands"]["verify"]["argv"] = "echo passed && deploy"
         with self.assertRaisesRegex(ctx.Invalid, "argument array"):
             ctx.validate_commands(config)
+
+
+class RoutingTests(unittest.TestCase):
+    def test_normalization_preserves_information_separately(self):
+        self.assertEqual(routing.normalize_response("## Report\r\nSaved.\r\n\t design \r\n\r\n", {"design"}),
+                         {"routing_token": "design", "informational_output": "## Report\nSaved."})
+        structured = '{"routing_token":"ready","informational_output":"Verdict: approved"}'
+        self.assertEqual(routing.normalize_response(structured, {"ready"}), json.loads(structured))
+        self.assertEqual(routing.normalize_response("Examples:\n```\nblocked\n```\nready", {"ready"})["routing_token"],
+                         "ready")
+
+    def test_unknown_ambiguous_and_malformed_signals_rejected(self):
+        for response in ("", "ready\nmore details", "unknown", "READY", "ready or blocked", "**ready**",
+                         "```\nready\n```", "```\nready", "blocked\nready", "integrate\nready",
+                         'routing_token: blocked\nready', '{"routing_token":"ready"}\nblocked',
+                         '{"routing_token":"ready","routing_token":"blocked"}',
+                         '{"routing_token":"unknown"}', '{"routing_token":["ready"]}',
+                         '{"routing_token":"ready","next":"integrate"}',
+                         '{"routing_token":"ready","informational_output":false}', "x" * (256 * 1024 + 1)):
+            with self.subTest(response=response[:80]):
+                with self.assertRaises(routing.RoutingError):
+                    routing.normalize_response(response, {"ready", "blocked"})
+
+    def test_cli_structured_result_and_symlink_rejection(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "ctx-routing-review.input"
+            args = [sys.executable, str(ROOT / "scripts/ctx_routing.py"), "normalize",
+                    "--component", "review", "--allowed", "ready,blocked"]
+            path.write_text("Saved review.\nready\n")
+            result = subprocess.run(args, cwd=root, capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout),
+                             {"routing_token": "ready", "informational_output": "Saved review."})
+            self.assertFalse(path.exists())
+            target = root / "user-file"
+            target.write_text("ready")
+            path.symlink_to(target)
+            result = subprocess.run(args, cwd=root, capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(result.stdout, "")
+            self.assertEqual(target.read_text(), "ready")
 
 
 class WaveTests(unittest.TestCase):

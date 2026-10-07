@@ -93,6 +93,430 @@ components:
         as: project_id
     toolset: ["read_file","list_dir","find_files","grep","get_project","get_issue","list_issues","get_merge_request","gitlab_merge_request_search","gitlab_api_get","create_issue_note","create_merge_request_note","create_file_with_contents","edit_file","run_command","create_branch","create_commit","create_merge_request","create_issue","update_issue"]
     ui_log_events: [on_agent_final_answer]
+  # Generated routing adapters: python scripts/ctx_workflow.py sync-routing
+  - name: coordinate_routing_prepare
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
+        coordinate --allowed design,tests,implementation,browser,integrate,epic,checkpoint,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: coordinate_routing_capture
+    type: DeterministicStepComponent
+    tool_name: create_file_with_contents
+    toolset:
+    - create_file_with_contents
+    inputs:
+    - from: context:coordinate.final_answer
+      as: contents
+    - from: ctx-routing-coordinate.input
+      as: file_path
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: coordinate_routing_token
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
+        coordinate --allowed design,tests,implementation,browser,integrate,epic,checkpoint,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: design_routing_prepare
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
+        design --allowed ready,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: design_routing_capture
+    type: DeterministicStepComponent
+    tool_name: create_file_with_contents
+    toolset:
+    - create_file_with_contents
+    inputs:
+    - from: context:design.final_answer
+      as: contents
+    - from: ctx-routing-design.input
+      as: file_path
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: design_routing_token
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
+        design --allowed ready,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: tests_routing_prepare
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
+        tests --allowed ready,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: tests_routing_capture
+    type: DeterministicStepComponent
+    tool_name: create_file_with_contents
+    toolset:
+    - create_file_with_contents
+    inputs:
+    - from: context:tests.final_answer
+      as: contents
+    - from: ctx-routing-tests.input
+      as: file_path
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: tests_routing_token
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
+        tests --allowed ready,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: implementation_routing_prepare
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
+        implementation --allowed ready,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: implementation_routing_capture
+    type: DeterministicStepComponent
+    tool_name: create_file_with_contents
+    toolset:
+    - create_file_with_contents
+    inputs:
+    - from: context:implementation.final_answer
+      as: contents
+    - from: ctx-routing-implementation.input
+      as: file_path
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: implementation_routing_token
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
+        implementation --allowed ready,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: browser_routing_prepare
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
+        browser --allowed ready,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: browser_routing_capture
+    type: DeterministicStepComponent
+    tool_name: create_file_with_contents
+    toolset:
+    - create_file_with_contents
+    inputs:
+    - from: context:browser.final_answer
+      as: contents
+    - from: ctx-routing-browser.input
+      as: file_path
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: browser_routing_token
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
+        browser --allowed ready,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: review_routing_prepare
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
+        review --allowed ready,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: review_routing_capture
+    type: DeterministicStepComponent
+    tool_name: create_file_with_contents
+    toolset:
+    - create_file_with_contents
+    inputs:
+    - from: context:review.final_answer
+      as: contents
+    - from: ctx-routing-review.input
+      as: file_path
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: review_routing_token
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
+        review --allowed ready,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: integrate_routing_prepare
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
+        integrate --allowed more,complete,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: integrate_routing_capture
+    type: DeterministicStepComponent
+    tool_name: create_file_with_contents
+    toolset:
+    - create_file_with_contents
+    inputs:
+    - from: context:integrate.final_answer
+      as: contents
+    - from: ctx-routing-integrate.input
+      as: file_path
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: integrate_routing_token
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
+        integrate --allowed more,complete,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: epic_review_routing_prepare
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
+        epic_review --allowed ready,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: epic_review_routing_capture
+    type: DeterministicStepComponent
+    tool_name: create_file_with_contents
+    toolset:
+    - create_file_with_contents
+    inputs:
+    - from: context:epic_review.final_answer
+      as: contents
+    - from: ctx-routing-epic_review.input
+      as: file_path
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: epic_review_routing_token
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
+        epic_review --allowed ready,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: close_routing_prepare
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
+        close --allowed ready,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: close_routing_capture
+    type: DeterministicStepComponent
+    tool_name: create_file_with_contents
+    toolset:
+    - create_file_with_contents
+    inputs:
+    - from: context:close.final_answer
+      as: contents
+    - from: ctx-routing-close.input
+      as: file_path
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
+  - name: close_routing_token
+    type: DeterministicStepComponent
+    tool_name: run_command
+    toolset:
+    - run_command
+    inputs:
+    - from: python3
+      as: program
+      literal: true
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+        actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
+        else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
+        close --allowed ready,blocked --token-only
+      as: args
+      literal: true
+    ui_log_events:
+    - on_tool_execution_failed
 prompts:
   - prompt_id: coordinate_prompt
     name: CTX coordinate
@@ -117,6 +541,14 @@ prompts:
         Reconcile remote state on resume; do not repeat uncertain writes without readback.
         Record operation, status, scope, source SHA, evidence and the next invocation.
         Persist partial progress and specific blockers. No automatic retrigger/repair loops.
+        Publish the detailed operation report as a note on the resolved source issue/work item.
+        Read the saved note back using its returned ID and verify project/source identity,
+        complete Markdown body, current SHA, evidence links and handoff against the intended report.
+        Record its note ID/URL in the durable handoff; a successful write response is not verification.
+        If publication/readback fails or mismatches, return blocked; do not claim success or
+        repeat an uncertain write. If source identity is unresolved, do not post to another item.
+        Keep reports, summaries and note URLs out of the final answer. Do not edit, commit or
+        ignore ctx-routing-*.input files: they are reserved for the deterministic routing adapter.
         Finish with ONLY the routing token specified below. No further steps are needed
         after that final answer; put explanations and evidence in the operation report.
 
@@ -169,6 +601,14 @@ prompts:
         Reconcile remote state on resume; do not repeat uncertain writes without readback.
         Record operation, status, scope, source SHA, evidence and the next invocation.
         Persist partial progress and specific blockers. No automatic retrigger/repair loops.
+        Publish the detailed operation report as a note on the resolved source issue/work item.
+        Read the saved note back using its returned ID and verify project/source identity,
+        complete Markdown body, current SHA, evidence links and handoff against the intended report.
+        Record its note ID/URL in the durable handoff; a successful write response is not verification.
+        If publication/readback fails or mismatches, return blocked; do not claim success or
+        repeat an uncertain write. If source identity is unresolved, do not post to another item.
+        Keep reports, summaries and note URLs out of the final answer. Do not edit, commit or
+        ignore ctx-routing-*.input files: they are reserved for the deterministic routing adapter.
         Finish with ONLY the routing token specified below. No further steps are needed
         after that final answer; put explanations and evidence in the operation report.
 
@@ -207,6 +647,14 @@ prompts:
         Reconcile remote state on resume; do not repeat uncertain writes without readback.
         Record operation, status, scope, source SHA, evidence and the next invocation.
         Persist partial progress and specific blockers. No automatic retrigger/repair loops.
+        Publish the detailed operation report as a note on the resolved source issue/work item.
+        Read the saved note back using its returned ID and verify project/source identity,
+        complete Markdown body, current SHA, evidence links and handoff against the intended report.
+        Record its note ID/URL in the durable handoff; a successful write response is not verification.
+        If publication/readback fails or mismatches, return blocked; do not claim success or
+        repeat an uncertain write. If source identity is unresolved, do not post to another item.
+        Keep reports, summaries and note URLs out of the final answer. Do not edit, commit or
+        ignore ctx-routing-*.input files: they are reserved for the deterministic routing adapter.
         Finish with ONLY the routing token specified below. No further steps are needed
         after that final answer; put explanations and evidence in the operation report.
 
@@ -248,6 +696,14 @@ prompts:
         Reconcile remote state on resume; do not repeat uncertain writes without readback.
         Record operation, status, scope, source SHA, evidence and the next invocation.
         Persist partial progress and specific blockers. No automatic retrigger/repair loops.
+        Publish the detailed operation report as a note on the resolved source issue/work item.
+        Read the saved note back using its returned ID and verify project/source identity,
+        complete Markdown body, current SHA, evidence links and handoff against the intended report.
+        Record its note ID/URL in the durable handoff; a successful write response is not verification.
+        If publication/readback fails or mismatches, return blocked; do not claim success or
+        repeat an uncertain write. If source identity is unresolved, do not post to another item.
+        Keep reports, summaries and note URLs out of the final answer. Do not edit, commit or
+        ignore ctx-routing-*.input files: they are reserved for the deterministic routing adapter.
         Finish with ONLY the routing token specified below. No further steps are needed
         after that final answer; put explanations and evidence in the operation report.
 
@@ -293,6 +749,14 @@ prompts:
         Reconcile remote state on resume; do not repeat uncertain writes without readback.
         Record operation, status, scope, source SHA, evidence and the next invocation.
         Persist partial progress and specific blockers. No automatic retrigger/repair loops.
+        Publish the detailed operation report as a note on the resolved source issue/work item.
+        Read the saved note back using its returned ID and verify project/source identity,
+        complete Markdown body, current SHA, evidence links and handoff against the intended report.
+        Record its note ID/URL in the durable handoff; a successful write response is not verification.
+        If publication/readback fails or mismatches, return blocked; do not claim success or
+        repeat an uncertain write. If source identity is unresolved, do not post to another item.
+        Keep reports, summaries and note URLs out of the final answer. Do not edit, commit or
+        ignore ctx-routing-*.input files: they are reserved for the deterministic routing adapter.
         Finish with ONLY the routing token specified below. No further steps are needed
         after that final answer; put explanations and evidence in the operation report.
 
@@ -338,6 +802,14 @@ prompts:
         Reconcile remote state on resume; do not repeat uncertain writes without readback.
         Record operation, status, scope, source SHA, evidence and the next invocation.
         Persist partial progress and specific blockers. No automatic retrigger/repair loops.
+        Publish the detailed operation report as a note on the resolved source issue/work item.
+        Read the saved note back using its returned ID and verify project/source identity,
+        complete Markdown body, current SHA, evidence links and handoff against the intended report.
+        Record its note ID/URL in the durable handoff; a successful write response is not verification.
+        If publication/readback fails or mismatches, return blocked; do not claim success or
+        repeat an uncertain write. If source identity is unresolved, do not post to another item.
+        Keep reports, summaries and note URLs out of the final answer. Do not edit, commit or
+        ignore ctx-routing-*.input files: they are reserved for the deterministic routing adapter.
         Finish with ONLY the routing token specified below. No further steps are needed
         after that final answer; put explanations and evidence in the operation report.
 
@@ -382,6 +854,14 @@ prompts:
         Reconcile remote state on resume; do not repeat uncertain writes without readback.
         Record operation, status, scope, source SHA, evidence and the next invocation.
         Persist partial progress and specific blockers. No automatic retrigger/repair loops.
+        Publish the detailed operation report as a note on the resolved source issue/work item.
+        Read the saved note back using its returned ID and verify project/source identity,
+        complete Markdown body, current SHA, evidence links and handoff against the intended report.
+        Record its note ID/URL in the durable handoff; a successful write response is not verification.
+        If publication/readback fails or mismatches, return blocked; do not claim success or
+        repeat an uncertain write. If source identity is unresolved, do not post to another item.
+        Keep reports, summaries and note URLs out of the final answer. Do not edit, commit or
+        ignore ctx-routing-*.input files: they are reserved for the deterministic routing adapter.
         Finish with ONLY the routing token specified below. No further steps are needed
         after that final answer; put explanations and evidence in the operation report.
 
@@ -427,6 +907,14 @@ prompts:
         Reconcile remote state on resume; do not repeat uncertain writes without readback.
         Record operation, status, scope, source SHA, evidence and the next invocation.
         Persist partial progress and specific blockers. No automatic retrigger/repair loops.
+        Publish the detailed operation report as a note on the resolved source issue/work item.
+        Read the saved note back using its returned ID and verify project/source identity,
+        complete Markdown body, current SHA, evidence links and handoff against the intended report.
+        Record its note ID/URL in the durable handoff; a successful write response is not verification.
+        If publication/readback fails or mismatches, return blocked; do not claim success or
+        repeat an uncertain write. If source identity is unresolved, do not post to another item.
+        Keep reports, summaries and note URLs out of the final answer. Do not edit, commit or
+        ignore ctx-routing-*.input files: they are reserved for the deterministic routing adapter.
         Finish with ONLY the routing token specified below. No further steps are needed
         after that final answer; put explanations and evidence in the operation report.
 
@@ -467,6 +955,14 @@ prompts:
         Reconcile remote state on resume; do not repeat uncertain writes without readback.
         Record operation, status, scope, source SHA, evidence and the next invocation.
         Persist partial progress and specific blockers. No automatic retrigger/repair loops.
+        Publish the detailed operation report as a note on the resolved source issue/work item.
+        Read the saved note back using its returned ID and verify project/source identity,
+        complete Markdown body, current SHA, evidence links and handoff against the intended report.
+        Record its note ID/URL in the durable handoff; a successful write response is not verification.
+        If publication/readback fails or mismatches, return blocked; do not claim success or
+        repeat an uncertain write. If source identity is unresolved, do not post to another item.
+        Keep reports, summaries and note URLs out of the final answer. Do not edit, commit or
+        ignore ctx-routing-*.input files: they are reserved for the deterministic routing adapter.
         Finish with ONLY the routing token specified below. No further steps are needed
         after that final answer; put explanations and evidence in the operation report.
 
@@ -487,75 +983,201 @@ prompts:
     params:
       timeout: 180
 routers:
-  - from: coordinate
-    condition:
-      input: context:coordinate.final_answer
-      routes:
-        design: design
-        tests: tests
-        implementation: implementation
-        browser: browser
-        integrate: integrate
-        epic: epic_review
-        checkpoint: end
-        blocked: abort
-        default_route: abort
-  - from: design
-    condition:
-      input: context:design.final_answer
-      routes:
-        ready: tests
-        blocked: abort
-        default_route: abort
-  - from: tests
-    condition:
-      input: context:tests.final_answer
-      routes:
-        ready: implementation
-        blocked: abort
-        default_route: abort
-  - from: implementation
-    condition:
-      input: context:implementation.final_answer
-      routes:
-        ready: browser
-        blocked: abort
-        default_route: abort
-  - from: browser
-    condition:
-      input: context:browser.final_answer
-      routes:
-        ready: review
-        blocked: abort
-        default_route: abort
-  - from: review
-    condition:
-      input: context:review.final_answer
-      routes:
-        ready: integrate
-        blocked: abort
-        default_route: abort
-  - from: integrate
-    condition:
-      input: context:integrate.final_answer
-      routes:
-        more: end
-        complete: epic_review
-        blocked: abort
-        default_route: abort
-  - from: epic_review
-    condition:
-      input: context:epic_review.final_answer
-      routes:
-        ready: close
-        blocked: abort
-        default_route: abort
-  - from: close
-    condition:
-      input: context:close.final_answer
-      routes:
-        ready: end
-        blocked: abort
-        default_route: abort
+- from: coordinate
+  to: coordinate_routing_prepare
+- from: coordinate_routing_prepare
+  condition:
+    input: context:coordinate_routing_prepare.tool_responses
+    routes:
+      absent: coordinate_routing_capture
+      default_route: abort
+- from: coordinate_routing_capture
+  condition:
+    input: context:coordinate_routing_capture.tool_responses
+    routes:
+      File written successfully: coordinate_routing_token
+      default_route: abort
+- from: coordinate_routing_token
+  condition:
+    input: context:coordinate_routing_token.tool_responses
+    routes:
+      design: design
+      tests: tests
+      implementation: implementation
+      browser: browser
+      integrate: integrate
+      epic: epic_review
+      checkpoint: end
+      blocked: abort
+      default_route: abort
+- from: design
+  to: design_routing_prepare
+- from: design_routing_prepare
+  condition:
+    input: context:design_routing_prepare.tool_responses
+    routes:
+      absent: design_routing_capture
+      default_route: abort
+- from: design_routing_capture
+  condition:
+    input: context:design_routing_capture.tool_responses
+    routes:
+      File written successfully: design_routing_token
+      default_route: abort
+- from: design_routing_token
+  condition:
+    input: context:design_routing_token.tool_responses
+    routes:
+      ready: tests
+      blocked: abort
+      default_route: abort
+- from: tests
+  to: tests_routing_prepare
+- from: tests_routing_prepare
+  condition:
+    input: context:tests_routing_prepare.tool_responses
+    routes:
+      absent: tests_routing_capture
+      default_route: abort
+- from: tests_routing_capture
+  condition:
+    input: context:tests_routing_capture.tool_responses
+    routes:
+      File written successfully: tests_routing_token
+      default_route: abort
+- from: tests_routing_token
+  condition:
+    input: context:tests_routing_token.tool_responses
+    routes:
+      ready: implementation
+      blocked: abort
+      default_route: abort
+- from: implementation
+  to: implementation_routing_prepare
+- from: implementation_routing_prepare
+  condition:
+    input: context:implementation_routing_prepare.tool_responses
+    routes:
+      absent: implementation_routing_capture
+      default_route: abort
+- from: implementation_routing_capture
+  condition:
+    input: context:implementation_routing_capture.tool_responses
+    routes:
+      File written successfully: implementation_routing_token
+      default_route: abort
+- from: implementation_routing_token
+  condition:
+    input: context:implementation_routing_token.tool_responses
+    routes:
+      ready: browser
+      blocked: abort
+      default_route: abort
+- from: browser
+  to: browser_routing_prepare
+- from: browser_routing_prepare
+  condition:
+    input: context:browser_routing_prepare.tool_responses
+    routes:
+      absent: browser_routing_capture
+      default_route: abort
+- from: browser_routing_capture
+  condition:
+    input: context:browser_routing_capture.tool_responses
+    routes:
+      File written successfully: browser_routing_token
+      default_route: abort
+- from: browser_routing_token
+  condition:
+    input: context:browser_routing_token.tool_responses
+    routes:
+      ready: review
+      blocked: abort
+      default_route: abort
+- from: review
+  to: review_routing_prepare
+- from: review_routing_prepare
+  condition:
+    input: context:review_routing_prepare.tool_responses
+    routes:
+      absent: review_routing_capture
+      default_route: abort
+- from: review_routing_capture
+  condition:
+    input: context:review_routing_capture.tool_responses
+    routes:
+      File written successfully: review_routing_token
+      default_route: abort
+- from: review_routing_token
+  condition:
+    input: context:review_routing_token.tool_responses
+    routes:
+      ready: integrate
+      blocked: abort
+      default_route: abort
+- from: integrate
+  to: integrate_routing_prepare
+- from: integrate_routing_prepare
+  condition:
+    input: context:integrate_routing_prepare.tool_responses
+    routes:
+      absent: integrate_routing_capture
+      default_route: abort
+- from: integrate_routing_capture
+  condition:
+    input: context:integrate_routing_capture.tool_responses
+    routes:
+      File written successfully: integrate_routing_token
+      default_route: abort
+- from: integrate_routing_token
+  condition:
+    input: context:integrate_routing_token.tool_responses
+    routes:
+      more: end
+      complete: epic_review
+      blocked: abort
+      default_route: abort
+- from: epic_review
+  to: epic_review_routing_prepare
+- from: epic_review_routing_prepare
+  condition:
+    input: context:epic_review_routing_prepare.tool_responses
+    routes:
+      absent: epic_review_routing_capture
+      default_route: abort
+- from: epic_review_routing_capture
+  condition:
+    input: context:epic_review_routing_capture.tool_responses
+    routes:
+      File written successfully: epic_review_routing_token
+      default_route: abort
+- from: epic_review_routing_token
+  condition:
+    input: context:epic_review_routing_token.tool_responses
+    routes:
+      ready: close
+      blocked: abort
+      default_route: abort
+- from: close
+  to: close_routing_prepare
+- from: close_routing_prepare
+  condition:
+    input: context:close_routing_prepare.tool_responses
+    routes:
+      absent: close_routing_capture
+      default_route: abort
+- from: close_routing_capture
+  condition:
+    input: context:close_routing_capture.tool_responses
+    routes:
+      File written successfully: close_routing_token
+      default_route: abort
+- from: close_routing_token
+  condition:
+    input: context:close_routing_token.tool_responses
+    routes:
+      ready: end
+      blocked: abort
+      default_route: abort
 flow:
   entry_point: coordinate
