@@ -1,9 +1,12 @@
 {
-  "version": 1,
+  "version": 2,
   "project_id": "REPLACE_WITH_PROJECT_ID",
-  "epic": "EPIC-I1",
+  "epic": "E2",
+  "epic_issue_iid": 2,
+  "source_issue_iid": 1,
+  "next_ticket_number": 3,
   "tickets": [
-    {"id": "T-I2", "depends_on": [], "status": "pending"},
-    {"id": "T-I3", "depends_on": ["T-I2"], "status": "pending"}
+    {"id": "E2-1", "issue_iid": 3, "depends_on": [], "status": "pending"},
+    {"id": "E2-2", "issue_iid": 4, "depends_on": ["E2-1"], "status": "pending"}
   ]
 }

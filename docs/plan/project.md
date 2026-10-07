@@ -8,9 +8,13 @@ human outcome approval and no real-payment/ad side effects in development tests.
 
 ## Current state
 
-Native flow definitions and workflow CI foundation are implemented locally.
-GitLab catalog registration, remote execution and application adapters are pending.
-No epics, ticket sessions, deployment or nine-stage completion are claimed here.
+Planning has run successfully through GitLab Duo with `/flow:ctx-planning`, as
+confirmed by the user. This is not an outstanding registration/execution blocker.
+The revised planning/development/delivery definitions, 30 shared repo skills,
+AC validator and browser CI harness are local changes awaiting publication and
+live validation. Application/deployment adapters remain unconfigured; no end-to-end
+release or nine-stage completion is claimed. Existing remote plans must be reconciled
+on resume rather than recreated. Add the planning session URL when available.
 
 ## Active work
 
@@ -31,15 +35,21 @@ No epics, ticket sessions, deployment or nine-stage completion are claimed here.
 
 ## Ready next work
 
-1. Resolve Duo access/credits and runner availability for live flow execution.
-2. Configure protected branches and mandatory CI checks.
-3. Run `ctx-epic-design issue=2` to write technical design and reconcile tickets.
-4. Run `ctx-ticket-design issue=3` to start T-I3 (feasibility spikes, Wave 1).
-5. Enable required application checks once real commands/evidence adapters exist.
+1. Review/publish this revision; update the existing planning catalog version and
+   enable development/delivery. Validate the new versions in Duo.
+2. Resolve Duo access/credits and runner availability for live flow execution.
+3. Configure protected branches and mandatory CI checks.
+4. Reconcile the existing epic/tickets and stable numbering. Develop the foundation
+   ticket with the minimum tests, real app/CI commands and browser startup contract.
+5. Run `ctx-epic-design issue=2` to write technical design and reconcile tickets.
+6. Run `ctx-ticket-design issue=3` to start T-I3 (feasibility spikes, Wave 1).
+7. Run current-SHA AC validation and separate ticket/epic review. Enable required
+   application checks before implementation merges; then connect delivery adapters.
 
 ## Blockers and decisions
 
 - GitLab Duo access/credits: resolve before live flow execution.
+- The app, test startup, Playwright tests and application command adapters are missing.
 - Protected branches and mandatory CI checks: must be configured before implementation MRs merge.
 - Hosting/configuration/secrets adapters: not implemented; no deployment permitted yet.
 - Public repository/MIT license and hackathon submission: T-I8 scope.

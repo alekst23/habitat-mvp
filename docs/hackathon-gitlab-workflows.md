@@ -2,7 +2,7 @@
 
 This is the concise implementation plan for the [GitLab Transcend hackathon](https://gitlab-transcend.devpost.com/). The goal is to show GitLab agents taking a HABITAT change from intent to a tested, secure, observable release.
 
-The GitLab submission is the agentic delivery workflow; HABITAT, the PayPal submission, is the application it builds and operates. Stage coverage must be demonstrated by actual workflow runs. This document describes the target behavior; the [implementation guide](development/gitlab-workflow.md) distinguishes the local foundation from pending adapters and live validation.
+The GitLab submission is the agentic delivery workflow; HABITAT, the PayPal submission, is the application it builds and operates. Stage coverage must be demonstrated by actual workflow runs. Planning has already run in Duo via `/flow:ctx-planning`. This document describes the target behavior; the [implementation guide](development/gitlab-workflow.md) distinguishes that milestone from the new local revision and pending application/delivery adapters.
 
 ## Prize-critical requirements
 
@@ -23,37 +23,28 @@ Google Cloud deployment is optional and can add up to 0.2 points. The Most Stage
 Use one real, trust-critical issue: **enforce and surface a blocked over-budget inference request**.
 
 ```text
-Issue created
-    ↓
-Planner Agent → acceptance criteria, risk, test plan
-    ↓
-Developer Flow → branch, code, tests, merge request
-    ↓
-Review/Verification Flow → review, tests, source scans, remediation
-    ↓
-Package/Security Flow → versioned artifact, SBOM, artifact scan
-    ↓
-Configure/Release Flow → validate configuration, check governance, deploy preview
-    ↓
-Smoke/Monitor Agent → health, logs, run metrics, lifecycle evidence
-    ↓
-Human outcome approval → promote verified artifact (Supervised)
-or automatic promotion after checks (Hands-off)
+ctx-planning → spec, ACs, epic and tickets
+    ↓ human starts development
+ctx-development → design, lean tests, implementation, browser/AC evidence,
+                  independent ticket review, integration, whole-epic review, MR
+    ↓ merge policy + human starts delivery
+ctx-delivery → security, package, configuration, release, monitoring, outcome review
+               (application/deployment adapters still required)
 ```
 
-Recommended flows:
+Three interaction points, not one flow per skill or lifecycle stage:
 
 | Trigger | Flow | Output |
 |---|---|---|
-| Work item created | Planner + Developer agents | Plan and merge request |
-| Merge request created or marked ready | Code Review/Security agents | Review comments, scan interpretation, fixes |
-| Pipeline failed | Fix CI/CD flow | Diagnostic and remediation commit |
-| Verification and source scans passed | Package/Security flow | Versioned artifact, SBOM, artifact scan results |
-| Package and artifact scans passed | Configure/Release flow | Validated environment configuration, governance checks, preview/staging deployment |
-| Deployment complete | Monitor/Governance agent | Smoke tests, health, redacted logs, run metrics, and lifecycle evidence summary |
-| Outcome approved (Supervised), or checks passed (Hands-off) | Promotion flow | Same verified artifact promoted, deployment record, post-promotion health result |
+| New intent or a plan change | `ctx-planning` | Reviewed intent/spec, epic/tickets, stable AC manifest |
+| Ready ticket/epic, a fix, or a resume after CI/feedback | `ctx-development` | Verified ticket integration and ultimately a reviewed epic MR |
+| Release candidate or deployment feedback | `ctx-delivery` | Candidate readiness, missing-stage blockers; eventual supervised release evidence |
 
-GitLab flows can be triggered by work-item events, merge-request events, pipeline state, mentions, assignments, or reviewer assignments. Keep the number of flows small and make every flow contribute to the same issue-to-release story.
+Begin with human-invoked flows on issues/MRs. GitLab's documented flow triggers
+require human action; these definitions do not automatically invoke another flow
+or wake on a pipeline event. CI dependencies execute deterministic jobs; persistent
+handoffs let a human resume the same flow after a blocker. Future scheduling must
+be implemented explicitly, not implied by an agent's final message.
 
 ## Most Stages Covered plan
 
@@ -63,7 +54,7 @@ Target all nine stages from the [prize inventory's coverage plan](hackathon-gitl
 |---|---|---|
 | Plan | Habitat Planner | Turn the issue into acceptance criteria, a scoped plan, trust-boundary risks, and a test plan. Link the issue, specification, and implementation tickets. |
 | Create | Habitat Builder | Implement code, tests, and documentation on a branch; open or update the MR. Retain agent execution records and the resulting commits. |
-| Verify | Verification flow and Builder remediation | Run unit, integration, contract, concurrency, and end-to-end tests, including insufficient budget, duplicate requests, and revoked access. Publish test reports and link any failed run to its fix and passing rerun. |
+| Verify | Development verification/review components | Run the absolute minimum tests needed for changed behavior and material risks, reusing coverage and avoiding duplicated layers. Map every AC to current-SHA test/browser/inspection evidence; publish reports and link actual regressions to fixes. |
 | Package | Package flow | Build and publish a versioned container or release artifact from the tested commit, with pinned dependencies and an SBOM. Record its immutable digest or checksum and registry/artifact URL. |
 | Secure | Habitat Security/Release and security jobs | Run source, dependency, secret, and built-artifact checks. Interpret findings and remediate blocking issues; retain scan reports, remediation commits where needed, and passing reruns. Scan the built artifact before deployment. |
 | Release | Release and promotion flows | Deploy the validated artifact to preview/staging, then promote that same artifact after the applicable outcome gate. Record environment URLs, deployment jobs, artifact identity, and smoke-test results. |
@@ -81,7 +72,8 @@ The final summary must identify the source commit, pipeline, artifact, configura
 
 Preserve the original Claude workflow's operations under the `ctx-` prefix, then
 extend delivery. These are logical procedures to implement in native GitLab Duo
-flows, not a requirement to install Claude skills or create one agent per operation.
+flows. Each is represented by a reusable `skills/ctx-*/SKILL.md` file, not a
+separately registered flow or a requirement to install Claude skills.
 The [shared contract](development/ctx-contract.md) records preserved behavior,
 artifacts, supervision, and handoffs.
 
@@ -111,11 +103,13 @@ Add six operations where the existing process lacks delivery coverage:
 | `ctx-monitor` | Deployment identity, health criteria and observation window | Smoke tests, logs, metrics and health verdict; actionable findings feed issue intake | Monitor |
 | `ctx-release-review` | Candidate identity and development/delivery evidence | Check readiness and reconcile evidence for human approval; record the real final outcome | Verify, Govern |
 
-The mistaken stage-named `.claude/skills/ctx-*/` files have been removed. Five native
-flow definitions now live under `.gitlab/duo/flows/`, with an explicit operation
-catalog, planning templates, dependency-wave helper, CI checks and evidence adapters.
-This is a locally tested foundation, not an activated end-to-end workflow. Automatic
-cross-flow dispatch and application/deployment adapters remain implementation gaps.
+The mistaken stage-named `.claude/skills/ctx-*/` files have been removed. Three native
+flow definitions live under `.gitlab/duo/flows/`, with 30 focused repo skills, an
+operation catalog, templates, dependency-wave helper, AC evidence validator and
+Playwright CI harness. Legacy ticket/epic/project flow files are archived rather
+than registered. The user already ran planning live; this revised grouping needs
+publication and validation. Development handles one ticket per invocation, not an
+automatic parallel dispatcher. Application/deployment adapters remain gaps.
 
 ### Stage coverage over the operations
 
@@ -141,9 +135,10 @@ implementation, ticket review, epic integration review, and delivery coordinatio
 A flow may reuse a role across operations. Preserve the distinct ticket and
 whole-epic review scopes, even if they use the same model.
 
-The eventual agent count and flow grouping are implementation decisions. Define
-each role with the tools needed for its work; keep production credentials out of
-agent context.
+The three flow definitions make these boundaries explicit. Ticket and epic reviewers
+are read-only except for reporting, while the browser component can execute checks.
+Keep production credentials out of agent context; tool separation is not a substitute
+for protected branches and human merge/release approval.
 
 ### Custom flows
 
@@ -165,7 +160,7 @@ GitLab Duo uses `AGENTS.md` for flows and new agent sessions. Add component-leve
 Commit a normal `.gitlab-ci.yml` with visible jobs such as:
 
 ```text
-lint → unit/integration/contract/e2e → source/dependency/secret checks
+minimal verification + required browser → AC coverage → source/dependency/secret checks
      → package/SBOM → artifact scan → configure/governance checks
      → deploy-preview → smoke/monitor → evidence summary
      → outcome gate → promote same artifact → health check
