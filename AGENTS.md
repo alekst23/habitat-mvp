@@ -24,6 +24,10 @@ and flows. Read the named skills before acting. Register flows, not every skill.
 Superseded ticket/epic/project definitions are retained in `.gitlab/duo/legacy/`.
 Read `docs/development/gitlab-workflow.md` for activation and implementation limits.
 
+Before publishing issue/MR descriptions or comments, follow "Publishing GitLab
+Markdown" in `docs/development/ctx-contract.md`: use real multiline Markdown,
+serialize only once, and read back the saved body and links before reporting success.
+
 ## Lean testing and acceptance
 
 Write the absolute minimum meaningful tests needed to prove the changed behavior

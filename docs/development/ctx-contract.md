@@ -144,6 +144,28 @@ then require an explicit reconciled resume. Automatic bounded retries are future
 orchestration work, not an implicit allowance per new commit. New commits invalidate
 candidate evidence; rerun applicable checks and rebuild/rescan artifacts.
 
+### Publishing GitLab Markdown
+
+Apply this check to issue/MR descriptions and comments, including operation reports.
+
+- Compose the body as multiline Markdown with actual line breaks. Separate headings,
+  paragraphs, lists and tables with blank lines; keep each table row on its own line.
+- Pass that text directly to a tool's description/body field. When using an API,
+  let a JSON serializer encode it once. Do not pre-escape line breaks as literal
+  `\n`, interpolate the body into a shell command, or submit a JSON-quoted string
+  as the Markdown body. A Markdown file read as text is a safe source for the field.
+- Before submission, check prose separators and URLs for leaked escapes or wrapper
+  quotes. Preserve intentional escapes in code, regexes and examples; never globally
+  replace `\n` in arbitrary content. Inspect a formatting repair before applying it.
+- Read back the saved description/comment. Confirm real line breaks, intended content
+  and exact link targets; use GitLab's rendered view/preview when available to check
+  headings, lists and tables. An API success response alone is not this check. If
+  rendered inspection is unavailable, report that limit instead of claiming visual QA.
+- For a confirmed formatting defect, update the same item once and verify again;
+  do not duplicate it or change its conclusions, identity, status or source code.
+  Re-read before retrying an uncertain write. If the repair still fails, report the
+  item URL and stop rather than entering a publication loop.
+
 ## Lean-testing policy
 
 Write the absolute minimum meaningful tests for the changed behavior and material
