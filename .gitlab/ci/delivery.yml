@@ -1,0 +1,59 @@
+include:
+  - local: .gitlab/ci/browser.yml
+
+.ctx-check:
+  allow_failure: false
+  timeout: 20 minutes
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - .ctx/reports/
+      - .ctx/acceptance.json
+
+ctx:verify:
+  extends: .ctx-check
+  stage: verify
+  script:
+    - python scripts/ctx_workflow.py run verify
+
+ctx:acceptance:
+  extends: .ctx-check
+  stage: acceptance
+  needs:
+    - job: ctx:verify
+    - job: ctx:browser
+      optional: true
+  script:
+    - python scripts/ctx_workflow.py run acceptance
+
+ctx:source-security:
+  extends: .ctx-check
+  stage: source-security
+  needs: ["ctx:verify", "ctx:acceptance"]
+  script:
+    - python scripts/ctx_workflow.py run source-security
+
+ctx:package:
+  extends: .ctx-check
+  stage: package
+  needs: ["ctx:verify", "ctx:acceptance", "ctx:source-security"]
+  script:
+    - python scripts/ctx_workflow.py run package
+
+ctx:artifact-security:
+  extends: .ctx-check
+  stage: artifact-security
+  needs: ["ctx:verify", "ctx:acceptance", "ctx:source-security", "ctx:package"]
+  script:
+    - python scripts/ctx_workflow.py run artifact-security
+
+ctx:configure:
+  extends: .ctx-check
+  stage: configure
+  needs: ["ctx:verify", "ctx:acceptance", "ctx:source-security", "ctx:package", "ctx:artifact-security"]
+  script:
+    - python scripts/ctx_workflow.py run configure
+
+# Deliberately no deploy/promote job. Add deployment credentials and protected
+# environment controls only with real adapters and reviewed target/approval rules.

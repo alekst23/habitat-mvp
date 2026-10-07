@@ -1,0 +1,12 @@
+# GitLab loads this from the default branch, not the ticket branch.
+image: python:3.12-bookworm
+# Static dependency setup only: do not run task-branch scripts before the sandbox.
+setup_script:
+  - python -m pip install --disable-pip-version-check PyYAML==6.0.3
+network_policy:
+  include_recommended_allowed: true
+  allow_all_unix_sockets: false
+  allowed_domains:
+    - gitlab.com
+    - pypi.org
+    - files.pythonhosted.org
