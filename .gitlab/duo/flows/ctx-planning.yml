@@ -1,4 +1,5 @@
-# Native GitLab Duo flow; publish this YAML as a catalog version after review.
+# RETIRED: use the CTX Planning Duo Chat agent in .gitlab/duo/agents/.
+# Retained for historical routing regression tests and rollback, not publication.
 version: v1
 environment: ambient
 coding_environment: full

@@ -17,12 +17,36 @@ and close operations under the `ctx-` prefix. Add the six delivery operations
 listed there. Lifecycle stages classify evidence; they do not define agent or
 operation boundaries.
 
-The three native GitLab Duo entry points are `ctx-planning`, `ctx-development`,
-and `ctx-delivery` in `.gitlab/duo/flows/`. Reusable operation instructions live
-in `skills/ctx-*/SKILL.md`; `.gitlab/ctx/catalog.json` maps operations to skills
-and flows. Read the named skills before acting. Register flows, not every skill.
+Planning is conversational: use the **CTX Planning** agent in Duo Chat. The two
+background flow entry points are `ctx-development` and `ctx-delivery` in
+`.gitlab/duo/flows/`. Reusable instructions live in `skills/ctx-*/SKILL.md`;
+`.gitlab/ctx/catalog.json` records the active entry points and operation mappings.
+Read the named skills before acting. Do not register a bot/flow for every skill.
+The retired `ctx-planning.yml` remains for historical regression tests and rollback,
+not publication or normal use. Its successful earlier runs remain valid history.
 Superseded ticket/epic/project definitions are retained in `.gitlab/duo/legacy/`.
 Read `docs/development/gitlab-workflow.md` for activation and implementation limits.
+
+The local Development revision is a bounded single-shot Duo supervisor; read
+`docs/development/single-shot-development.md` before changing or running it. It
+advances all explicitly scoped work through delegated SDLC phases, with an explicit
+serial fallback (native parallel execution is unverified). Its progress journal
+does not grant authority or attest evidence; remote review/CI/ancestry must still
+be checked. Preserve ticket-only scope, respect active runs, and keep durable
+checkpoints. This local revision is not yet the published catalog version.
+
+CTX Planning and CTX Design prompts/registration records live in
+`.gitlab/duo/agents/`. The order is Planning -> Design -> Development. Planning
+publishes approved scope, epics, tickets, dependencies and state, marking Design
+pending. Design interviews and commits specs, technical/ticket design and the
+acceptance manifest on the epic branch, verifying files at the returned commit SHA.
+An issue note reports that save; it does not replace it. Neither starts
+implementation or flows. Both return ordinary prose and wait for replies;
+terminal-token and checkpoint/abort rules apply to ambient components, not chat.
+Neither chat agent has a shell: helper validation requires actual runner/human
+evidence. Pending checks do not prevent scope/design saves or design conversation,
+but must not be reported as implementation readiness. Only real scope/decomposition
+changes return to Planning; never send users there merely to save Design's work.
 
 Before publishing issue/MR descriptions or comments, follow "Publishing GitLab
 Markdown" in `docs/development/ctx-contract.md`: use real multiline Markdown,
@@ -58,10 +82,12 @@ green unit-test job. Missing/skipped/stale checks block completion. See
 
 ## Current implementation status
 
-The user has successfully executed planning through Duo with `/flow:ctx-planning`.
-That live milestone is established. The revised three-flow definitions and shared
-skills in this change have not yet been published or live-validated. Local workflow
-validation, dependency-wave planning and fail-closed evidence adapters are provided.
+The earlier planning flow ran successfully. CTX Planning now replaces that entry
+point with chat; CTX Design supports detailed design interviews. Their read-only
+chat behavior is live-tested, but approved planning writes still need a live test.
+Revised development/delivery definitions have separate publication/live-validation
+status in the implementation guide. Local workflow validation, dependency-wave
+planning and fail-closed evidence adapters are provided.
 
 Workflow development commands (Python 3.12):
 

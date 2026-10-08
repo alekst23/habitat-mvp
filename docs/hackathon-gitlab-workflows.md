@@ -23,7 +23,9 @@ Google Cloud deployment is optional and can add up to 0.2 points. The Most Stage
 Use one real, trust-critical issue: **enforce and surface a blocked over-budget inference request**.
 
 ```text
-ctx-planning → spec, ACs, epic and tickets
+CTX Planning (Duo Chat) ↔ scope interview → approved scope, epic, tickets, dependencies
+    ↓ human opens Design with saved plan references
+CTX Design (Duo Chat) ↔ design interview → committed specs, ticket designs, AC manifest
     ↓ human starts development
 ctx-development → design, lean tests, implementation, browser/AC evidence,
                   independent ticket review, integration, whole-epic review, MR
@@ -32,13 +34,25 @@ ctx-delivery → security, package, configuration, release, monitoring, outcome 
                (application/deployment adapters still required)
 ```
 
-Three interaction points, not one flow per skill or lifecycle stage:
+Planning is a conversational agent; execution remains in flows. There is no
+one-agent/flow-per-skill or per-stage requirement:
 
-| Trigger | Flow | Output |
+| Trigger | Entry point | Output |
 |---|---|---|
-| New intent or a plan change | `ctx-planning` | Reviewed intent/spec, epic/tickets, stable AC manifest |
+| New intent or a scope change | **CTX Planning** chat agent | Approved scope, epic/tickets, dependencies and plan state; Design pending |
+| Scoped epic/tickets needing specification | **CTX Design** chat agent | Committed/read-back-verified specs, ticket designs and AC manifest; explicit open decisions/validation status |
 | Ready ticket/epic, a fix, or a resume after CI/feedback | `ctx-development` | Verified ticket integration and ultimately a reviewed epic MR |
 | Release candidate or deployment feedback | `ctx-delivery` | Candidate readiness, missing-stage blockers; eventual supervised release evidence |
+
+**CTX Design** runs after Planning and before Development. It reuses spec-interview,
+epic-design and ticket-design procedures across all scoped tickets, saves versioned
+specs on the existing epic branch and verifies the saved files at the returned SHA.
+Its issue note reports the save, not a substitute for it. It does not send users to
+Planning or Development merely to save specifications. Only genuine scope changes
+return to Planning. Chat checkpoints can be saved drafts with explicit open questions.
+The original planning flow is retired, not another required background step.
+The chat contributes Plan/design preparation; it does not establish implementation
+or delivery-stage evidence. See [usage and boundaries](development/gitlab-workflow.md#ctx-design-conversational-entry-point).
 
 Begin with human-invoked flows on issues/MRs. GitLab's documented flow triggers
 require human action; these definitions do not automatically invoke another flow
@@ -71,8 +85,8 @@ The final summary must identify the source commit, pipeline, artifact, configura
 ### CTX operations and handoffs
 
 Preserve the original Claude workflow's operations under the `ctx-` prefix, then
-extend delivery. These are logical procedures to implement in native GitLab Duo
-flows. Each is represented by a reusable `skills/ctx-*/SKILL.md` file, not a
+extend delivery. These are logical procedures reused by native GitLab Duo agents
+and flows. Each is represented by a reusable `skills/ctx-*/SKILL.md` file, not a
 separately registered flow or a requirement to install Claude skills.
 The [shared contract](development/ctx-contract.md) records preserved behavior,
 artifacts, supervision, and handoffs.
@@ -103,13 +117,19 @@ Add six operations where the existing process lacks delivery coverage:
 | `ctx-monitor` | Deployment identity, health criteria and observation window | Smoke tests, logs, metrics and health verdict; actionable findings feed issue intake | Monitor |
 | `ctx-release-review` | Candidate identity and development/delivery evidence | Check readiness and reconcile evidence for human approval; record the real final outcome | Verify, Govern |
 
-The mistaken stage-named `.claude/skills/ctx-*/` files have been removed. Three native
-flow definitions live under `.gitlab/duo/flows/`, with 30 focused repo skills, an
-operation catalog, templates, dependency-wave helper, AC evidence validator and
-Playwright CI harness. Legacy ticket/epic/project flow files are archived rather
-than registered. The user already ran planning live; this revised grouping needs
-publication and validation. Development handles one ticket per invocation, not an
-automatic parallel dispatcher. Application/deployment adapters remain gaps.
+The mistaken stage-named `.claude/skills/ctx-*/` files have been removed. CTX Planning
+and CTX Design chat-agent records live under `.gitlab/duo/agents/`; development and
+delivery definitions live under `.gitlab/duo/flows/`. The retired planning YAML is
+retained there for regression tests/rollback, not publication. There are 30 focused
+repo skills, an operation catalog, templates, dependency-wave helper, AC evidence
+validator and Playwright CI harness. Legacy ticket/epic/project flows are archived.
+The earlier planning flow ran live; the agent's approved artifact publication still
+needs live validation. The local Development revision is a bounded single-shot
+supervisor across scoped tickets/epics, with an explicit serial fallback. Its
+progress journal enforces sequencing/identity, not external evidence or a remote
+lease. The registered older flow remains single-ticket until publication/testing.
+True parallel dispatch and application/deployment adapters remain gaps. See
+[single-shot implementation](development/single-shot-development.md).
 
 ### Stage coverage over the operations
 
@@ -135,7 +155,7 @@ implementation, ticket review, epic integration review, and delivery coordinatio
 A flow may reuse a role across operations. Preserve the distinct ticket and
 whole-epic review scopes, even if they use the same model.
 
-The three flow definitions make these boundaries explicit. Ticket and epic reviewers
+The agents and active flow definitions make these boundaries explicit. Ticket and epic reviewers
 are read-only except for reporting, while the browser component can execute checks.
 Keep production credentials out of agent context; tool separation is not a substitute
 for protected branches and human merge/release approval.
@@ -176,7 +196,7 @@ Keep Habitat's own credentials behind its proxy. The GitLab flow may call a test
 
 Target **Supervised** first: agents execute the complete multi-step workflow, deploy to preview/staging, and a human approves the outcome. This is aligned with HABITAT's trust story and is easier to demonstrate honestly.
 
-Treat **Hands-off** as a stretch target only for a disposable, reversible environment. GitLab supports human-input components, but an agent's approval conversation is not a substitute for deployment authorization. This implementation persists unresolved intent on issues and stops; sensitive actions still require enforced environment/branch controls. Protected promotion is not implemented yet.
+Treat **Hands-off** as a stretch target only for a disposable, reversible environment. GitLab supports human-input components, but an agent's approval conversation is not a substitute for deployment authorization. Planning/design now resolve intent in chat and publish confirmed durable artifacts; background execution stops on missing prerequisites. Sensitive actions still require enforced environment/branch controls. Protected promotion is not implemented yet.
 
 ## Evidence judges should see
 

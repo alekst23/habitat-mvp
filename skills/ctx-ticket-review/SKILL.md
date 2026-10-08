@@ -40,7 +40,9 @@ the ENTIRE final response must be `ready`.
 For missing evidence, changes or a decision, the ENTIRE final response is `blocked`.
 No Markdown, explanations, verdict prefix or handoff text belongs in that response.
 Never emit `integrate`: it names the next component, not this review's result.
-The flow router maps `ready` to integration; the reviewer does not perform it.
+The supervisor consumes `ready` plus the verified current-SHA report before
+delegating integration; the reviewer does not perform it. The retained historical
+single-ticket flow uses its router for the equivalent handoff.
 The deterministic consumer may recover a valid last-line token from accidental
 preceding prose. That compatibility behavior does not relax this producer contract
 or permit conflicting signals or `integrate` as a review result.

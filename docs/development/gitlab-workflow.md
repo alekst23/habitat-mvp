@@ -2,8 +2,11 @@
 
 ## Status and boundaries
 
-Planning has already run successfully in GitLab Duo through `/flow:ctx-planning`,
-as confirmed by the user. The review-routing correction was published to Showcase's
+Planning originally ran successfully through `/flow:ctx-planning`, as confirmed
+by the user. That background entry point is now retired in favor of the
+conversational **CTX Planning** agent. CTX Design is the detailed interview/design
+partner; development and delivery remain background flows. The review-routing
+correction was published to Showcase's
 CTX Development catalog entry as v1.1.0 on 2026-10-07; its saved YAML was read back
 and matched the tested local definition. No execution of this corrected version
 has been verified. Other unpublished changes and implementation limits below
@@ -13,18 +16,112 @@ run deterministic workflow checks and, once configured, application adapters.
 
 | Native flow | Preserved process | Current boundary |
 |---|---|---|
-| `.gitlab/duo/flows/ctx-planning.yml` | Route → intake/intent → spec → epic/tickets and acceptance manifest | Prior planning version ran live; publish this revised version |
-| `.gitlab/duo/flows/ctx-development.yml` | Coordinate → design → minimal tests → implementation → browser/AC checks → independent ticket review → integration → whole-epic review/close | One ticket per run; resumable handoffs, no autonomous retriggering or parallel dispatcher |
+| CTX Planning chat agent | Scope interview → epic/tickets, dependencies and plan state | Publish approved scope first; detailed design follows |
+| CTX Design chat agent | Design interview → committed spec, technical/ticket design and acceptance manifest | Owns file persistence/readback; no implementation or flow start |
+| `.gitlab/duo/flows/ctx-development.yml` | Single-shot supervisor → delegated ticket SDLC → reassess → epic docs/review/close | Local bounded implementation; serial fallback; live catalog still single-ticket |
 | `.gitlab/duo/flows/ctx-delivery.yml` | Six delivery operations, stage evidence and candidate readiness review | Read/comment only; application adapters and deployment/approval integration are missing |
 
 Each of the 30 procedures is a repo skill at `skills/ctx-*/SKILL.md`, explicitly
-referenced by its flow prompt. Skills supply instructions; flow components supply
-tool permissions and routing. Only the three flows need catalog registration.
+referenced by its agent/flow prompt. Skills supply instructions; agent registrations
+and flow components supply tool permissions. Active entry points are two chat
+agents and two background flows, not one registration per procedure. The retired
+planning YAML and its catalog operation mapping remain for regression tests and
+rollback; do not republish or invoke it. The validator's count of three YAML flow
+definitions includes this retained historical definition, not three active flows.
 The superseded ticket/epic/project YAML is preserved under `.gitlab/duo/legacy/`
 for reference, not registration. The operation-to-flow mapping is
 `.gitlab/ctx/catalog.json`. Stages classify
 evidence; they do not determine agent boundaries. Read the full contract in
 `ctx-contract.md` and the prize coverage plan in `../hackathon-gitlab-workflows.md`.
+
+## CTX Planning: scope and tickets first
+
+[CTX Planning](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016257)
+owns scope, epics, tickets, dependencies and planning state. Its five procedures
+are project design, intake, triage, epic creation and ticket creation. Open
+**Add new chat → CTX Planning**, provide the source issue, review its scope and
+decomposition preview, then say **"Publish this plan."**
+
+It saves the approved plan on the verified non-default epic branch, preserves
+`E2-1` identities and real issue-IID mappings, verifies artifacts, and reports
+**scope saved; design pending**. Detailed specs and a final acceptance manifest
+are not prerequisites for creating tickets. Existing designs/evidence survive replans.
+Next open CTX Design with the saved plan/epic/commit links—not Development directly.
+
+The exact prompt/registration are `.gitlab/duo/agents/ctx-planning.md` and
+`ctx-planning.json`. Its 19 tools allow remote reads, issue publication, branches,
+commits and draft MRs. No command, merge or flow/pipeline-start tool is selected.
+No shell means helper validation must be reported pending without real evidence;
+that does not prevent publication or proceeding to the design conversation.
+
+The old Showcase planning flow (catalog `1016235`) and its trigger were disabled
+on 2026-10-07. Its definition/history remain for rollback; no issues/branches were
+deleted. The historical project was untouched. Do not re-enable it for normal use.
+
+## CTX Design: owns specifications and saving
+
+[CTX Design](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016255)
+runs **after Planning and before Development**. It applies `ctx-spec-interview`,
+`ctx-epic-design` and `ctx-ticket-design` across all scoped tickets in an epic.
+
+It owns the behavioral spec, technical design when needed, ticket Design sections
+and final acceptance manifest. It commits these files on the existing epic branch,
+reads each file back at the returned commit SHA, then posts a report linking the
+saved files/commit. A note or chat answer is not a saved specification.
+
+A scoped design request authorizes routine design-document saves unless the user
+explicitly requests read-only brainstorming. Useful draft checkpoints can be saved
+with open questions clearly marked. Unresolved decisions block dependent execution,
+not persistence. A direct "save" request should not cause another approval loop.
+
+To use the corrected agent, start a **new chat → CTX Design** and provide the plan:
+
+> Design the scoped tickets for this epic. Read the existing plan and design note,
+> reuse settled decisions, and interview me only about unresolved choices. Save the
+> spec, technical design, ticket Design sections and acceptance manifest on the
+> existing epic branch. Verify saved files and return their links and commit SHA.
+> Do not implement or start a flow.
+
+For existing E2, supply the verified epic/source/note links instead of recreating
+the plan. The agent must verify the source issue separately from epic #2. Only
+real scope/decomposition changes go back to Planning; never a request merely to
+save design. Next is human-invoked Development with the saved design revision.
+
+The prompt/registration are `.gitlab/duo/agents/ctx-design.md` and
+`ctx-design.json`. Its revised 18-tool set adds branch/commit/draft-MR publication,
+existing-issue updates and branch/MR/pipeline reads. It cannot create new issues,
+execute shell commands, merge or start flows. No external MCP server is configured.
+
+Both agents are private and project-enabled. These restrictions are prompt rules,
+not tool-level path/project permissions; underlying GitLab access controls remain
+essential. Commits/MRs may cause ordinary repository pipelines. The exact published
+version, prompt digest and verification status are tracked in each JSON record.
+Publishing repository files alone does not update the registered agent. New chats
+avoid carrying old handoff instructions forward; chats do not implicitly share memory.
+
+Published 2026-10-07: Design **v1.2.0**, Planning **v1.1.0**. Their full prompts,
+tool sets, private visibility, enablement and updated chat-picker entries were
+read back and matched. A fresh read-only Design chat correctly described its own
+commit/readback responsibility, draft saves and no detour to Planning/Development.
+A fresh Planning chat confirmed scope/tickets first, Design pending, and Design
+ownership of specification publication. Neither smoke test changed product artifacts.
+These configuration/conversation checks do not prove the revised write behavior.
+The first actual design commit/readback and approved plan batch still need live
+verification. Do not create fake product decisions just to smoke-test saving.
+
+### Single-shot Development: local supervisor revision
+
+The local flow now owns a complete invocation across explicitly scoped tickets/epics.
+It delegates separate SDLC phases, continues after integration, isolates blockers,
+and performs final epic docs/review/MR preparation. The progress helper pins scope,
+stage order, active claims, candidate SHAs and bounded retries. It does not replace
+independent remote evidence or merge controls. The original process is parallel by
+default; this revision honestly uses a serial runtime fallback, not full parallel
+parity. See [the implementation and activation protocol](single-shot-development.md).
+
+The registered catalog flow is unchanged until this revision and its required scripts
+are published and GitLab-validated. The old single-ticket chain remains under
+`.gitlab/duo/legacy/ctx-development-single-ticket.yml` for regression tests/rollback.
 
 ## What is executable now
 
@@ -40,14 +137,17 @@ python3.12 -m venv .venv
 The local validator checks our supported custom-flow subset, prompt inputs,
 restricted fields, reachable/acyclic routing, fail-closed status routes, reviewer
 tool separation, catalog coverage and CI evidence dependencies. It also requires
-each prompt's explicit `Terminal tokens: [...]` declaration to equal its router's
-keys (excluding `default_route`) and the component's `terminal_tokens` entry in
-the local catalog. Required skills with explicit terminal-token declarations may
+each routed prompt's explicit `Terminal tokens: [...]` declaration to equal its
+router's keys (excluding `default_route`) and catalog `terminal_tokens`. Managed
+agents match `managed_terminal_tokens` and return to their sole bounded supervisor,
+without standalone routers. Required skills with explicit terminal-token declarations may
 only use tokens accepted by their consuming component. It is not a copy
 of GitLab's server-side schema and cannot prove tool availability or authorization.
 Official catalog validation and GitLab CI lint remain required.
 
-The three flow graphs terminate on unknown or blocked results. Agents post detailed
+The supervisor's final routing and standalone graphs fail closed on unknown or
+blocked results. A managed worker's blocked result checkpoints that target while
+unrelated ready work continues in the supervisor. Flow components post detailed
 operation reports to the source issue before returning a routing token. A GitLab
 session ending in `abort` can mean a documented missing prerequisite, not a crash.
 Resume with the explicit operation after resolving that blocker. There are no
@@ -121,9 +221,9 @@ The implementation follows GitLab's [deterministic component](https://docs.gitla
 and [command executor](https://gitlab.com/gitlab-org/duo-workflow/duo-workflow-executor/-/blob/main/pkg/actions/run_command.go)
 contracts; it does not add an unsupported custom router or response-schema field.
 
-Publication order: independently review and merge the helper plus all three YAML
+Publication order: independently review and merge the helper plus the active flow YAML
 definitions, ensure the approved helper exists with the matching digest on each
-execution branch, then publish new planning/development/delivery catalog versions
+execution branch, then publish new development/delivery catalog versions
 and verify each project's enabled version. Test the native tool schemas and exact
 write/command response shapes with a scoped run before relying on this revision.
 Executor variants returning decorated output must fail closed, not gain permissive
@@ -156,10 +256,10 @@ must reconcile them against remote commit ancestry, review and pipeline state fi
 It does not start sessions or lock concurrent coordinators; use one coordinator per
 epic until a transactional dispatch/lease adapter is implemented.
 
-The development coordinator selects one ready ticket per invocation and stops after
-its integration, unless the epic is ready for final review/close. Distinct tickets
-can be started in separate human-triggered sessions with separate branches/checkouts;
-do not run competing coordinators for the same epic. Integration uses ordinary
+The local development supervisor delegates all scoped ready work in the same
+invocation, not one ticket per user trigger. It uses verified isolated worktrees;
+do not run competing coordinators for the same epic. The registered older flow
+retains its single-ticket behavior until updated. Integration uses ordinary
 non-force Git pushes, rechecks target movement,
 and reruns integration checks. A ticket MR is not a closed ticket; a closed epic is
 not an approved deployment. Default-branch merges follow repository policy.
@@ -222,9 +322,9 @@ to match; do not recreate issues or rewrite historical comments. Verify waves
 and all links, then record the migration commit and issue-title readback before
 resuming. The next new ticket is `E2-7`, regardless of its GitLab issue IID.
 
-Publish the revised repository definitions and update the registered AI Catalog
-flow versions (including the enabled project versions) before using new numbering.
-Changing local YAML alone does not update the already registered CTX Planning flow.
+Publish revised repository definitions and the CTX Planning agent prompt before
+using changed numbering. Changing local files does not update the registered agent.
+The old planning flow is retired; do not reactivate it for numbering changes.
 
 ## Application command and evidence contract
 
@@ -312,17 +412,18 @@ catalog publication does not merge those files into the checkout used by agents.
 3. Keep `.gitlab/duo/agent-config.yml` on default; GitLab reads that version. It is
    currently a Python environment, not a preinstalled browser environment. The
    browser CI job has its own Playwright image; see the browser guide for the distinction.
-4. Update existing CTX Planning/Development registrations rather than creating
-   duplicates. Development v1.1.0 is published as recorded above; Planning's local
-   terminal-token declarations are not yet published. Check for a delivery
+4. Use CTX Planning/Design chat agents and update their existing registrations
+   rather than creating duplicates. Keep the old planning flow disabled.
+   Development v1.1.0 is published as recorded above. Check for a delivery
    registration before creating/enabling it, then verify the enabled versions.
    Do not register legacy YAML or individual skills.
 5. Review service-account permissions and begin with human-invoked flows on issues
    or MRs. These definitions do not implement automatic pipeline-event triggering.
 6. Verify branch/merge protections for the project's tier. Optional CI variables
    are not merge protection. No production job or enforced release approval exists yet.
-7. Re-run `/flow:ctx-planning` for a scoped plan update; retain the successful
-   session URL and confirm skill loading, numbering and acceptance-manifest creation.
+7. Use **Add new chat → CTX Planning** for a scoped plan update; confirm skill
+   loading, explicit publication approval, numbering, acceptance-manifest creation,
+   saved-artifact readback and actual helper validation evidence.
 8. Once enabled, invoke `/flow:ctx-development` on the selected issue, e.g. with
    `ctx-ticket-design issue=<actual-ticket-iid>`. It handles the internal operations.
    If CI is pending or a prerequisite is missing, resolve it and invoke the same flow
@@ -336,10 +437,11 @@ Committing these files alone does not register or activate catalog flows.
 
 ## Remaining implementation for the full objective
 
-- Live validation of the revised three-flow versions, skill loading and handoffs;
-  the earlier planning execution is already confirmed.
-- Automatic cross-flow ticket dispatch, concurrency leases and bounded repair
-  accounting; current explicit handoffs are not end-to-end autonomous orchestration.
+- Live validation of development/delivery versions and the planning agent's first
+  approved publication; the earlier planning-flow execution remains historical evidence.
+- Publish and live-test the bounded native Development supervisor. Real parallel
+  workers and distributed concurrency leases remain gaps; the local journal is
+  not either. No cross-flow mention/retrigger workaround is implemented.
 - The hosted app foundation and real test/security/build/SBOM/configuration adapters.
 - Deterministic attestation of design/red-test/review prerequisites beyond prompts.
 - Staging preflight, actual configuration application/deploy/migrations/recovery,

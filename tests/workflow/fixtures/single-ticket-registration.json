@@ -1,0 +1,70 @@
+{
+  "operations": [
+    "ctx-project-go",
+    "ctx-project-sleep",
+    "ctx-epic-run",
+    "ctx-ticket-design",
+    "ctx-ticket-tests",
+    "ctx-ticket-start",
+    "ctx-branch-agent",
+    "ctx-hotfix",
+    "ctx-project-fix",
+    "ctx-ci-check",
+    "ctx-browser-check",
+    "ctx-ticket-review",
+    "ctx-ticket-close",
+    "ctx-epic-docs",
+    "ctx-epic-review",
+    "ctx-epic-close",
+    "ctx-merge-queue"
+  ],
+  "read_only_components": [
+    "review",
+    "epic_review"
+  ],
+  "terminal_tokens": {
+    "coordinate": [
+      "design",
+      "tests",
+      "implementation",
+      "browser",
+      "integrate",
+      "epic",
+      "checkpoint",
+      "blocked"
+    ],
+    "design": [
+      "ready",
+      "blocked"
+    ],
+    "tests": [
+      "ready",
+      "blocked"
+    ],
+    "implementation": [
+      "ready",
+      "blocked"
+    ],
+    "browser": [
+      "ready",
+      "blocked"
+    ],
+    "review": [
+      "ready",
+      "blocked"
+    ],
+    "integrate": [
+      "more",
+      "complete",
+      "blocked"
+    ],
+    "epic_review": [
+      "ready",
+      "blocked"
+    ],
+    "close": [
+      "ready",
+      "blocked"
+    ]
+  }
+}

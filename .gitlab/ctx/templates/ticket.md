@@ -7,14 +7,17 @@ sequence within its epic, not the ticket's GitLab issue IID. Preserve it on resu
 
 ## Acceptance criteria
 
-Feature spec and stable scenario/AC IDs; matching acceptance.json entries with
-UI classification and required methods (test/browser/justified inspection):
+Planning: high-level acceptance expectations; preserve existing stable AC IDs.
+Design: feature spec and stable scenario/AC IDs; matching acceptance.json entries
+with UI classification and required methods (test/browser/justified inspection).
 
 ## Dependencies
 
 ## Design
 
-Solution approach, contracts/stubs, boundaries, technical.md pointer, design SHA:
+Design pending until CTX Design saves the solution approach, contracts, boundaries,
+technical.md pointer and verified design commit reference. Pending design does not
+block ticket creation, but it does block implementation.
 
 ## Tests before implementation
 
