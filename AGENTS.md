@@ -35,7 +35,11 @@ does not grant authority or attest evidence; remote review/CI/ancestry must stil
 be checked. Preserve ticket-only scope, respect active runs, and keep durable
 checkpoints. Development v1.2.0 is published; full catalog YAML readback passed.
 Its observed execution stopped at preflight; delegated ticket processing remains
-unverified. The local design-repair revision is not yet published.
+unverified. The local design-repair and bounded development-repair revision is not
+yet published. New runs use the version-2 journal: pin the exact AC manifest, repair
+actionable defects up to three times per target, and require fresh application/AC
+verification plus independent review after every fix. Missing infrastructure, intent
+or authority is still a blocker; no automatic flow retriggers or policy weakening.
 
 CTX Planning and CTX Design prompts/registration records live in
 `.gitlab/duo/agents/`. The order is Planning -> Design -> Development. Planning

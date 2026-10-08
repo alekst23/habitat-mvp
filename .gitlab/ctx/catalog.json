@@ -82,11 +82,11 @@
       "mode": "bounded-supervisor",
       "max_delegations": 64,
       "runtime_parallelism": "serial-fallback; native parallel delegation unverified",
-      "publication_status": "v1.2.0 remains published; design review/typed-contract repair is a repository candidate pending independent review, helper merge and catalog publication/readback.",
+      "publication_status": "v1.2.0 remains published. The v1.3.0 repository candidate combines design review/typed contracts with version-2 bounded development repair and strict AC verification; merge and catalog publication/readback are pending.",
       "catalog_version": "1.2.0",
       "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234",
-      "definition_sha256": "f95132618dcdcd44d594e9aa38a4c9aabc08a96cd8c42721f7df11c114d96ae4",
-      "verification": "Published v1.2.0 preflight ran in session 9174694 and correctly blocked invalid E2 state; no worker delegation occurred. Prior saved YAML/private enablement/trigger checks remain historical. Candidate design-review mode is not live validated.",
+      "definition_sha256": "5b620c4be51e86837f9a20b70ed9e033725a2b8e21bd948a943729b796b1173e",
+      "verification": "Published v1.2.0 preflight ran in session 9174694 and correctly blocked invalid E2 state; no worker delegation occurred. Version-2 repair, current-SHA verification and legacy replay are covered by local fixtures, not live agent/application execution. Prior catalog checks remain historical; the candidate requires publication and a controlled failing-AC/fix/retest live run.",
       "managed_terminal_tokens": {
         "design": [
           "ready",

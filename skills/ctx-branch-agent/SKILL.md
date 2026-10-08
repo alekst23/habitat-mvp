@@ -3,6 +3,12 @@ name: ctx-branch-agent
 description: Execute one selected ticket in an isolated branch while preserving its epic and other work.
 ---
 
+The ticket rules below apply to normal ticket work. For an explicitly delegated
+version-2 assembled-epic repair, use ctx-project-fix and the coordinator's owned
+non-default epic consolidation branch instead. Only that mode may commit/publish
+the scoped repair on the epic branch; it still cannot merge to default, seize other
+work or bypass fresh full-epic verification and independent review.
+
 Read the selected ticket's actual issue mapping and dependencies. Use a dedicated
 checkout of ctx/ticket-i<ticket-issue-iid>, based on the reconciled epic. Never
 reuse another session's dirty checkout or write the default branch.

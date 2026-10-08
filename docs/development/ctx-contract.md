@@ -187,9 +187,15 @@ candidate. Missing checks are blockers, not evidence of stage completion.
 Read back remote state after uncertain writes before repeating them. No flow
 automatically retriggers itself. The local single-shot supervisor advances ready
 work internally and permits one reconciled transient/CI-wait retry per target,
-within its action bound. Decision, evidence and conflict blockers require input;
-this is not a code-repair loop or an implicit allowance per new commit. New commits invalidate
-candidate evidence; rerun applicable checks and rebuild/rescan artifacts.
+within its action bound. Version-2 journals also permit three cumulative scoped
+code/test/AC repair cycles per ticket or assembled epic, with actionable findings,
+a new candidate SHA, fresh full-scope verification and separate independent review.
+See [the receipt and repair protocol](single-shot-development.md#version-2-verification-and-repair).
+Decision, missing evidence/infrastructure, permission and conflict blockers still
+require reconciliation; no policy change or uncertain write becomes a code fix.
+Limits never reset per commit. New commits invalidate candidate evidence; rerun
+applicable checks and rebuild/rescan artifacts. The repair candidate is not yet
+published/live-validated; existing version-1 journals retain their historical rules.
 
 ### Publishing GitLab Markdown
 

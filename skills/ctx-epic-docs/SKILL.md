@@ -11,3 +11,6 @@ need inspection or existing validators, not new behavioral tests.
 
 Commit on the epic branch. Documentation commits change the candidate SHA; obtain
 the applicable CI and final review before publishing readiness for the new SHA.
+In a version-2 managed docs delegation, report the saved commit and return to the
+supervisor's dedicated verify phase; do not call that save application readiness.
+After an assembled-epic repair reconcile docs again before fresh verification/review.

@@ -14,5 +14,11 @@ separate acceptance job checks that manifest requirements have matching evidence
 Fetch actual job status and source SHA: workflow self-tests, skipped jobs, allowed
 failures, pending CI and stale results do not establish application acceptance.
 
-For failure, identify the smallest cause and affected checks. Persist diagnostics;
-an explicit development resume owns repair. Missing adapters are blocked, not pass.
+For failure, identify the smallest cause and affected checks. Persist diagnostics.
+In version-2 Development, publish the verification bundle defined in
+docs/development/single-shot-development.md, including actual jobs and full AC/browser
+reports. Confirmed scoped code/test/AC defects return structured findings with
+blocker_kind=defect for the same supervisor's bounded repair loop. Missing adapters,
+permissions or reports are evidence blockers, pending CI is ci_pending; neither is a
+pass or license to weaken controls. New commits require fresh checks for all scoped
+ACs and required integration gates, followed by a new independent review.

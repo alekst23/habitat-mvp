@@ -28,7 +28,8 @@ CTX Planning (Duo Chat) ↔ scope interview → approved scope, epic, tickets, d
 CTX Design (Duo Chat) ↔ design interview → committed specs, ticket designs, AC manifest
     ↓ human starts development
 ctx-development → design, lean tests, implementation, browser/AC evidence,
-                  independent ticket review, integration, whole-epic review, MR
+                  independent review ↔ bounded fixes, integration,
+                  whole-epic validation/review ↔ bounded fixes, MR
     ↓ merge policy + human starts delivery
 ctx-delivery → security, package, configuration, release, monitoring, outcome review
                (application/deployment adapters still required)
@@ -129,6 +130,10 @@ supervisor across scoped tickets/epics, with an explicit serial fallback. Its
 progress journal enforces sequencing/identity, not external evidence or a remote
 lease. The supervisor is published as Development v1.2.0 with full YAML readback;
 actual native execution remains unverified.
+The current unpublished candidate adds bounded in-session code/test/AC repair with
+fresh evidence and independent review after every fix, for tickets and assembled
+epics. It must be published and live-tested before claiming this as demonstrated
+Create/Verify coverage; no additional flow or bot per repair is required.
 True parallel dispatch and application/deployment adapters remain gaps. See
 [single-shot implementation](development/single-shot-development.md).
 
