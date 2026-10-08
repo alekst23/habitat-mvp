@@ -55,7 +55,8 @@ requirements. Generated E-numbered plans and design handoffs are checked by
 scripts/ctx_design.py in CI. Structural checks do not replace independent semantic
 design review. Chat Design owns typed contract documentation; Development's design
 worker creates/reuses executable contract stubs and minimal port fakes before tests.
-The revised prompts/flow are publication candidates until catalog readback is recorded.
+CTX Design v1.3.0 is published with full prompt readback. The revised Planning prompt
+and Development flow remain publication candidates; do not infer activation from merge.
 
 Before publishing issue/MR descriptions or comments, follow "Publishing GitLab
 Markdown" in `docs/development/ctx-contract.md`: use real multiline Markdown,

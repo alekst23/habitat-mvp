@@ -9,7 +9,7 @@
   "system_prompt_file": "ctx-design.md",
   "system_prompt_sha256": "e2361c272fa17c82dc97415896405a4365760c5b5ae5df0009da2e51d676f6c2",
   "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016255",
-  "catalog_version": "1.2.0",
+  "catalog_version": "1.3.0",
   "enabled_in_project": true,
   "operations": [
     "ctx-spec-interview",
@@ -54,13 +54,13 @@
   ],
   "external_mcp_servers": [],
   "trigger": "Duo Chat agent picker; no mention/assignment/flow trigger",
-  "publication_status": "Design-contract repair is a repository candidate, not yet published. catalog_version and published_system_prompt_sha256 identify the last published registration; merge/review repository procedures before catalog update.",
+  "publication_status": "Published v1.3.0 on 2026-10-08 after workflow MR !9 merged. Full saved prompt readback matches the repository SHA-256. Private visibility, project enablement, 18 existing tools and no external MCP servers retained. Publication is not proof of a successful design run.",
   "verification": {
     "chat_interview_smoke": "passed 2026-10-07; source issue 10; project, issue, repository-file and issue-note reads observed; normal prose plus one design question with options; no write or flow-start call",
     "issue_note_save_readback": "user reports an earlier note on epic 2; revised commit-and-readback path not yet exercised",
     "design_commit_readback": "MR !8 contains design commit 89c3018 and a saved-spec report; structural/content defects found 2026-10-08. Expanded repair and new catalog behavior still require review/live validation.",
-    "ownership_smoke": "passed 2026-10-07 on v1.2.0 in fresh Duo Chat: owns spec/ticket/manifest commits, exact-SHA file readback, saves drafts with open questions, no Planning/Development detour for saving, does not promise epic-wide execution; no writes or jobs requested/observed"
+    "ownership_smoke": "passed 2026-10-07 on v1.2.0 in fresh Duo Chat: owns spec/ticket/manifest commits, exact-SHA file readback, saves drafts with open questions, no Planning/Development detour for saving, does not promise epic-wide execution; no writes or jobs requested/observed",
+    "v1_3_configuration_readback": "2026-10-08: full saved prompt matched e2361c272fa17c82dc97415896405a4365760c5b5ae5df0009da2e51d676f6c2 (repository trailing newline normalized); UI shows v1.3.0, enabled, private, unchanged tools and no external MCP servers. User will exercise the design interview/save in a new chat."
   },
-  "published_system_prompt_sha256": "15a3d7926a872cb12c7f95bc79e2c6cdeda3748a17c46a1b4650f974482e5c81",
-  "pending_catalog_version": "1.3.0"
+  "published_system_prompt_sha256": "e2361c272fa17c82dc97415896405a4365760c5b5ae5df0009da2e51d676f6c2"
 }

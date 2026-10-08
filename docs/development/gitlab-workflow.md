@@ -2,12 +2,20 @@
 
 ## Status and boundaries
 
-Design repair candidate (2026-10-08): restored interview/technical-contract/wiring
+Design repair (2026-10-08): restored interview/technical-contract/wiring
 procedures, generated-artifact CI checks and explicit Development contract-stub
 preparation. Read [design handoff requirements](design-readiness.md). Planning
-v1.1.0, Design v1.2.0 and Development v1.2.0 remain the published registrations;
-candidate prompt hashes and pending versions are recorded separately. Do not claim
-the changes are active in Duo until repository review/merge and catalog readback.
+v1.1.0 and Development v1.2.0 remain published, with their repair candidates pending
+catalog publication. CTX Design v1.3.0 is now published/enabled; its full saved prompt
+matches the merged source. Private visibility, tools and external-server settings
+were unchanged. A new Design chat is required to exercise the revised behavior.
+
+Workflow [MR !9](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/9)
+merged into main at 090d153. E2 repair
+[MR !10](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/10)
+merged into ctx/epic-i2 at 2578695, including the updated helpers. Both MR pipelines
+passed; the E2 check covers 46 scenarios and 14 criteria. MR !8 remains an open draft.
+These are structural checks, not independent semantic approval or application tests.
 
 Live evidence since the earlier setup checks: MR !8 saved E2 ticket designs at
 89c3018, but its state/manifest and design completeness were defective. Development
