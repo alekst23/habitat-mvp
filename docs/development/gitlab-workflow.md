@@ -142,6 +142,14 @@ independent remote evidence or merge controls. The original process is parallel 
 default; this revision honestly uses a serial runtime fallback, not full parallel
 parity. See [the implementation and activation protocol](single-shot-development.md).
 
+The current unpublished candidate closes the development loop with version-2
+requests: exact committed AC manifests, complete verification receipts, and up to
+three scoped defect repairs per ticket or assembled epic. Each fix returns through
+current-SHA testing/AC validation and a fresh independent review. Missing setup,
+intent, permissions or evidence still blocks; global action limits and durable
+checkpoints remain. Existing journals retain their version-1 rules. Local fixtures
+exercise the loop; real application adapters and a live catalog run remain required.
+
 Development v1.2.0 is now registered and enabled. GitLab rejected the initially
 configured `on_delegation_error`; removing that unsupported UI logging event let
 catalog validation pass. The local validator now checks the accepted event enum.
@@ -176,8 +184,10 @@ blocked results. A managed worker's blocked result checkpoints that target while
 unrelated ready work continues in the supervisor. Flow components post detailed
 operation reports to the source issue before returning a routing token. A GitLab
 session ending in `abort` can mean a documented missing prerequisite, not a crash.
-Resume with the explicit operation after resolving that blocker. There are no
-automatic flow-retrigger or repair loops in this version.
+Resume with the explicit operation after resolving a genuine blocker. No flow
+automatically retriggers another flow. Published v1.2.0 lacks the new bounded repair
+loop; the version-2 repository candidate repairs evidenced scoped defects internally
+in the same supervisor session, then re-verifies and obtains independent review.
 
 ### Final results are not handoff destinations
 

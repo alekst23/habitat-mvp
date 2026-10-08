@@ -10,3 +10,7 @@ ctx-ticket-design/tests/start/review/close with the normal prerequisites.
 Prefer one focused regression test, or an existing failing test that already proves
 the defect. Do not bypass tenant, cost, review or merge controls for urgency. Report
 the repaired behavior and actual verification; missing infrastructure remains blocked.
+
+Inside a version-2 Development repair delegation, reuse the existing claim, scope
+and owned branch via ctx-project-fix. Do not create another ticket, catalog session
+or nested SDLC run; the supervisor owns re-verification and independent review.

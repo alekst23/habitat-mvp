@@ -27,6 +27,13 @@ Block for missing/failed/stale acceptance evidence or unresolved material findin
 Record ready, needs changes or needs decision with precise evidence. This verdict
 is not GitLab MR approval, ticket integration or release authorization.
 
+For version-2 Development bind verification_url to the saved current-SHA verification
+report. Classify actionable scoped code/test/AC findings as blocker_kind=defect with
+unique finding IDs, in-scope ac_ids, summary and actual evidence_url per the single-shot
+protocol. The supervisor sends them to implementation and returns here after fresh
+checks. Confirm prior findings are really resolved; do not carry an old review forward.
+Missing evidence/permissions/intent is a genuine blocker, not automatic repair authority.
+
 ## Final routing response
 
 Terminal tokens: [ready, blocked]

@@ -20,11 +20,16 @@ import tempfile
 
 from ctx_routing import normalize_response, RoutingError
 from ctx_workflow import Invalid, SHA, positive_integer, ready_wave, require, ticket_order
+from ctx_acceptance import selected_criteria, validate_acceptance
 
 TICKET_PHASES = ("design", "tests", "implementation", "browser", "review", "integrate")
 EPIC_PHASES = ("docs", "epic_review", "close")
 MAX_ACTIONS = 60  # Reserve room below the supervisor's hard max_delegations=64.
 READ_ONLY_PHASES = {"browser", "review", "integrate", "epic_review", "close"}
+V2_TICKET_PHASES = ("design", "tests", "implementation", "verify", "review", "integrate")
+V2_EPIC_PHASES = ("implementation", "docs", "verify", "epic_review", "close")
+MAX_REPAIRS = 3
+REPAIR_PHASES = {"implementation", "verify", "review", "epic_review"}
 
 
 def digest(value):
@@ -32,7 +37,8 @@ def digest(value):
 
 
 def new_run(request):
-    require(isinstance(request, dict) and request.get("version") == 1, "invalid request version")
+    require(isinstance(request, dict) and type(request.get("version")) is int and
+            request["version"] in (1, 2), "invalid request version")
     require(re.fullmatch(r"[A-Za-z0-9_-]{1,64}", request.get("run_id", "")), "invalid run ID")
     require(positive_integer(request.get("source_issue_iid")), "invalid source issue IID")
     path = request.get("project_path", "")
@@ -59,6 +65,11 @@ def new_run(request):
         issues.add(state["epic_issue_iid"])
         heads[eid] = epic["base_sha"]
         all_ids = {ticket["id"] for ticket in state["tickets"]}
+        if request["version"] == 2:
+            manifest, _ = acceptance_manifest(epic)
+            criteria = selected_criteria(manifest, eid)
+            require(manifest["epic"] == eid and {c["id"].split(".")[0] for c in criteria} == all_ids,
+                    "manifest must cover exactly the planned tickets")
         selected = epic.get("ticket_ids", [ticket["id"] for ticket in state["tickets"]])
         require(isinstance(selected, list) and selected and all(isinstance(t, str) for t in selected)
                 and len(selected) == len(set(selected)) and set(selected) <= all_ids,
@@ -83,13 +94,100 @@ def new_run(request):
             nodes[eid] = {"epic": eid, "issue_iid": state["epic_issue_iid"], "kind": "epic",
                           "depends_on": [t["id"] for t in state["tickets"]], "phase_index": 0,
                           "status": "pending", "reason": "", "candidate_sha": epic["base_sha"], "retries": 0}
-    return {"version": 1, "request": deepcopy(request), "request_sha256": digest(request),
+    if request["version"] == 2:
+        for node in nodes.values():
+            node.update(protocol_version=2, repairs=0)
+            if node["kind"] == "epic":
+                node["phase_index"] = 1  # Start with docs; implementation is only for repair.
+    return {"version": request["version"], "request": deepcopy(request), "request_sha256": digest(request),
             "nodes": nodes, "required_targets": required_targets, "epic_heads": heads,
             "actions": 0, "active": None, "events": []}
 
 
+def phases(node):
+    if node.get("protocol_version") == 2:
+        return V2_TICKET_PHASES if node["kind"] == "ticket" else V2_EPIC_PHASES
+    return TICKET_PHASES if node["kind"] == "ticket" else EPIC_PHASES
+
+
 def phase(node):
-    return (TICKET_PHASES if node["kind"] == "ticket" else EPIC_PHASES)[node["phase_index"]]
+    return phases(node)[node["phase_index"]]
+
+
+def acceptance_manifest(epic):
+    raw = epic.get("acceptance_manifest")
+    require(isinstance(raw, str) and raw.strip(), "exact committed acceptance manifest text required")
+    manifest = json.loads(raw, object_pairs_hook=unique_object)
+    require(isinstance(manifest, dict), "acceptance manifest must be an object")
+    return manifest, hashlib.sha256(raw.encode()).hexdigest()
+
+
+def scoped_manifest(run, target):
+    eid = run["nodes"][target]["epic"]
+    return acceptance_manifest(next(e for e in run["request"]["epics"] if e["state"]["epic"] == eid))
+
+
+def validate_verification(run, target, sha, bundle):
+    """Check actual report snapshots, not a model's 'all ACs passed' summary.
+
+    URLs/snapshots still require independent remote readback by the supervisor.
+    The acceptance validator additionally binds raw manifest bytes and every AC.
+    """
+    require(isinstance(bundle, dict), "verification bundle required")
+    pipeline = bundle.get("pipeline_id")
+    require(isinstance(pipeline, str) and re.fullmatch(r"[1-9][0-9]*", pipeline), "pipeline ID required")
+    base = f"https://gitlab.com/{run['request']['project_path']}/-/"
+    require(bundle.get("pipeline_url") == base + "pipelines/" + pipeline, "verification pipeline mismatch")
+    expected = {"project_id": str(run["request"]["project_id"]), "source_sha": sha,
+                "pipeline_id": pipeline, "scope": target}
+    manifest, manifest_hash = scoped_manifest(run, target)
+    criteria = selected_criteria(manifest, target)
+    browser_ids = {c["id"] for c in criteria if "browser" in c["methods"]}
+    names = {"ctx:verify", "ctx:acceptance"} | ({"ctx:browser"} if browser_ids else set())
+    jobs = bundle.get("jobs")
+    require(isinstance(jobs, dict) and names <= jobs.keys(), "required application jobs missing")
+    urls = set()
+    for name in names:
+        job = jobs[name]
+        require(isinstance(job, dict) and job.get("status") == "success", f"{name}: job not passed")
+        require(job.get("allow_failure") is False, f"{name}: mandatory non-allowed-failure job required")
+        require(all(job.get(k) == expected[k] for k in ("project_id", "source_sha", "pipeline_id")),
+                f"{name}: stale/wrong job identity")
+        url = job.get("url", "")
+        require(isinstance(url, str) and re.fullmatch(re.escape(base) + r"jobs/[1-9][0-9]*", url) and url not in urls,
+                "distinct same-project application job URLs required")
+        urls.add(url)
+    report = bundle.get("acceptance")
+    require(isinstance(report, dict), "full acceptance report required")
+    validate_acceptance(manifest, manifest_hash, report, expected, bundle.get("browser"))
+    # Bind runtime evidence to the successful producer job, not another run's URL.
+    for producer, data, method in (("ctx:verify", report, "test"),
+                                   ("ctx:browser", bundle.get("browser"), "browser")):
+        for row in (data or {}).get("criteria", []):
+            if method not in row.get("evidence", {}):
+                continue
+            url = row["evidence"][method]["url"]
+            job_url = jobs[producer]["url"]
+            require(url == job_url or url.startswith(job_url + "/artifacts/") or url.startswith(job_url + "#"),
+                    "AC evidence must link its verified producer job")
+
+
+def validate_findings(run, target, findings):
+    manifest, _ = scoped_manifest(run, target)
+    allowed = {c["id"] for c in selected_criteria(manifest, target)}
+    require(isinstance(findings, list) and findings, "actionable findings required")
+    seen = set()
+    prefix = re.escape(f"https://gitlab.com/{run['request']['project_path']}/-/")
+    for finding in findings:
+        require(isinstance(finding, dict), "invalid finding")
+        fid, ids = finding.get("id"), finding.get("ac_ids")
+        require(isinstance(fid, str) and fid.strip() and fid not in seen, "unique finding ID required")
+        seen.add(fid)
+        require(isinstance(ids, list) and ids and all(isinstance(cid, str) and cid in allowed for cid in ids)
+                and len(ids) == len(set(ids)), "findings must reference in-scope ACs")
+        require(isinstance(finding.get("summary"), str) and finding["summary"].strip(), "finding summary required")
+        require(re.fullmatch(prefix + r"(?:jobs/[1-9][0-9]*(?:/artifacts/[^\s]+)?|(?:issues|work_items|merge_requests)/[1-9][0-9]*#note_[1-9][0-9]*)",
+                             finding.get("evidence_url", "")), "same-project failure evidence required")
 
 
 def next_actions(run):
@@ -102,13 +200,20 @@ def next_actions(run):
                                    ticket_order(key)[1] if "-" in key else 0))
     complete = all(nodes[key]["status"] == "done" for key in run["required_targets"])
     permitted = not run["active"] and run["actions"] < MAX_ACTIONS
-    return {"complete": complete, "mode": "serial-native-supervisor",
+    repairable = [key for key, node in nodes.items() if node["status"] == "blocked" and
+                  node.get("blocker_kind") == "defect" and node.get("repairs", MAX_REPAIRS) < MAX_REPAIRS]
+    result = {"complete": complete, "mode": "serial-native-supervisor",
             "ready": [{"target": key, "phase": phase(nodes[key])} for key in frontier] if permitted else [],
             "active": run["active"], "actions_remaining": MAX_ACTIONS - run["actions"],
             "blocked": {key: n["reason"] for key, n in nodes.items() if n["status"] == "blocked"},
             "waiting": {key: [d for d in n["depends_on"] if nodes[d]["status"] != "done"]
                         for key, n in nodes.items() if n["status"] == "pending" and key not in frontier},
-            "checkpoint": not complete and (not frontier or not permitted)}
+            "checkpoint": not complete and (not (frontier or repairable) or not permitted)}
+    if run["version"] == 2:
+        result["repairable"] = repairable if permitted else []
+        for item in result["ready"]:
+            item["component"] = "browser" if item["phase"] == "verify" else item["phase"]
+    return result
 
 
 def claim(run, target):
@@ -116,8 +221,11 @@ def claim(run, target):
     ready = next_actions(result)["ready"]
     require(target in {item["target"] for item in ready}, "target is not ready or run is in-flight/exhausted")
     node = result["nodes"][target]
-    if node["phase_index"] == 0:
+    initial = 1 if node.get("protocol_version") == 2 and node["kind"] == "epic" else 0
+    if node["phase_index"] == initial and not node.get("repairs", 0) and not node.get("started"):
         node["candidate_sha"] = result["epic_heads"][node["epic"]]
+    if result["version"] == 2:
+        node["started"] = True
     result["actions"] += 1
     active = {"run_id": result["request"]["run_id"], "target": target,
               "phase": phase(node), "attempt": result["actions"], "candidate_sha": node["candidate_sha"]}
@@ -141,16 +249,46 @@ def record(run, receipt):
     require(receipt.get("report_readback") is True, "saved report readback required")
     result = deepcopy(run)
     node = result["nodes"][target]
+    v2 = run["version"] == 2
+    if v2:
+        sha = receipt.get("candidate_sha", "")
+        require(isinstance(sha, str) and SHA.fullmatch(sha), "candidate SHA required")
+        if operation in READ_ONLY_PHASES | {"verify"}:
+            require(sha == active["candidate_sha"], "review/evidence does not match delegated SHA")
     if token == "blocked":
         require(receipt.get("reason") and isinstance(receipt["reason"], str), "blocked reason required")
-        require(receipt.get("blocker_kind") in {"decision", "evidence", "ci_pending", "transient", "conflict"},
+        require(receipt.get("blocker_kind") in ({"decision", "evidence", "ci_pending", "transient", "conflict"} |
+                                               ({"defect"} if v2 else set())),
                 "classify blocker before continuing other work")
+        if v2 and receipt["blocker_kind"] == "defect":
+            require(operation in REPAIR_PHASES, "this phase cannot authorize code repair")
+            validate_findings(run, target, receipt.get("findings"))
+            node.update(findings=deepcopy(receipt["findings"]), candidate_sha=sha)
+        if v2:
+            node["candidate_sha"] = sha  # Preserve a reconciled write even when its CI is pending.
         node.update(status="blocked", reason=receipt["reason"], blocker_kind=receipt["blocker_kind"])
     else:
         sha = receipt.get("candidate_sha", "")
         require(SHA.fullmatch(sha), "candidate SHA required")
         if operation in READ_ONLY_PHASES:
             require(sha == active["candidate_sha"], "review/evidence does not match delegated SHA")
+        if v2 and operation == "implementation" and "repair_from_sha" in node:
+            require(sha != node["repair_from_sha"], "repair must produce a new candidate SHA")
+            resolved = receipt.get("resolved_findings")
+            expected_ids = {finding["id"] for finding in node["findings"]}
+            require(isinstance(resolved, list) and all(isinstance(fid, str) for fid in resolved) and
+                    len(resolved) == len(set(resolved)) and set(resolved) == expected_ids,
+                    "repair must report all resolved findings; independent review still required")
+        if v2 and operation == "verify":
+            validate_verification(run, target, sha, receipt.get("verification"))
+            node.update(verification=deepcopy(receipt["verification"]), verification_url=receipt["report_url"])
+        if v2 and operation in {"review", "epic_review"}:
+            require(node.get("verification_url") and receipt.get("verification_url") == node["verification_url"],
+                    "independent review must bind current verification")
+            node["review_url"] = receipt["report_url"]
+        if v2 and operation == "close":
+            require(node.get("review_url") and receipt.get("review_url") == node["review_url"],
+                    "close must bind independent whole-epic review")
         if operation == "integrate":
             integration = receipt.get("integration", {})
             require(integration.get("source_sha") == sha, "integration source mismatch")
@@ -158,19 +296,41 @@ def record(run, receipt):
             require(re.fullmatch(prefix + r"pipelines/[1-9][0-9]*", integration.get("pipeline_url", "")),
                     "integration pipeline required")
             require(integration.get("review_url") == node.get("review_url"), "independent review mismatch")
+            if v2:
+                validate_verification(run, target, integration["epic_sha"], integration.get("verification"))
+                require(integration["pipeline_url"] == integration["verification"]["pipeline_url"],
+                        "integration verification pipeline mismatch")
             result["epic_heads"][node["epic"]] = integration["epic_sha"]
             node["integration"] = integration
         if operation == "review":
             node["review_url"] = receipt["report_url"]
-        if operation == "docs":
+        if operation == "docs" or (v2 and operation == "implementation" and node["kind"] == "epic"):
             result["epic_heads"][target] = sha
         node["candidate_sha"] = sha
         node["phase_index"] += 1
-        phases = TICKET_PHASES if node["kind"] == "ticket" else EPIC_PHASES
-        if node["phase_index"] == len(phases):
+        if node["phase_index"] == len(phases(node)):
             node["status"] = "done"
     result["events"].append(deepcopy(receipt))
     result["active"] = None
+    return result
+
+
+def repair(run, target):
+    """Reopen only an evidenced in-scope defect; never widen authority or reset budgets."""
+    next_actions(run)
+    require(run["version"] == 2, "legacy runs require reconciled resume, not an implicit upgrade")
+    require(run["active"] is None and run["actions"] < MAX_ACTIONS, "active work or action budget exhausted")
+    node = run["nodes"][target]
+    require(node["status"] == "blocked" and node.get("blocker_kind") == "defect",
+            "only actionable code/test/AC defects permit automatic repair")
+    require(node["repairs"] < MAX_REPAIRS, "repair budget exhausted; persist checkpoint")
+    result = deepcopy(run)
+    node = result["nodes"][target]
+    node.update(status="pending", reason="", repairs=node["repairs"] + 1,
+                phase_index=phases(node).index("implementation"), repair_from_sha=node["candidate_sha"])
+    for key in ("verification", "verification_url", "review_url", "integration", "blocker_kind"):
+        node.pop(key, None)
+    result["events"].append({"repair": target})
     return result
 
 
@@ -200,7 +360,9 @@ def verify_journal(run):
     require(isinstance(run["events"], list) and len(run["events"]) <= MAX_ACTIONS * 2,
             "invalid journal history size")
     for event in run["events"]:
-        if set(event) == {"retry", "observation_url"}:
+        if set(event) == {"repair"}:
+            expected = repair(expected, event["repair"])
+        elif set(event) == {"retry", "observation_url"}:
             expected = retry(expected, event["retry"], event["observation_url"])
         else:
             expected = record(claim(expected, event["target"]), event)
@@ -254,7 +416,7 @@ def save_json(path, value):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("init", "next", "claim", "record", "retry"))
+    parser.add_argument("action", choices=("init", "next", "claim", "record", "retry", "repair"))
     parser.add_argument("journal", type=Path)
     parser.add_argument("input", nargs="?", help="request/receipt path, or target ID")
     parser.add_argument("--observation-url")
@@ -273,10 +435,12 @@ def main():
                     run = record(run, read_json(Path(args.input)))
                 elif args.action == "retry":
                     run = retry(run, args.input, args.observation_url or "")
+                elif args.action == "repair":
+                    run = repair(run, args.input)
             if args.action != "next":
                 save_json(path, run)
             print(json.dumps(next_actions(run), indent=2))
-    except (Invalid, RoutingError, OSError, ValueError, KeyError, TypeError, IndexError) as exc:
+    except (Invalid, RoutingError, OSError, ValueError, KeyError, TypeError, IndexError, AttributeError) as exc:
         print(json.dumps({"status": "blocked", "error": str(exc)}))
         return 2
     return 0

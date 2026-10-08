@@ -40,3 +40,10 @@ tests solely because another review layer exists.
 Report AC/scenario verdicts, wiring findings, current evidence and readiness. Missing
 required evidence or unfinished tickets blocks epic closure. Record a separate
 epic-review report even if the same model performed ticket review.
+
+In version-2 integrated-epic mode, bind verification_url to the saved full-epic
+verification at this SHA. Publish actionable scoped defects as structured findings
+with blocker_kind=defect, per docs/development/single-shot-development.md. The
+supervisor may repair the assembled epic and return after docs and fresh full-epic
+checks. Recheck the findings independently; never reuse a stale pass. This repair
+contract does not apply to design-readiness mode or unresolved product decisions.
