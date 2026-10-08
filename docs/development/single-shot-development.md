@@ -1,14 +1,16 @@
 # CTX single-shot Development
 
-Status: published as CTX Development v1.2.0 on 2026-10-08 UTC (October 7 Eastern),
-after repository helpers landed through MR !6. Full saved YAML readback matched
-the tested source except for GitLab trimming its final newline. Private visibility,
-enabled state, service account and triggers were preserved. No application work or
-flow run was dispatched; native execution still requires validation.
+Status: **CTX Development v1.3.0 published and enabled on 2026-10-08**, including
+the version-2 repair/verification protocol below. [MR !12](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/12)
+merged at `04a57ddb`; [pipeline 2927553756](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2927553756)
+passed. All 120 local workflow tests and staged/outgoing secret scans passed.
+Full saved YAML matched the tested source, with only its final newline trimmed.
+Private visibility, enabled state, service account and active triggers were preserved.
+Source and saved hashes are recorded in `.gitlab/ctx/catalog.json`.
 
-The current repository candidate adds the **version-2 repair/verification protocol**
-below. It is not yet published to the catalog or live-tested. Published v1.2.0
-does not acquire this behavior merely because repository instructions change.
+No application work or flow run was dispatched by publication. Native repair-loop
+execution remains unverified and needs real application adapters. This replaces
+v1.2.0, originally published after MR !6; old sessions/journals retain their own rules.
 
 GitLab rejected the initial `on_delegation_error` UI logging event. The published
 definition removes that unsupported event, and the local validator now rejects
@@ -301,8 +303,8 @@ action; it never reports completion. Keep processing unrelated ready targets.
    Preserve the old chain at `.gitlab/duo/legacy/ctx-development-single-ticket.yml`.
 2. Validate locally and exercise the journal fixtures, including unrelated-work
    continuation, dependency blocking, stale/replayed receipts, narrow scope and limits.
-3. Catalog publication/readback completed for v1.2.0. GitLab accepted managed agents
-   and the delegation bound; this is schema acceptance, not execution evidence.
+3. Catalog publication/readback completed for v1.3.0 after MR !12. GitLab accepted
+   the full definition; this is schema acceptance, not execution evidence.
 4. Run a read-only/dry-run session to confirm actual supervisor availability and
    resolved scope. Configuration tests are not evidence that delegation ran live.
 5. Use an explicitly authorized foundation slice for the first real execution.

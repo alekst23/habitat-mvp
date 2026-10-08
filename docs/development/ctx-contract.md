@@ -194,8 +194,9 @@ See [the receipt and repair protocol](single-shot-development.md#version-2-verif
 Decision, missing evidence/infrastructure, permission and conflict blockers still
 require reconciliation; no policy change or uncertain write becomes a code fix.
 Limits never reset per commit. New commits invalidate candidate evidence; rerun
-applicable checks and rebuild/rescan artifacts. The repair candidate is not yet
-published/live-validated; existing version-1 journals retain their historical rules.
+applicable checks and rebuild/rescan artifacts. Development v1.3.0 is published with
+full YAML readback, but the repair loop is not yet live-validated; existing version-1
+journals retain their historical rules.
 
 ### Publishing GitLab Markdown
 
@@ -277,7 +278,7 @@ revision is a bounded supervisor that advances explicitly scoped tickets/epics w
 one invocation. Its 60-action progress journal (64-delegation engine cap) preserves
 ordering, report identity and candidate-SHA checks. It does not certify external
 evidence or implement a distributed lease. Native parallel delegation is unverified;
-this revision explicitly uses a serial fallback. Development v1.2.0 is published
+this revision explicitly uses a serial fallback. Development v1.3.0 is published
 with full catalog readback; actual native execution remains unverified. See
 [single-shot Development](single-shot-development.md). No recursive flow starts occur.
 Ticket review and whole-epic review are separate

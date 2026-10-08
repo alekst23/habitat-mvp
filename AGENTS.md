@@ -33,10 +33,10 @@ advances all explicitly scoped work through delegated SDLC phases, with an expli
 serial fallback (native parallel execution is unverified). Its progress journal
 does not grant authority or attest evidence; remote review/CI/ancestry must still
 be checked. Preserve ticket-only scope, respect active runs, and keep durable
-checkpoints. Development v1.2.0 is published; full catalog YAML readback passed.
-Its observed execution stopped at preflight; delegated ticket processing remains
-unverified. The local design-repair and bounded development-repair revision is not
-yet published. New runs use the version-2 journal: pin the exact AC manifest, repair
+checkpoints. Development v1.3.0 is published and enabled; full catalog YAML readback
+passed after MR !12 merged. The historical v1.2.0 run stopped at preflight; delegated
+ticket processing and the repair loop still need live validation. New runs use the
+version-2 journal: pin the exact AC manifest, repair
 actionable defects up to three times per target, and require fresh application/AC
 verification plus independent review after every fix. Missing infrastructure, intent
 or authority is still a blocker; no automatic flow retriggers or policy weakening.
@@ -59,8 +59,9 @@ requirements. Generated E-numbered plans and design handoffs are checked by
 scripts/ctx_design.py in CI. Structural checks do not replace independent semantic
 design review. Chat Design owns typed contract documentation; Development's design
 worker creates/reuses executable contract stubs and minimal port fakes before tests.
-CTX Design v1.3.0 is published with full prompt readback. The revised Planning prompt
-and Development flow remain publication candidates; do not infer activation from merge.
+CTX Design and Development v1.3.0 are published with full prompt/YAML readback.
+The revised Planning prompt remains a publication candidate; do not infer activation
+or successful execution merely from merge or catalog acceptance.
 
 Before publishing issue/MR descriptions or comments, follow "Publishing GitLab
 Markdown" in `docs/development/ctx-contract.md`: use real multiline Markdown,

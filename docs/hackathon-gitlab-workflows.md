@@ -128,11 +128,11 @@ The earlier planning flow ran live; the agent's approved artifact publication st
 needs live validation. The local Development revision is a bounded single-shot
 supervisor across scoped tickets/epics, with an explicit serial fallback. Its
 progress journal enforces sequencing/identity, not external evidence or a remote
-lease. The supervisor is published as Development v1.2.0 with full YAML readback;
+lease. The supervisor is published as Development v1.3.0 with full YAML readback;
 actual native execution remains unverified.
-The current unpublished candidate adds bounded in-session code/test/AC repair with
+The published v1.3.0 adds bounded in-session code/test/AC repair with
 fresh evidence and independent review after every fix, for tickets and assembled
-epics. It must be published and live-tested before claiming this as demonstrated
+epics. It must still be live-tested before claiming this as demonstrated
 Create/Verify coverage; no additional flow or bot per repair is required.
 True parallel dispatch and application/deployment adapters remain gaps. See
 [single-shot implementation](development/single-shot-development.md).
