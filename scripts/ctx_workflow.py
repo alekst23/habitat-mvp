@@ -19,6 +19,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_FLOW_BYTES = 40 * 1024  # GitLab AI Catalog's entered flow-YAML limit.
+UI_LOG_EVENTS = {"on_agent_final_answer", "on_tool_execution_success", "on_tool_execution_failed",
+                 "on_delegation", "on_delegation_returns"}
 STEPS = ("verify", "acceptance", "source-security", "package", "artifact-security", "configure")
 IDENTITY_KEYS = ("project_id", "source_sha", "pipeline_id")
 SHA = re.compile(r"[0-9a-f]{40}")
@@ -223,6 +225,9 @@ def validate_flow(flow, registration):
                  {"subagents", "max_delegations"} if supervisor else set())
         require(set(component) == {"name", "type", "prompt_id", "inputs", "toolset",
                                    "ui_log_events"} | extra, "unsupported component fields")
+        events = component["ui_log_events"]
+        require(isinstance(events, list) and all(isinstance(e, str) and e in UI_LOG_EVENTS for e in events)
+                and len(events) == len(set(events)), "unsupported or duplicate UI log events")
         if component["name"] in managed:
             require(bool(component["description"]), "managed agent description required")
         elif supervisor:

@@ -265,8 +265,8 @@ revision is a bounded supervisor that advances explicitly scoped tickets/epics w
 one invocation. Its 60-action progress journal (64-delegation engine cap) preserves
 ordering, report identity and candidate-SHA checks. It does not certify external
 evidence or implement a distributed lease. Native parallel delegation is unverified;
-this revision explicitly uses a serial fallback. The live catalog is still the old
-single-ticket version until publication and validation. See
+this revision explicitly uses a serial fallback. Development v1.2.0 is published
+with full catalog readback; actual native execution remains unverified. See
 [single-shot Development](single-shot-development.md). No recursive flow starts occur.
 Ticket review and whole-epic review are separate
 read-only agent components. Review is tool-separated, not a GitLab approval grant.

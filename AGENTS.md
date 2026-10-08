@@ -33,7 +33,8 @@ advances all explicitly scoped work through delegated SDLC phases, with an expli
 serial fallback (native parallel execution is unverified). Its progress journal
 does not grant authority or attest evidence; remote review/CI/ancestry must still
 be checked. Preserve ticket-only scope, respect active runs, and keep durable
-checkpoints. This local revision is not yet the published catalog version.
+checkpoints. This revision is published as Development v1.2.0; full catalog YAML
+readback passed, but native execution and actual ticket processing remain unverified.
 
 CTX Planning and CTX Design prompts/registration records live in
 `.gitlab/duo/agents/`. The order is Planning -> Design -> Development. Planning

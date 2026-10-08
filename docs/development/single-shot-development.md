@@ -1,9 +1,15 @@
 # CTX single-shot Development
 
-Status: local implementation, not yet published or live-tested. The registered
-Development flow is still the previous version. Repository scripts must be available
-on the execution revision before publishing this definition. No application work
-was dispatched while developing this workflow.
+Status: published as CTX Development v1.2.0 on 2026-10-08 UTC (October 7 Eastern),
+after repository helpers landed through MR !6. Full saved YAML readback matched
+the tested source except for GitLab trimming its final newline. Private visibility,
+enabled state, service account and triggers were preserved. No application work or
+flow run was dispatched; native execution still requires validation.
+
+GitLab rejected the initial `on_delegation_error` UI logging event. The published
+definition removes that unsupported event, and the local validator now rejects
+unsupported/duplicate event names. This compatibility correction is included in
+MR !7; it does not change the runtime helpers already merged by !6.
 
 ## What is preserved from the original process
 
@@ -165,8 +171,8 @@ the session successfully without asserting the implementation is complete.
    Preserve the old chain at `.gitlab/duo/legacy/ctx-development-single-ticket.yml`.
 2. Validate locally and exercise the journal fixtures, including unrelated-work
    continuation, dependency blocking, stale/replayed receipts, narrow scope and limits.
-3. Publish a new version of the existing Development catalog item, not a new bot.
-   Verify GitLab accepts managed agents and the bound, and read back the saved YAML.
+3. Catalog publication/readback completed for v1.2.0. GitLab accepted managed agents
+   and the delegation bound; this is schema acceptance, not execution evidence.
 4. Run a read-only/dry-run session to confirm actual supervisor availability and
    resolved scope. Configuration tests are not evidence that delegation ran live.
 5. Use an explicitly authorized foundation slice for the first real execution.
@@ -177,4 +183,4 @@ Example human invocation after activation: use the existing enabled Development
 mention/flow entry point on the source issue with `ctx-epic-run epic=2`, the design
 commit/epic branch, and "advance all scoped tickets through review and integration;
 prepare the epic MR; do not merge or deploy." Do not use that example to claim the
-currently registered old flow has gained single-shot behavior.
+catalog acceptance proves successful single-shot execution.
