@@ -33,8 +33,9 @@ advances all explicitly scoped work through delegated SDLC phases, with an expli
 serial fallback (native parallel execution is unverified). Its progress journal
 does not grant authority or attest evidence; remote review/CI/ancestry must still
 be checked. Preserve ticket-only scope, respect active runs, and keep durable
-checkpoints. This revision is published as Development v1.2.0; full catalog YAML
-readback passed, but native execution and actual ticket processing remain unverified.
+checkpoints. Development v1.2.0 is published; full catalog YAML readback passed.
+Its observed execution stopped at preflight; delegated ticket processing remains
+unverified. The local design-repair revision is not yet published.
 
 CTX Planning and CTX Design prompts/registration records live in
 `.gitlab/duo/agents/`. The order is Planning -> Design -> Development. Planning
@@ -48,6 +49,13 @@ Neither chat agent has a shell: helper validation requires actual runner/human
 evidence. Pending checks do not prevent scope/design saves or design conversation,
 but must not be reported as implementation readiness. Only real scope/decomposition
 changes return to Planning; never send users there merely to save Design's work.
+
+Read docs/development/design-readiness.md for restored interview/contract/wiring
+requirements. Generated E-numbered plans and design handoffs are checked by
+scripts/ctx_design.py in CI. Structural checks do not replace independent semantic
+design review. Chat Design owns typed contract documentation; Development's design
+worker creates/reuses executable contract stubs and minimal port fakes before tests.
+The revised prompts/flow are publication candidates until catalog readback is recorded.
 
 Before publishing issue/MR descriptions or comments, follow "Publishing GitLab
 Markdown" in `docs/development/ctx-contract.md`: use real multiline Markdown,
@@ -86,6 +94,8 @@ green unit-test job. Missing/skipped/stale checks block completion. See
 The earlier planning flow ran successfully. CTX Planning now replaces that entry
 point with chat; CTX Design supports detailed design interviews. Their read-only
 chat behavior is live-tested, but approved planning writes still need a live test.
+Design saved E2 artifacts in MR !8; this repair addresses their incomplete contracts
+and inconsistent state/acceptance mappings, rather than claiming save alone suffices.
 Revised development/delivery definitions have separate publication/live-validation
 status in the implementation guide. Local workflow validation, dependency-wave
 planning and fail-closed evidence adapters are provided.

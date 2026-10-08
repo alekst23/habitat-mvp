@@ -7,23 +7,65 @@
   "project_id": 87329027,
   "project_path": "gitlab-ai-hackathon/transcend-october-2026/43066631/showcase",
   "system_prompt_file": "ctx-planning.md",
-  "system_prompt_sha256": "f39aac120985c68dd692cf93fe1040f5b24b5393e953e6b44c1c7bd1d4526ba5",
+  "system_prompt_sha256": "62288c63232b49b3d74503d33f17ad9d1e369e14922c4fdd470d14f02c3d3fe9",
   "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016257",
   "catalog_version": "1.1.0",
   "enabled_in_project": true,
-  "operations": ["ctx-project-design", "ctx-issue-new", "ctx-issue-triage", "ctx-epic-new", "ctx-ticket-new"],
-  "artifact_ownership": ["scope", "epic", "tickets", "dependencies", "plan_state"],
+  "operations": [
+    "ctx-project-design",
+    "ctx-issue-new",
+    "ctx-issue-triage",
+    "ctx-epic-new",
+    "ctx-ticket-new"
+  ],
+  "artifact_ownership": [
+    "scope",
+    "epic",
+    "tickets",
+    "dependencies",
+    "plan_state"
+  ],
   "next_entrypoint": "design",
-  "tools_ui_labels": ["Get Project", "Get Commit", "Get Repository Files", "List Repository Tree", "Get Issue", "Get Issue Note", "List Issue Notes", "List Issues", "Get Merge Request", "Create Issue Note", "List Branches", "List Merge Requests", "Get Pipeline", "Get Job Logs", "Create Issue", "Update Issue", "Create Branch", "Create Commit", "Create Merge Request"],
-  "gitlab_mcp_beta_tools_ui_labels": ["Get Project", "Get Commit", "List Repository Tree", "Get Merge Request", "List Branches", "List Merge Requests", "Get Pipeline"],
+  "tools_ui_labels": [
+    "Get Project",
+    "Get Commit",
+    "Get Repository Files",
+    "List Repository Tree",
+    "Get Issue",
+    "Get Issue Note",
+    "List Issue Notes",
+    "List Issues",
+    "Get Merge Request",
+    "Create Issue Note",
+    "List Branches",
+    "List Merge Requests",
+    "Get Pipeline",
+    "Get Job Logs",
+    "Create Issue",
+    "Update Issue",
+    "Create Branch",
+    "Create Commit",
+    "Create Merge Request"
+  ],
+  "gitlab_mcp_beta_tools_ui_labels": [
+    "Get Project",
+    "Get Commit",
+    "List Repository Tree",
+    "Get Merge Request",
+    "List Branches",
+    "List Merge Requests",
+    "Get Pipeline"
+  ],
   "external_mcp_servers": [],
   "trigger": "Duo Chat agent picker; no mention/assignment/flow trigger",
   "supersedes_flow_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016235",
   "superseded_flow_status": "Showcase trigger turned off and flow disabled 2026-10-07; retained catalog definition/history; enabled replacement smoke-tested first",
-  "publication_status": "v1.1.0 published 2026-10-07: scope/tickets first, then CTX Design; full saved prompt matched; 19 tools, private visibility, enablement and updated chat-picker description verified",
+  "publication_status": "Design-contract repair is a repository candidate, not yet published. catalog_version and published_system_prompt_sha256 identify the last published registration; merge/review repository procedures before catalog update.",
   "verification": {
     "chat_interview_smoke": "passed 2026-10-07; issue 10, existing epic/branch and planning instructions read; 12 read actions, one scope question with options; no writes or flow starts; runner validation explicitly pending",
     "approved_plan_publication": "not exercised; no product plan changes authorized by setup",
     "ownership_smoke": "passed 2026-10-07 on v1.1.0 in fresh Duo Chat: scope is sufficient before detailed specs; publishes epic/tickets/dependencies/state with Design pending; hands off to CTX Design to save specs; no writes or jobs requested/observed"
-  }
+  },
+  "published_system_prompt_sha256": "f39aac120985c68dd692cf93fe1040f5b24b5393e953e6b44c1c7bd1d4526ba5",
+  "pending_catalog_version": "1.2.0"
 }

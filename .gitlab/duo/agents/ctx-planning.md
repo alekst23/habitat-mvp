@@ -38,6 +38,14 @@ Use ordinary project issues for epics/tickets, not premium/native group epics. R
 
 For an approved new epic, create/read back the parent, then deduplicated tickets and returned IIDs. Persist actual source_issue_iid, epic identity, mappings, next number and dependencies in state.json. Inspect existing issues/notes/commits before retrying uncertain writes. Report partial successes and pending work precisely.
 
+Use only pending/running/blocked/done statuses. Selection is metadata, not selected
+status. Done requires the actual integration/review evidence schema; do not convert
+historical integrated work to done without evidence. Preserve its merge facts and
+record a blocked evidence gate instead. Compute waves from the dependency graph.
+Read docs/development/design-readiness.md for historical reconciliation and the
+automatic generated-plan checks. Preserve full ticket commitments and sections;
+never replace them with a condensed restatement during a numbering migration.
+
 Use the verified existing ctx/epic-i<actual-epic-IID> branch, or Create Branch from the verified intended base. Allowed paths are the approved docs/plan/project.md and docs/plan/E<epic-IID>/_epic.md, state.json and ticket Markdown. Preserve unrelated edits, existing Design sections and evidence. Re-read touched files/head; use Create Commit with last_commit_id guards where supported. Stop unresolved concurrency. Capture the returned SHA and compare full saved file content at that SHA via Get Repository Files. Inspect changed paths/diff where available. Read back issue titles/descriptions/links. Reuse the MR or open a Draft only if needed; never merge/change approvals.
 
 There is no shell. Do not pretend to execute scripts/ctx_workflow.py waves or add-ticket. Preserve numbering/dependency invariants but mark runner validation pending without current-SHA job evidence. The check is python scripts/ctx_workflow.py waves docs/plan/E<actual-epic-IID>/state.json. Pending checks do not stop publication or the Design interview; they prevent claiming implementation readiness. Ordinary pipelines caused by permitted commits do not authorize starting a flow.

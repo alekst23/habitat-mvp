@@ -89,6 +89,12 @@ authority to expand credentials, targets, spending, or permitted actions.
 
 ## Artifacts and handoffs
 
+The detailed [design handoff requirements](design-readiness.md) are normative.
+Preserve the ordered interview, typed contracts, process topology, configuration,
+integration smoke and independent semantic review. Chat Design saves documentation;
+Development prepares typed stubs before tests. CI validates generated handoffs with
+scripts/ctx_design.py; a structural pass never grants implementation authority.
+
 Preserve the original hierarchy:
 
 - `docs/plan/project.md`: objective, active work, backlog, blockers, decisions, handoff.

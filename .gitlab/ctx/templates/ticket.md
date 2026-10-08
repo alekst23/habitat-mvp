@@ -19,11 +19,23 @@ Design pending until CTX Design saves the solution approach, contracts, boundari
 technical.md pointer and verified design commit reference. Pending design does not
 block ticket creation, but it does block implementation.
 
-## Tests before implementation
+## Solution approach
+
+Behavioral slice, touched layers, proposed/existing paths, verified reuse and sequence.
+
+## Contracts
+
+Named technical.md definitions, owner/consumers, configuration and wiring impact.
+Development prepares typed stubs before tests; Chat Design saves definitions only.
+
+## Verification
 
 AC-to-test mapping; existing tests reused and why each new test is necessary.
 Write the absolute minimum meaningful tests, using one test for multiple ACs where
 appropriate. Small fixtures, direct assertions, no duplicated layers or quotas.
+
+## Tests before implementation
+
 Command, collected count, expected assertion failure, red-test SHA and evidence URL.
 Collection/import errors do not satisfy this gate. For unchanged behavior or docs,
 record why existing coverage or inspection is sufficient rather than adding ritual tests.

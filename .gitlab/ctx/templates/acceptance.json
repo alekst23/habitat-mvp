@@ -4,14 +4,14 @@
   "criteria": [
     {
       "id": "E2-1.AC1",
-      "scenario": "S1",
+      "scenario": "F1-S1",
       "statement": "Replace with the agreed observable acceptance criterion.",
       "ui": false,
       "methods": ["test"]
     },
     {
       "id": "E2-1.AC2",
-      "scenario": "S1",
+      "scenario": "F1-S1",
       "statement": "Replace with the owner-visible outcome of the same behavior.",
       "ui": true,
       "methods": ["browser"]

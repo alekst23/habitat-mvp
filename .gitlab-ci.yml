@@ -34,6 +34,15 @@ ctx:workflow-tests:
   script:
     - python -m unittest discover -s tests/workflow -v
 
+ctx:design-validate:
+  stage: workflow
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CTX_WORKFLOW_CHECKS == "1"'
+  script:
+    - python scripts/ctx_design.py --all
+
 # Application and delivery checks are explicitly opt-in while Habitat has no code.
 # This include is a fail-closed adapter contract, NOT completed stage coverage.
 include:
