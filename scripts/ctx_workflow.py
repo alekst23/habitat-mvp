@@ -379,8 +379,18 @@ def validate_repository(root=ROOT):
     require(config["network_policy"]["allow_all_unix_sockets"] is False,
             "unrestricted unix sockets are not allowed")
     ci = read_yaml(root / ".gitlab-ci.yml")
+    for name in ("ctx:workflow-validate", "ctx:workflow-tests"):
+        rules = ci[name]["rules"]
+        require(rules[:2] == [
+            {"if": '$CI_PIPELINE_SOURCE == "merge_request_event"'},
+            {"if": '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'},
+        ], "workflow checks must run on MRs/default branch without opt-in")
+        require(ci[name].get("allow_failure", False) is False, "workflow checks must block")
     jobs = read_yaml(root / ".gitlab/ci/delivery.yml")
     require(jobs[".ctx-check"]["allow_failure"] is False, "checks must block on failure")
+    require(jobs[".ctx-check"]["rules"] == [
+        {"if": '$CI_PIPELINE_SOURCE == "merge_request_event"'}, {"if": '$CI_COMMIT_BRANCH'},
+    ], "opted-in application checks must run in MR and branch pipelines")
     for i, step in enumerate(STEPS):
         job = jobs[f"ctx:{step}"]
         require(job["stage"] in ci["stages"], "CI stage missing")
@@ -396,6 +406,14 @@ def validate_repository(root=ROOT):
     browser = read_yaml(root / ".gitlab/ci/browser.yml")["ctx:browser"]
     require(browser["allow_failure"] is False and browser["stage"] == "verify",
             "browser execution must be a blocking verification job")
+    readiness = jobs["ctx:delivery-readiness"]
+    require(readiness["stage"] in ci["stages"] and readiness["extends"] == ".ctx-check" and
+            readiness["when"] == "always" and
+            readiness["rules"] == [{"if": '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'}] and
+            readiness["script"] == ["python scripts/ctx_delivery.py --phase candidate"] and
+            set(readiness["needs"]) == {f"ctx:{s}" for s in STEPS} and
+            "environment" not in readiness and readiness.get("allow_failure", False) is False,
+            "delivery readiness must reconcile all CI evidence without deployment authority")
     return {"status": "passed", "flows": len(actual), "skills": len(operations),
             "scope": "local CTX contract validation; GitLab catalog/CI lint still required"}
 

@@ -328,11 +328,13 @@ The old planning flow is retired; do not reactivate it for numbering changes.
 
 ## Application command and evidence contract
 
-Workflow validation/self-tests remain opt-in with `CTX_WORKFLOW_CHECKS=1`. Set
+Workflow validation/self-tests run automatically for MRs and the default branch;
+`CTX_WORKFLOW_CHECKS=1` also enables them on other branches. Set
 `CTX_APPLICATION_CHECKS=1` in a pipeline to include `.gitlab/ci/delivery.yml`:
 
 ```text
 verify + browser (when required) → acceptance → source-security → package → artifact-security → configure
+    → delivery-readiness (default-branch release pipeline only)
 ```
 
 The `acceptance` command is implemented. Application command entries in
@@ -382,6 +384,14 @@ coverage. A malicious adapter can invent evidence. Trust comes from independentl
 reviewed adapters, protected CI definitions, actual job results and access controls.
 Never give a task agent deployment credentials or permission to weaken those controls.
 
+The new `ctx:delivery-readiness` job collects these reports on the default branch,
+including failures, and writes `.ctx/reports/delivery-readiness.json`. It checks
+the candidate identity, design/merge/governance receipts and all prerequisite
+evidence. It also exposes all nine stage statuses without claiming that configuration
+validation applied settings or that a verified package was deployed. The checker
+supports later staging/promotion/production receipts but does not implement their
+executors or provide approval authority. See [delivery readiness](delivery-readiness.md).
+
 ## GitLab activation checklist
 
 The earlier empty-repository/credits observation is superseded by the successful
@@ -407,7 +417,8 @@ catalog publication does not merge those files into the checkout used by agents.
 
 1. Review and publish this revision, including `skills/`, templates and CI helpers.
    Preserve the existing numbering migration and remote history.
-2. Run GitLab CI lint and set `CTX_WORKFLOW_CHECKS=1` for a workflow-check pipeline.
+2. Run GitLab CI lint and verify automatic MR/default-branch workflow checks.
+   For a separate branch pipeline, set `CTX_WORKFLOW_CHECKS=1`.
    Static checks are not GitLab server-side schema validation.
 3. Keep `.gitlab/duo/agent-config.yml` on default; GitLab reads that version. It is
    currently a Python environment, not a preinstalled browser environment. The
