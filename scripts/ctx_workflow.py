@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+MAX_FLOW_BYTES = 40 * 1024  # GitLab AI Catalog's entered flow-YAML limit.
 STEPS = ("verify", "acceptance", "source-security", "package", "artifact-security", "configure")
 IDENTITY_KEYS = ("project_id", "source_sha", "pipeline_id")
 SHA = re.compile(r"[0-9a-f]{40}")
@@ -202,8 +203,15 @@ def validate_flow(flow, registration):
     agents = [c for c in components if c["type"] == "AgentComponent"]
     agent_names = {c["name"] for c in agents}
     declared = registration.get("terminal_tokens")
-    require(isinstance(declared, dict) and set(declared) == agent_names,
+    managed = registration.get("managed_terminal_tokens", {})
+    require(isinstance(declared, dict) and isinstance(managed, dict) and
+            not set(declared) & set(managed) and set(declared) | set(managed) == agent_names,
             "catalog terminal tokens must cover every agent component exactly")
+    supervisor = bool(managed)
+    if supervisor:
+        require(registration.get("mode") == "bounded-supervisor" and set(declared) == {"coordinate"},
+                "unsupported supervisor ownership")
+        require(registration.get("max_delegations") == 64, "supervisor delegation budget required")
     helpers = [c for c in components if c["type"] != "AgentComponent"]
     expected_helpers = [c for name, tokens in declared.items()
                         for c in routing_adapter_components(name, tokens)]
@@ -211,8 +219,19 @@ def validate_flow(flow, registration):
     require(len(prompts) == len(flow["prompts"]), "duplicate prompt id")
     used_prompts = set()
     for component in agents:
+        extra = ({"description"} if component["name"] in managed else
+                 {"subagents", "max_delegations"} if supervisor else set())
         require(set(component) == {"name", "type", "prompt_id", "inputs", "toolset",
-                                   "ui_log_events"}, "unsupported component fields")
+                                   "ui_log_events"} | extra, "unsupported component fields")
+        if component["name"] in managed:
+            require(bool(component["description"]), "managed agent description required")
+        elif supervisor:
+            children = component["subagents"]
+            require(isinstance(children, list) and children and
+                    all(isinstance(c, dict) and set(c) == {"name"} for c in children) and
+                    len(children) == len(managed) and {c["name"] for c in children} == set(managed),
+                    "supervisor must own each managed agent exactly once")
+            require(component["max_delegations"] == 64, "unbounded supervisor delegation")
         require(component["type"] == "AgentComponent", "unsupported component type")
         require(component["prompt_id"] in prompts, "missing prompt reference")
         used_prompts.add(component["prompt_id"])
@@ -234,6 +253,14 @@ def validate_flow(flow, registration):
         variables = set(re.findall(r"{{\s*(\w+)\s*}}", template["user"]))
         require(variables == {"goal", "project_id"}, "prompt/input mismatch")
         require("{{" not in template["system"], "undeclared system template variable")
+        if component["name"] in managed:
+            require(documented_terminal_tokens(template["system"], component["name"]) ==
+                    terminal_token_set(managed[component["name"]], component["name"]),
+                    "managed terminal tokens differ from catalog")
+        elif supervisor:
+            require(all(term in template["system"] for term in
+                        ("delegate_task", "final_response_tool", "scripts/ctx_development.py")),
+                    "supervisor execution contract missing")
         tools = component["toolset"]
         require(isinstance(tools, list) and set(tools) <= TOOLS, "unknown tool")
         require(len(tools) == len(set(tools)), "duplicate tool")
@@ -250,7 +277,8 @@ def validate_flow(flow, registration):
     for router in flow["routers"]:
         source = router["from"]
         require(source in names and source not in graph, "unknown/duplicate router source")
-        if source in agent_names:
+        require(source not in managed, "managed agents must return to their supervisor, not a router")
+        if source in declared:
             require(router == {"from": source, "to": source + "_routing_prepare"},
                     "agent must route through normalization")
             graph[source] = {router["to"]}
@@ -278,11 +306,11 @@ def validate_flow(flow, registration):
                 require(routers.get(expected_router["from"]) == expected_router,
                         "routing adapter gate differs from contract")
         graph[source] = set(routes.values())
-    require(set(graph) == set(names), "component without router")
+    require(set(graph) == set(names) - set(managed), "component without router")
     require(helpers == expected_helpers, "routing adapters differ from pinned contract; run sync-routing")
     require(set(flow["flow"]) == {"entry_point"}, "unsupported flow entry fields")
     entry = flow["flow"]["entry_point"]
-    require(entry in names, "missing entry point")
+    require(entry in declared, "missing entry point")
     visited, active = set(), set()
 
     def visit(name):
@@ -298,6 +326,8 @@ def validate_flow(flow, registration):
         visited.add(name)
 
     visit(entry)
+    if supervisor and "coordinate" in visited:
+        visited.update(managed)
     require(visited == set(names), "unreachable component")
 
 
@@ -323,6 +353,8 @@ def validate_repository(root=ROOT):
     skill_texts = {filename: (root / filename).read_text()
                   for filename in catalog["skills"].values() if (root / filename).is_file()}
     for filename, registration in catalog["flows"].items():
+        require((root / filename).stat().st_size <= MAX_FLOW_BYTES,
+                f"flow exceeds GitLab's 40 KiB YAML limit: {filename}")
         flow = read_yaml(root / filename)
         validate_flow(flow, registration)
         validate_skill_terminal_tokens(flow, skill_texts)

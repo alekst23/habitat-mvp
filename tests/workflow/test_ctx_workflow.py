@@ -50,9 +50,9 @@ def reports():
 
 class FlowTests(unittest.TestCase):
     def setUp(self):
-        catalog = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())
-        path = ".gitlab/duo/flows/ctx-development.yml"
-        self.registration = catalog["flows"][path]
+        # Preserve the original routing-regression tests against the retained chain.
+        path = ".gitlab/duo/legacy/ctx-development-single-ticket.yml"
+        self.registration = json.loads((ROOT / "tests/workflow/fixtures/single-ticket-registration.json").read_text())
         self.flow = ctx.read_yaml(ROOT / path)
 
     def route_response(self, source, response, *, stale=False, tampered=False, write_error=False):
@@ -138,8 +138,9 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(ctx.validate_repository()["flows"], 3)
         catalog_path = Path(".gitlab/ctx/catalog.json")
         catalog = json.loads((ROOT / catalog_path).read_text())
-        tokens = {token for flow in catalog["flows"].values()
-                  for allowed in flow["terminal_tokens"].values() for token in allowed}
+        tokens = {token for flow in [*catalog["flows"].values(), self.registration]
+                  for allowed in {**flow["terminal_tokens"], **flow.get("managed_terminal_tokens", {})}.values()
+                  for token in allowed}
         self.assertEqual(tokens, routing.TOKENS)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

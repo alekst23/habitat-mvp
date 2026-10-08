@@ -11,4 +11,6 @@ allows and rerun affected verification before claiming integration.
 Run sufficient integration checks on the resulting epic SHA. Record source and
 integration SHAs, passing pipeline and review links in state.json before marking
 done. A ticket MR alone is not completion. Partial work cannot unlock dependents.
-Persist the next ready ticket handoff using the same ctx-development entry point.
+Return the verified integration receipt to the supervisor so it selects the next
+ready ticket in the SAME invocation. Only a real blocker/budget boundary requires
+a durable resume handoff. Do not let an integration token certify whole-epic completion.

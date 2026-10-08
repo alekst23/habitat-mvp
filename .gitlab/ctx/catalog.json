@@ -1,7 +1,27 @@
 {
   "version": 2,
+  "entrypoints": {
+    "planning": {
+      "kind": "agent",
+      "registration": ".gitlab/duo/agents/ctx-planning.json"
+    },
+    "design": {
+      "kind": "agent",
+      "registration": ".gitlab/duo/agents/ctx-design.json"
+    },
+    "development": {
+      "kind": "flow",
+      "definition": ".gitlab/duo/flows/ctx-development.yml"
+    },
+    "delivery": {
+      "kind": "flow",
+      "definition": ".gitlab/duo/flows/ctx-delivery.yml"
+    }
+  },
   "flows": {
     ".gitlab/duo/flows/ctx-planning.yml": {
+      "status": "retired",
+      "replaced_by": ".gitlab/duo/agents/ctx-planning.json",
       "operations": [
         "ctx-project-design",
         "ctx-issue-new",
@@ -13,9 +33,19 @@
       ],
       "read_only_components": [],
       "terminal_tokens": {
-        "route": ["ready", "intake_done", "blocked"],
-        "specification": ["ready", "blocked"],
-        "decomposition": ["ready", "blocked"]
+        "route": [
+          "ready",
+          "intake_done",
+          "blocked"
+        ],
+        "specification": [
+          "ready",
+          "blocked"
+        ],
+        "decomposition": [
+          "ready",
+          "blocked"
+        ]
       }
     },
     ".gitlab/duo/flows/ctx-development.yml": {
@@ -43,15 +73,54 @@
         "epic_review"
       ],
       "terminal_tokens": {
-        "coordinate": ["design", "tests", "implementation", "browser", "integrate", "epic", "checkpoint", "blocked"],
-        "design": ["ready", "blocked"],
-        "tests": ["ready", "blocked"],
-        "implementation": ["ready", "blocked"],
-        "browser": ["ready", "blocked"],
-        "review": ["ready", "blocked"],
-        "integrate": ["more", "complete", "blocked"],
-        "epic_review": ["ready", "blocked"],
-        "close": ["ready", "blocked"]
+        "coordinate": [
+          "complete",
+          "checkpoint",
+          "blocked"
+        ]
+      },
+      "mode": "bounded-supervisor",
+      "max_delegations": 64,
+      "runtime_parallelism": "serial-fallback; native parallel delegation unverified",
+      "publication_status": "local implementation; catalog validation and live dry-run pending",
+      "managed_terminal_tokens": {
+        "design": [
+          "ready",
+          "blocked"
+        ],
+        "tests": [
+          "ready",
+          "blocked"
+        ],
+        "implementation": [
+          "ready",
+          "blocked"
+        ],
+        "browser": [
+          "ready",
+          "blocked"
+        ],
+        "review": [
+          "ready",
+          "blocked"
+        ],
+        "integrate": [
+          "more",
+          "complete",
+          "blocked"
+        ],
+        "epic_review": [
+          "ready",
+          "blocked"
+        ],
+        "close": [
+          "ready",
+          "blocked"
+        ],
+        "docs": [
+          "ready",
+          "blocked"
+        ]
       }
     },
     ".gitlab/duo/flows/ctx-delivery.yml": {
@@ -67,7 +136,10 @@
         "assess"
       ],
       "terminal_tokens": {
-        "assess": ["ready", "blocked"]
+        "assess": [
+          "ready",
+          "blocked"
+        ]
       }
     }
   },

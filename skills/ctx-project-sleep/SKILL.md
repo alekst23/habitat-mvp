@@ -7,6 +7,12 @@ Reconcile completed, partial, in-flight and blocked work against GitLab. Save br
 and candidate SHAs, evidence links, unresolved decisions and the next operation in
 the project/epic state and source issue. Commit state on the authorized epic branch.
 
+Persist the pinned request, full progress journal (including active/uncertain claims),
+receipts and owned-resource manifest in verified source-issue notes or committed run
+documents on the authorized branch. The runner's .ctx directory is ephemeral, not
+a durable checkpoint. Read back the saved body/identity/links before returning.
+
 Do not mark pending work complete or lose earlier failure evidence. Give the same
-ctx-development entry point and actual issue IID needed to resume. This creates no
-scheduler, background execution, cleanup of other work or automatic flow invocation.
+ctx-development entry point, actual source/epic IIDs, exact refs and saved journal
+needed to resume. This creates no scheduler or automatic flow invocation. Keep
+dirty, unmerged, active and foreign worktrees. No force or glob cleanup.

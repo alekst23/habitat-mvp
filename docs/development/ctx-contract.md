@@ -1,8 +1,10 @@
 # CTX workflow contract
 
-Status: planning has run successfully in Duo via `/flow:ctx-planning`, confirmed
-by the user. The revised three-flow implementation and shared skills need publication
-and live validation. See [implementation status](gitlab-workflow.md).
+Status: the earlier planning flow ran successfully, confirmed by the user. Planning
+now uses the CTX Planning chat agent; detailed design uses CTX Design. Their chat
+reads/interviews are live-tested. Approved planning publication and revised
+development/delivery execution need separate validation. See
+[implementation status](gitlab-workflow.md).
 
 Preserve the original development process under the `ctx-` prefix and extend it
 with six delivery operations. The nine prize stages are a coverage map over this
@@ -12,17 +14,21 @@ The [operation catalog](../hackathon-gitlab-workflows.md#ctx-operations-and-hand
 defines the preserved operations and additions. Native definitions are under
 `.gitlab/duo/flows/`, with deterministic helpers and CI jobs. The mistaken local
 stage-named Claude skills have been removed; the original global skills are untouched.
-Reusable GitLab procedures now live in `skills/ctx-*/SKILL.md` and are explicitly
-loaded by the three flow entry points, not individually registered as flows.
+Reusable GitLab procedures live in `skills/ctx-*/SKILL.md`. Planning procedures
+are loaded by the CTX Planning chat agent; development/delivery procedures remain
+in background flows. CTX Design reuses interview/design procedures in chat.
+Individual skills are not individually registered as flows. The earlier planning
+flow is retired, with its definition retained for regression tests and rollback.
 
 ## Behavior to preserve
 
 - `ctx-project-design` compares a request with existing specifications and active
   work, then routes to an update, a scoped hotfix, or new issue intake.
 - `ctx-issue-new` files a structured issue. `ctx-issue-triage` explores the project,
-  resolves behavioral intent, and produces a specification and scoped work plan.
+  resolves scope and produces a scoped work plan with open design questions.
   Filing an issue and completing triage remain different outcomes.
-- `ctx-spec-interview` resolves intent; `ctx-epic-new` decomposes work;
+- Planning's `ctx-epic-new` decomposes resolved scope before detailed design;
+  Design's `ctx-spec-interview` resolves detailed intent;
   `ctx-epic-design` writes or updates the behavioral spec and reconciles tickets,
   including integration/wiring work. Feature specs outlive individual epics.
 - `ctx-ticket-design` produces the solution approach and required contract
@@ -56,6 +62,22 @@ prompts. Preserve the intent interview: a missing decision that materially chang
 product behavior or authority becomes a question on the issue and blocks dependent
 work. Persist that state and resume after the answer arrives. Other ready work can
 continue. A runner must not wait for an interactive terminal response.
+
+CTX Planning and CTX Design provide the conversational entry points in Duo Chat.
+They reuse existing procedures but ask questions in chat and wait for replies.
+They return ordinary prose, not ambient routing tokens. The order is **Planning ->
+Design -> Development**. Planning previews/approves and saves scope, epic/tickets,
+dependencies and plan state on a non-default branch. Tickets can be Design pending.
+Design owns saving the spec, technical design, ticket Design sections and acceptance
+manifest on that epic branch, verifying every saved file at the returned commit SHA.
+A scoped design request authorizes ordinary design saves unless explicitly read-only;
+unresolved decisions stay clearly marked in saved drafts and block dependent execution.
+An issue report links committed artifacts; it is not their substitute. Return to
+Planning only for real scope/decomposition changes, never merely to save design.
+Neither starts implementation or flows. Neither has a shell: pending runner checks
+must be stated accurately but do not prevent saving scope or design. Human handoff to
+development preserves test, review and approval gates. Prompt/registration records
+are in `.gitlab/duo/agents/`; see the implementation guide for usage and limits.
 
 The supervised delivery outcome is approval of the release candidate. Any required
 repository merge approval remains a separate control, not proof that deployment
@@ -156,10 +178,11 @@ application, and a release plan from a deployment. Collectible failing tests are
 expected during test design; those acceptance tests must pass on the final
 candidate. Missing checks are blockers, not evidence of stage completion.
 
-Read back remote state after uncertain writes before repeating them. V1 has no
-automatic repair/retrigger loops: persist the stable blocker and attempted SHAs,
-then require an explicit reconciled resume. Automatic bounded retries are future
-orchestration work, not an implicit allowance per new commit. New commits invalidate
+Read back remote state after uncertain writes before repeating them. No flow
+automatically retriggers itself. The local single-shot supervisor advances ready
+work internally and permits one reconciled transient/CI-wait retry per target,
+within its action bound. Decision, evidence and conflict blockers require input;
+this is not a code-repair loop or an implicit allowance per new commit. New commits invalidate
 candidate evidence; rerun applicable checks and rebuild/rescan artifacts.
 
 ### Publishing GitLab Markdown
@@ -235,10 +258,17 @@ approval. Recovery follows the documented deployment and migration procedure.
 
 ## Implementation boundary
 
-Three native flows encode the interaction points: planning, development and delivery.
-Their 30 reusable skills preserve the finer-grained operations. Development processes
-one ticket per run, then persists a handoff; it does not automatically dispatch
-parallel sessions or retrigger itself. Ticket review and whole-epic review are separate
+Two chat agents cover planning and interactive design; two background flows cover
+development and delivery. Their 30 reusable skills preserve the finer-grained
+operations. The retired planning YAML remains regression-tested. The local Development
+revision is a bounded supervisor that advances explicitly scoped tickets/epics within
+one invocation. Its 60-action progress journal (64-delegation engine cap) preserves
+ordering, report identity and candidate-SHA checks. It does not certify external
+evidence or implement a distributed lease. Native parallel delegation is unverified;
+this revision explicitly uses a serial fallback. The live catalog is still the old
+single-ticket version until publication and validation. See
+[single-shot Development](single-shot-development.md). No recursive flow starts occur.
+Ticket review and whole-epic review are separate
 read-only agent components. Review is tool-separated, not a GitLab approval grant.
 
 Workflow CI is opt-in. The application lane includes verify, optional browser checks,
@@ -246,6 +276,6 @@ AC validation, scans, packaging and configuration readiness. Only the AC adapter
 implemented; app adapters and the browser startup/test prerequisites remain missing.
 Staging/promotion and enforced release approval are not implemented.
 
-Next, publish the revised planning version, enable development/delivery, and exercise
+Use the CTX Planning agent, verify its first approved publication, and exercise
 one foundation ticket through development. Connect delivery as the app becomes runnable.
 Local definitions/tests and the successful planning run do not establish nine-stage coverage.

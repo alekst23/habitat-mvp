@@ -1,17 +1,33 @@
 ---
 name: ctx-epic-run
-description: Reconcile an epic's dependencies and select a bounded development slice from verified remote state.
+description: Advance all authorized remaining epic tickets through dependency-aware SDLC phases and consolidation.
 ---
 
 Read state.json, current issues/MRs, session notes and branch/CI state. Resolve actual
 issue mappings and run scripts/ctx_workflow.py waves. Done dependencies require
 real ancestry, review and integration evidence. Preserve blocked and in-flight work.
 
-The initial ctx-development flow processes one ticket per run, in dependency order.
-Persist the selected ticket and branch on the source issue before component handoff.
-Use one coordinator per epic. This is a deliberate serial first version: the wave
-helper identifies parallelism but does not launch or lease independent workers.
+Preflight committed specs, per-ticket Design and acceptance manifests. Missing
+design questions block affected work; missing test stubs route to ctx-ticket-tests
+inside this invocation. Confirm actual remote ownership before dispatch. The local
+wave helper/journal is not a distributed lease; never take over another live run.
 
-After ticket closure, save the next ready work. When every ticket is integrated,
-hand off internally to ctx-epic-review. No agent-to-agent mention dispatch, automatic
-retriggering or unbounded repair loops are implemented.
+Use the bounded supervisor and progress journal described in
+docs/development/single-shot-development.md. Compute all independent ready work,
+delegate design preflight/tests/implementation/browser/review/integration, then
+reassess until scoped work is complete or a real blocker/budget requires checkpoint.
+The current native runtime uses an explicit serial fallback; do not claim parallel
+workers. Keep each ticket in its own verified worktree/branch and prevent workers
+from writing shared project state. A failed setup must never fall back to main.
+
+Publish/read back the claim before dispatch and the receipt after each delegation.
+Only independently verified integration unlocks dependents. A blocked ticket does
+not abort unrelated ready work. After closure, continue to the next ready ticket
+in this session; integrate.more is not an end signal. When all tickets are integrated,
+delegate ctx-epic-docs, obtain fresh epic-SHA checks, ctx-epic-review and ctx-epic-close.
+Do not merge to default, dispatch another flow, invent evidence or expand scope.
+
+The journal allows at most 60 actions, below the engine's 64-delegation bound, and
+one reconciled transient/CI-wait retry per target. Never repeat uncertain writes
+or hide a partial result as completion. Preserve dirty/unmerged/foreign resources;
+cleanup only clean, integrated, inactive entries in this run's ownership manifest.
