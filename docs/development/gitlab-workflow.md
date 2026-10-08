@@ -8,9 +8,11 @@ conversational **CTX Planning** agent. CTX Design is the detailed interview/desi
 partner; development and delivery remain background flows. The review-routing
 correction was published to Showcase's
 CTX Development catalog entry as v1.1.0 on 2026-10-07; its saved YAML was read back
-and matched the tested local definition. No execution of this corrected version
-has been verified. Other unpublished changes and implementation limits below
-remain separate from that catalog update. No external Claude runner is used. Duo runs
+and matched the tested local definition. This was superseded by the single-shot
+supervisor v1.2.0 on 2026-10-08 UTC, after MR !6 merged. Its saved YAML was read
+back in full (only the trailing newline was trimmed). No native execution of this
+supervisor has been verified. Other implementation limits below remain separate
+from catalog acceptance. No external Claude runner is used. Duo runs
 the native flow definitions in its CI execution environment. Normal GitLab CI jobs
 run deterministic workflow checks and, once configured, application adapters.
 
@@ -18,7 +20,7 @@ run deterministic workflow checks and, once configured, application adapters.
 |---|---|---|
 | CTX Planning chat agent | Scope interview → epic/tickets, dependencies and plan state | Publish approved scope first; detailed design follows |
 | CTX Design chat agent | Design interview → committed spec, technical/ticket design and acceptance manifest | Owns file persistence/readback; no implementation or flow start |
-| `.gitlab/duo/flows/ctx-development.yml` | Single-shot supervisor → delegated ticket SDLC → reassess → epic docs/review/close | Local bounded implementation; serial fallback; live catalog still single-ticket |
+| `.gitlab/duo/flows/ctx-development.yml` | Single-shot supervisor → delegated ticket SDLC → reassess → epic docs/review/close | Published v1.2.0; serial fallback; native execution still unverified |
 | `.gitlab/duo/flows/ctx-delivery.yml` | Six delivery operations, stage evidence and candidate readiness review | Read/comment only; application adapters and deployment/approval integration are missing |
 
 Each of the 30 procedures is a repo skill at `skills/ctx-*/SKILL.md`, explicitly
@@ -119,8 +121,11 @@ independent remote evidence or merge controls. The original process is parallel 
 default; this revision honestly uses a serial runtime fallback, not full parallel
 parity. See [the implementation and activation protocol](single-shot-development.md).
 
-The registered catalog flow is unchanged until this revision and its required scripts
-are published and GitLab-validated. The old single-ticket chain remains under
+Development v1.2.0 is now registered and enabled. GitLab rejected the initially
+configured `on_delegation_error`; removing that unsupported UI logging event let
+catalog validation pass. The local validator now checks the accepted event enum.
+Private visibility, the service account and active triggers were preserved. The
+old single-ticket chain remains under
 `.gitlab/duo/legacy/ctx-development-single-ticket.yml` for regression tests/rollback.
 
 ## What is executable now
@@ -213,7 +218,8 @@ python scripts/ctx_workflow.py validate
 python -m unittest discover -s tests/workflow -v
 ```
 
-The normalization revision is locally tested, not yet published or live-validated.
+Normalization is included in published Development v1.2.0, but has not been
+live-executor-validated there. Delivery catalog publication remains separate.
 The local graph tests execute the literal commands from the YAML, including the
 hash check, and simulate the file-tool acknowledgment from GitLab's Go executor.
 They are not a substitute for catalog schema validation or a live executor test.
@@ -258,8 +264,8 @@ epic until a transactional dispatch/lease adapter is implemented.
 
 The local development supervisor delegates all scoped ready work in the same
 invocation, not one ticket per user trigger. It uses verified isolated worktrees;
-do not run competing coordinators for the same epic. The registered older flow
-retains its single-ticket behavior until updated. Integration uses ordinary
+do not run competing coordinators for the same epic. The registered v1.2.0 has
+this supervisor definition; verify actual execution before relying on it. Integration uses ordinary
 non-force Git pushes, rechecks target movement,
 and reruns integration checks. A ticket MR is not a closed ticket; a closed epic is
 not an approved deployment. Default-branch merges follow repository policy.
@@ -328,11 +334,13 @@ The old planning flow is retired; do not reactivate it for numbering changes.
 
 ## Application command and evidence contract
 
-Workflow validation/self-tests remain opt-in with `CTX_WORKFLOW_CHECKS=1`. Set
+Workflow validation/self-tests run automatically for MRs and the default branch;
+`CTX_WORKFLOW_CHECKS=1` also enables them on other branches. Set
 `CTX_APPLICATION_CHECKS=1` in a pipeline to include `.gitlab/ci/delivery.yml`:
 
 ```text
 verify + browser (when required) → acceptance → source-security → package → artifact-security → configure
+    → delivery-readiness (default-branch release pipeline only)
 ```
 
 The `acceptance` command is implemented. Application command entries in
@@ -382,6 +390,14 @@ coverage. A malicious adapter can invent evidence. Trust comes from independentl
 reviewed adapters, protected CI definitions, actual job results and access controls.
 Never give a task agent deployment credentials or permission to weaken those controls.
 
+The new `ctx:delivery-readiness` job collects these reports on the default branch,
+including failures, and writes `.ctx/reports/delivery-readiness.json`. It checks
+the candidate identity, design/merge/governance receipts and all prerequisite
+evidence. It also exposes all nine stage statuses without claiming that configuration
+validation applied settings or that a verified package was deployed. The checker
+supports later staging/promotion/production receipts but does not implement their
+executors or provide approval authority. See [delivery readiness](delivery-readiness.md).
+
 ## GitLab activation checklist
 
 The earlier empty-repository/credits observation is superseded by the successful
@@ -407,14 +423,15 @@ catalog publication does not merge those files into the checkout used by agents.
 
 1. Review and publish this revision, including `skills/`, templates and CI helpers.
    Preserve the existing numbering migration and remote history.
-2. Run GitLab CI lint and set `CTX_WORKFLOW_CHECKS=1` for a workflow-check pipeline.
+2. Run GitLab CI lint and verify automatic MR/default-branch workflow checks.
+   For a separate branch pipeline, set `CTX_WORKFLOW_CHECKS=1`.
    Static checks are not GitLab server-side schema validation.
 3. Keep `.gitlab/duo/agent-config.yml` on default; GitLab reads that version. It is
    currently a Python environment, not a preinstalled browser environment. The
    browser CI job has its own Playwright image; see the browser guide for the distinction.
 4. Use CTX Planning/Design chat agents and update their existing registrations
    rather than creating duplicates. Keep the old planning flow disabled.
-   Development v1.1.0 is published as recorded above. Check for a delivery
+   Development v1.2.0 is published/read back as recorded above. Check for a delivery
    registration before creating/enabling it, then verify the enabled versions.
    Do not register legacy YAML or individual skills.
 5. Review service-account permissions and begin with human-invoked flows on issues
@@ -439,7 +456,7 @@ Committing these files alone does not register or activate catalog flows.
 
 - Live validation of development/delivery versions and the planning agent's first
   approved publication; the earlier planning-flow execution remains historical evidence.
-- Publish and live-test the bounded native Development supervisor. Real parallel
+- Live-test the published bounded native Development supervisor. Real parallel
   workers and distributed concurrency leases remain gaps; the local journal is
   not either. No cross-flow mention/retrigger workaround is implemented.
 - The hosted app foundation and real test/security/build/SBOM/configuration adapters.

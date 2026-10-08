@@ -3,6 +3,9 @@ include:
 
 .ctx-check:
   allow_failure: false
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH'
   timeout: 20 minutes
   artifacts:
     when: always
@@ -55,5 +58,20 @@ ctx:configure:
   script:
     - python scripts/ctx_workflow.py run configure
 
+# A read-only consistency gate, not deployment authorization. Plan/create/govern
+# receipts must be produced by reviewed jobs after GitLab readback, not invented
+# by the model. Missing receipts block the candidate; validation is not deployment.
+ctx:delivery-readiness:
+  extends: .ctx-check
+  stage: readiness
+  when: always
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  needs: ["ctx:verify", "ctx:acceptance", "ctx:source-security", "ctx:package", "ctx:artifact-security", "ctx:configure"]
+  script:
+    - python scripts/ctx_delivery.py --phase candidate
+
+# Readiness is release-branch-only: a feature MR cannot yet have a merged release
+# SHA. Do not make merged-candidate receipts a circular prerequisite of that MR.
 # Deliberately no deploy/promote job. Add deployment credentials and protected
 # environment controls only with real adapters and reviewed target/approval rules.

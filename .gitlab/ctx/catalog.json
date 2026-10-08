@@ -82,7 +82,11 @@
       "mode": "bounded-supervisor",
       "max_delegations": 64,
       "runtime_parallelism": "serial-fallback; native parallel delegation unverified",
-      "publication_status": "local implementation; catalog validation and live dry-run pending",
+      "publication_status": "v1.2.0 published 2026-10-08 UTC; complete saved YAML read back; live execution validation pending",
+      "catalog_version": "1.2.0",
+      "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234",
+      "definition_sha256": "55483b08fb062788f718f07f319d1704116586af3b62da76c5548a6ff1c59bfc",
+      "verification": "Private visibility, enabled state, service account and active Mention/Assign/Assign reviewer triggers preserved; full saved YAML matches source except trimmed final newline. No flow/application run started.",
       "managed_terminal_tokens": {
         "design": [
           "ready",

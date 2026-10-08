@@ -49,6 +49,15 @@ def finish_target(run, target):
 
 
 class SupervisorFlowTests(unittest.TestCase):
+    def test_catalog_rejects_unsupported_logging_events(self):
+        flow = ctx.read_yaml(ROOT / ".gitlab/duo/flows/ctx-development.yml")
+        registration = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())["flows"][".gitlab/duo/flows/ctx-development.yml"]
+        for events in (["on_delegation_error"], "on_agent_final_answer", ["on_delegation", "on_delegation"], [{}]):
+            changed = deepcopy(flow)
+            changed["components"][0]["ui_log_events"] = events
+            with self.subTest(events=events), self.assertRaisesRegex(ctx.Invalid, "log events"):
+                ctx.validate_flow(changed, registration)
+
     def test_development_is_a_bounded_supervisor_not_a_single_ticket_chain(self):
         self.assertLessEqual((ROOT / ".gitlab/duo/flows/ctx-development.yml").stat().st_size, ctx.MAX_FLOW_BYTES)
         flow = ctx.read_yaml(ROOT / ".gitlab/duo/flows/ctx-development.yml")

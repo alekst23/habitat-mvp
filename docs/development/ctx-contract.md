@@ -265,16 +265,23 @@ revision is a bounded supervisor that advances explicitly scoped tickets/epics w
 one invocation. Its 60-action progress journal (64-delegation engine cap) preserves
 ordering, report identity and candidate-SHA checks. It does not certify external
 evidence or implement a distributed lease. Native parallel delegation is unverified;
-this revision explicitly uses a serial fallback. The live catalog is still the old
-single-ticket version until publication and validation. See
+this revision explicitly uses a serial fallback. Development v1.2.0 is published
+with full catalog readback; actual native execution remains unverified. See
 [single-shot Development](single-shot-development.md). No recursive flow starts occur.
 Ticket review and whole-epic review are separate
 read-only agent components. Review is tool-separated, not a GitLab approval grant.
 
-Workflow CI is opt-in. The application lane includes verify, optional browser checks,
-AC validation, scans, packaging and configuration readiness. Only the AC adapter is
-implemented; app adapters and the browser startup/test prerequisites remain missing.
+Workflow CI runs on merge requests/default branch without an opt-in. The application
+lane includes verify, optional browser checks, AC validation, scans, packaging,
+configuration validation and deterministic release-evidence reconciliation. The AC
+adapter and delivery consistency checker are implemented; app adapters, verified
+plan/create/govern receipt producers and browser startup/test prerequisites remain missing.
 Staging/promotion and enforced release approval are not implemented.
+
+The delivery checker reports all nine stages, but its `evidence_complete` status is
+not an attestation or deployment grant. The independent reviewer must inspect actual
+GitLab state. See [delivery readiness](delivery-readiness.md) for receipt schemas,
+phase boundaries and the remaining activation requirements.
 
 Use the CTX Planning agent, verify its first approved publication, and exercise
 one foundation ticket through development. Connect delivery as the app becomes runnable.

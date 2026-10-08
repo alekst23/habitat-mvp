@@ -33,7 +33,8 @@ advances all explicitly scoped work through delegated SDLC phases, with an expli
 serial fallback (native parallel execution is unverified). Its progress journal
 does not grant authority or attest evidence; remote review/CI/ancestry must still
 be checked. Preserve ticket-only scope, respect active runs, and keep durable
-checkpoints. This local revision is not yet the published catalog version.
+checkpoints. This revision is published as Development v1.2.0; full catalog YAML
+readback passed, but native execution and actual ticket processing remain unverified.
 
 CTX Planning and CTX Design prompts/registration records live in
 `.gitlab/duo/agents/`. The order is Planning -> Design -> Development. Planning
@@ -104,9 +105,15 @@ application, its pinned Playwright dependency, startup command and real UI tests
 Establish reviewed argument arrays and evidence writers in `.gitlab/ctx/commands.yml`
 as part of the application foundation. `python scripts/ctx_workflow.py run verify`
 currently returns blocked (exit 2), correctly. Workflow self-tests are not application
-tests. Workflow self-checks remain opt-in with `CTX_WORKFLOW_CHECKS=1`. Set
+tests. Workflow self-checks run automatically on merge requests and the default
+branch; `CTX_WORKFLOW_CHECKS=1` also enables them on other branches. Set
 `CTX_APPLICATION_CHECKS=1` for the application CI lane; until configured,
 its first job fails closed. Make the lane mandatory before implementation MRs merge.
+
+The application lane's `ctx:delivery-readiness` job collects prerequisite receipts
+and produces a nine-stage evidence summary, even for incomplete candidates. Read
+`docs/development/delivery-readiness.md`. Receipt consistency cannot attest real
+jobs or authorize deployments; actual CI, control and approval readback is required.
 
 Agents may edit scoped planning/application files on ticket/epic branches, create
 issues/MRs and publish redacted evidence. They may not change workflow policy,

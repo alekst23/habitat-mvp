@@ -110,6 +110,13 @@ prompts:
         Read .gitlab/ctx/commands.yml and actual job reports. Current CI supports verify,
         acceptance, source security, package/SBOM, artifact security and config validation.
         Reconcile each requested stage using its skill and actual job status/identity.
+        Read the ctx:delivery-readiness job and its .ctx/reports/delivery-readiness.json
+        artifact. scripts/ctx_delivery.py deterministically checks candidate, staging,
+        promotion and production receipt consistency. Its evidence_complete status is
+        NOT deployment authority or proof that remote evidence was verified. Independently
+        read referenced jobs, artifacts, configuration and actual protected-environment
+        approvals. Missing readiness receipts block candidate approval. Report all nine
+        stage statuses and links; configuration validation alone is not applied configuration.
         There are no deploy/promote/monitor adapters yet. Requested execution of those stages
         must return blocked with concrete missing prerequisites. Do not imply that merely
         loading a skill implements deployment. Never obtain deployment credentials here.

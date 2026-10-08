@@ -12,7 +12,7 @@ components:
       - from: context:project_id
         as: project_id
     toolset: ["read_file","list_dir","find_files","grep","get_project","get_issue","list_issues","get_merge_request","gitlab_merge_request_search","gitlab_api_get","create_issue_note","create_merge_request_note","create_file_with_contents","edit_file","run_command","create_branch","create_commit","create_merge_request","update_issue"]
-    ui_log_events: ["on_agent_final_answer","on_tool_execution_failed","on_delegation","on_delegation_returns","on_delegation_error"]
+    ui_log_events: ["on_agent_final_answer","on_tool_execution_failed","on_delegation","on_delegation_returns"]
     subagents:
       - name: design
       - name: tests
