@@ -5,8 +5,10 @@
 Design repair (2026-10-08): restored interview/technical-contract/wiring
 procedures, generated-artifact CI checks and explicit Development contract-stub
 preparation. Read [design handoff requirements](design-readiness.md). Planning
-v1.1.0 and Development v1.2.0 remain published, with their repair candidates pending
-catalog publication. CTX Design v1.3.0 is now published/enabled; its full saved prompt
+v1.1.0 remains published, with its repair candidate pending catalog publication.
+Development v1.3.0 is published/enabled after MR !12 merged at `04a57ddb`; its full
+YAML readback matches the tested source except the final newline. It adds bounded
+repair and strict current-SHA AC verification. CTX Design v1.3.0 is also published/enabled; its full saved prompt
 matches the merged source. Private visibility, tools and external-server settings
 were unchanged. A new Design chat is required to exercise the revised behavior.
 
@@ -40,7 +42,7 @@ run deterministic workflow checks and, once configured, application adapters.
 |---|---|---|
 | CTX Planning chat agent | Scope interview → epic/tickets, dependencies and plan state | Publish approved scope first; detailed design follows |
 | CTX Design chat agent | Design interview → committed spec, technical/ticket design and acceptance manifest | Owns file persistence/readback; no implementation or flow start |
-| `.gitlab/duo/flows/ctx-development.yml` | Single-shot supervisor → delegated ticket SDLC → reassess → epic docs/review/close | Published v1.2.0; serial fallback; preflight observed, delegated execution unverified |
+| `.gitlab/duo/flows/ctx-development.yml` | Single-shot supervisor → ticket SDLC/repair → reassess → epic validation/repair/MR | Published v1.3.0; serial fallback; historical preflight observed, delegated repair execution unverified |
 | `.gitlab/duo/flows/ctx-delivery.yml` | Six delivery operations, stage evidence and candidate readiness review | Read/comment only; application adapters and deployment/approval integration are missing |
 
 Each of the 30 procedures is a repo skill at `skills/ctx-*/SKILL.md`, explicitly
@@ -142,7 +144,7 @@ independent remote evidence or merge controls. The original process is parallel 
 default; this revision honestly uses a serial runtime fallback, not full parallel
 parity. See [the implementation and activation protocol](single-shot-development.md).
 
-The current unpublished candidate closes the development loop with version-2
+Published Development v1.3.0 closes the development loop with version-2
 requests: exact committed AC manifests, complete verification receipts, and up to
 three scoped defect repairs per ticket or assembled epic. Each fix returns through
 current-SHA testing/AC validation and a fresh independent review. Missing setup,
@@ -150,7 +152,7 @@ intent, permissions or evidence still blocks; global action limits and durable
 checkpoints remain. Existing journals retain their version-1 rules. Local fixtures
 exercise the loop; real application adapters and a live catalog run remain required.
 
-Development v1.2.0 is now registered and enabled. GitLab rejected the initially
+Development v1.3.0 is now registered and enabled. GitLab rejected the initially
 configured `on_delegation_error`; removing that unsupported UI logging event let
 catalog validation pass. The local validator now checks the accepted event enum.
 Private visibility, the service account and active triggers were preserved. The
@@ -185,8 +187,8 @@ unrelated ready work continues in the supervisor. Flow components post detailed
 operation reports to the source issue before returning a routing token. A GitLab
 session ending in `abort` can mean a documented missing prerequisite, not a crash.
 Resume with the explicit operation after resolving a genuine blocker. No flow
-automatically retriggers another flow. Published v1.2.0 lacks the new bounded repair
-loop; the version-2 repository candidate repairs evidenced scoped defects internally
+automatically retriggers another flow. Historical v1.2.0 lacks the new bounded repair
+loop; published v1.3.0 repairs evidenced scoped defects internally
 in the same supervisor session, then re-verifies and obtains independent review.
 
 ### Final results are not handoff destinations
@@ -249,7 +251,7 @@ python scripts/ctx_workflow.py validate
 python -m unittest discover -s tests/workflow -v
 ```
 
-Normalization is included in published Development v1.2.0, but has not been
+Normalization is included in published Development v1.3.0, but has not been
 live-executor-validated there. Delivery catalog publication remains separate.
 The local graph tests execute the literal commands from the YAML, including the
 hash check, and simulate the file-tool acknowledgment from GitLab's Go executor.
@@ -295,7 +297,7 @@ epic until a transactional dispatch/lease adapter is implemented.
 
 The local development supervisor delegates all scoped ready work in the same
 invocation, not one ticket per user trigger. It uses verified isolated worktrees;
-do not run competing coordinators for the same epic. The registered v1.2.0 has
+do not run competing coordinators for the same epic. The registered v1.3.0 has
 this supervisor definition; verify actual execution before relying on it. Integration uses ordinary
 non-force Git pushes, rechecks target movement,
 and reruns integration checks. A ticket MR is not a closed ticket; a closed epic is
@@ -462,7 +464,7 @@ catalog publication does not merge those files into the checkout used by agents.
    browser CI job has its own Playwright image; see the browser guide for the distinction.
 4. Use CTX Planning/Design chat agents and update their existing registrations
    rather than creating duplicates. Keep the old planning flow disabled.
-   Development v1.2.0 is published/read back as recorded above. Check for a delivery
+   Development v1.3.0 is published/read back as recorded above. Check for a delivery
    registration before creating/enabling it, then verify the enabled versions.
    Do not register legacy YAML or individual skills.
 5. Review service-account permissions and begin with human-invoked flows on issues
