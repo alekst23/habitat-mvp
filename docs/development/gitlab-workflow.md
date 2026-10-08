@@ -2,6 +2,18 @@
 
 ## Status and boundaries
 
+Design repair candidate (2026-10-08): restored interview/technical-contract/wiring
+procedures, generated-artifact CI checks and explicit Development contract-stub
+preparation. Read [design handoff requirements](design-readiness.md). Planning
+v1.1.0, Design v1.2.0 and Development v1.2.0 remain the published registrations;
+candidate prompt hashes and pending versions are recorded separately. Do not claim
+the changes are active in Duo until repository review/merge and catalog readback.
+
+Live evidence since the earlier setup checks: MR !8 saved E2 ticket designs at
+89c3018, but its state/manifest and design completeness were defective. Development
+session 9174694 stopped at preflight with no worker delegation. The repair validates
+saved artifacts, not just registration wording; it does not turn old runs into passes.
+
 Planning originally ran successfully through `/flow:ctx-planning`, as confirmed
 by the user. That background entry point is now retired in favor of the
 conversational **CTX Planning** agent. CTX Design is the detailed interview/design
@@ -10,8 +22,8 @@ correction was published to Showcase's
 CTX Development catalog entry as v1.1.0 on 2026-10-07; its saved YAML was read back
 and matched the tested local definition. This was superseded by the single-shot
 supervisor v1.2.0 on 2026-10-08 UTC, after MR !6 merged. Its saved YAML was read
-back in full (only the trailing newline was trimmed). No native execution of this
-supervisor has been verified. Other implementation limits below remain separate
+back in full (only the trailing newline was trimmed). Its observed native run stopped
+at preflight; delegated ticket execution remains unverified. Other limits remain separate
 from catalog acceptance. No external Claude runner is used. Duo runs
 the native flow definitions in its CI execution environment. Normal GitLab CI jobs
 run deterministic workflow checks and, once configured, application adapters.
@@ -20,7 +32,7 @@ run deterministic workflow checks and, once configured, application adapters.
 |---|---|---|
 | CTX Planning chat agent | Scope interview → epic/tickets, dependencies and plan state | Publish approved scope first; detailed design follows |
 | CTX Design chat agent | Design interview → committed spec, technical/ticket design and acceptance manifest | Owns file persistence/readback; no implementation or flow start |
-| `.gitlab/duo/flows/ctx-development.yml` | Single-shot supervisor → delegated ticket SDLC → reassess → epic docs/review/close | Published v1.2.0; serial fallback; native execution still unverified |
+| `.gitlab/duo/flows/ctx-development.yml` | Single-shot supervisor → delegated ticket SDLC → reassess → epic docs/review/close | Published v1.2.0; serial fallback; preflight observed, delegated execution unverified |
 | `.gitlab/duo/flows/ctx-delivery.yml` | Six delivery operations, stage evidence and candidate readiness review | Read/comment only; application adapters and deployment/approval integration are missing |
 
 Each of the 30 procedures is a repo skill at `skills/ctx-*/SKILL.md`, explicitly
@@ -107,8 +119,9 @@ read back and matched. A fresh read-only Design chat correctly described its own
 commit/readback responsibility, draft saves and no detour to Planning/Development.
 A fresh Planning chat confirmed scope/tickets first, Design pending, and Design
 ownership of specification publication. Neither smoke test changed product artifacts.
-These configuration/conversation checks do not prove the revised write behavior.
-The first actual design commit/readback and approved plan batch still need live
+Those configuration/conversation checks alone did not prove write behavior.
+Subsequent MR !8 demonstrates saved Design artifacts, but not a complete, valid
+design handoff. The repaired agent and an approved Planning batch still need live
 verification. Do not create fake product decisions just to smoke-test saving.
 
 ### Single-shot Development: local supervisor revision

@@ -384,13 +384,15 @@ def validate_repository(root=ROOT):
     require(config["network_policy"]["allow_all_unix_sockets"] is False,
             "unrestricted unix sockets are not allowed")
     ci = read_yaml(root / ".gitlab-ci.yml")
-    for name in ("ctx:workflow-validate", "ctx:workflow-tests"):
+    for name in ("ctx:workflow-validate", "ctx:workflow-tests", "ctx:design-validate"):
         rules = ci[name]["rules"]
         require(rules[:2] == [
             {"if": '$CI_PIPELINE_SOURCE == "merge_request_event"'},
             {"if": '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'},
         ], "workflow checks must run on MRs/default branch without opt-in")
         require(ci[name].get("allow_failure", False) is False, "workflow checks must block")
+    require(ci["ctx:design-validate"]["script"] == ["python scripts/ctx_design.py --all"],
+            "generated design artifacts must be checked in CI")
     jobs = read_yaml(root / ".gitlab/ci/delivery.yml")
     require(jobs[".ctx-check"]["allow_failure"] is False, "checks must block on failure")
     require(jobs[".ctx-check"]["rules"] == [
