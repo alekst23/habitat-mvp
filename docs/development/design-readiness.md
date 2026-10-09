@@ -228,15 +228,18 @@ startup path and observable evidence, not just a demonstration checklist.
 
 ## Publication
 
-Local completion-boundary repair (2026-10-09) is not yet merged or published.
-It changes both the Design prompt and Development preflight, plus the helper and
-shared procedures. Review/merge the workflow repair, synchronize trusted helpers
-onto E2, then merge the separate product-document repair into the epic branch.
-Publish/read back both existing catalog entries (Design candidate v1.5.0,
-Development candidate v1.4.0), preserving tools, visibility and triggers. Verify
-native handoff/review behavior before claiming success; no flow is launched here.
+Completion-boundary repair is merged and published (2026-10-09 UTC). Workflow
+MR !17 merged into main at f6447be; E2 document/helper repair MR !18 merged into
+ctx/epic-i2 at 5b526720. Pipelines 2931358538 and 2931376845 passed, as did 127 local
+workflow tests and outgoing secret scans. E2's --handoff check validates six
+features, 48 scenarios and 14 criteria; Q2 enablement and E2-1 remain open.
+The existing Design v1.5.0 and Development v1.4.0 entries are enabled/private,
+with full prompt/YAML readback matching the tested sources except their final
+newlines. Tools, external MCP settings, service account and triggers were preserved.
+Native handoff/review behavior still needs validation; no chat/flow was launched
+and product MR !8 remains open. Start a fresh Design chat to use the new prompt.
 
-Design v1.4.0 is published/enabled with full prompt readback (2026-10-09 UTC).
+Historically, Design v1.4.0 was published with full prompt readback (2026-10-09 UTC).
 Workflow MR !14 merged at 9f5ccbf and helper-sync MR !15 merged onto E2 at a58e623;
 both pipelines passed. That publication preserved product documents. The subsequent
 live Design run at 97d7e2cb split features but left full contracts in the old umbrella

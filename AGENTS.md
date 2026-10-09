@@ -33,8 +33,8 @@ advances all explicitly scoped work through delegated SDLC phases, with an expli
 serial fallback (native parallel execution is unverified). Its progress journal
 does not grant authority or attest evidence; remote review/CI/ancestry must still
 be checked. Preserve ticket-only scope, respect active runs, and keep durable
-checkpoints. Development v1.3.0 is published and enabled; full catalog YAML readback
-passed after MR !12 merged. The historical v1.2.0 run stopped at preflight; delegated
+checkpoints. Development v1.4.0 is published and enabled; full catalog YAML readback
+passed after MR !17 merged. The historical v1.2.0 run stopped at preflight; delegated
 ticket processing and the repair loop still need live validation. New runs use the
 version-2 journal: pin the exact AC manifest, repair
 actionable defects up to three times per target, and require fresh application/AC
@@ -67,17 +67,18 @@ requirements. Generated E-numbered plans and design handoffs are checked by
 scripts/ctx_design.py in CI. Structural checks do not replace independent semantic
 design review. Chat Design owns typed contract documentation; Development's design
 worker creates/reuses executable contract stubs and minimal port fakes before tests.
-The local completion repair adds --handoff for specified design with explicit later
+The completion repair adds --handoff for specified design with explicit later
 gates; --ready remains all-clear and conservative. Development obtains independent
 design/historical reviews before ticket claims and publishes source-issue receipts.
 Missing execution/enablement evidence alone does not keep complete design in draft.
-This changes both catalog definitions; publication and native validation are pending.
-CTX Design v1.4.0 and Development v1.3.0 are published with full prompt/YAML readback.
-Design continuity/layout MR !14 merged into main at 9f5ccbf; helper-sync MR !15
-merged into ctx/epic-i2 at a58e623. Both pipelines passed. All existing E2 product
-documents were preserved. The subsequent E2 feature split at 97d7e2cb retained
-detail in a legacy umbrella; a separate local product-document repair now moves
-full contracts and leaves section redirects. MR !8 has not been merged by this repair.
+CTX Design v1.5.0 and Development v1.4.0 are published/enabled with full prompt/YAML
+readback (2026-10-09 UTC); native behavior validation remains pending. Workflow
+MR !17 merged into main at f6447be; document/helper repair MR !18 merged into
+ctx/epic-i2 at 5b526720. Both pipelines passed, as did 127 local workflow tests.
+E2 now keeps full contracts in six canonical feature pairs with umbrella redirects;
+48 scenarios, 14 criteria and ticket execution states were preserved. The handoff
+check passes while Q2 enablement and E2-1 remain open. No chat/flow was launched,
+and product MR !8 has not been merged by this repair.
 The revised Planning prompt remains a publication candidate; do not infer activation
 or successful execution merely from merge or catalog acceptance.
 
