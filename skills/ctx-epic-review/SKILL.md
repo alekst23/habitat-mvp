@@ -10,12 +10,29 @@ read docs/development/design-readiness.md and the pinned spec, technical contrac
 ticket designs, design.json and acceptance manifest. Apply the five perspectives
 below to the proposed design: producer/consumer agreement, coverage, process channels,
 configuration, failure/recovery and wiring ownership. Inspect the structural report;
-do not treat it as semantic proof. Return blocked for material findings or unresolved
-decisions in the requested scope, ready for a satisfactory design review only.
+do not treat it as semantic proof. Return blocked for material design findings or
+open design-stage decisions in scope, ready for a satisfactory design review only.
+Inspect later-gate classification and safeguards: unknown behavior cannot be hidden
+as enablement. Report legitimate later execution/enablement gates separately; they
+are not design defects. Neither human signoff nor a green pipeline replaces review.
 Publish a source-issue note with mode, scope, exact design SHA, reviewer identity,
 findings and verdict; read it back. This is not implementation evidence, a ticket
 review, a merge approval or the final epic review. Do not require unbuilt application
 tests for design review. Normal integrated-epic mode below remains unchanged.
+
+## Historical evidence mode
+
+For mode=historical-evidence, independently inspect the named historically merged
+ticket, original ACs, exact source/integration SHAs, actual MR/ancestry, original CI
+and retained artifacts. Use current evidence only for what it actually proves;
+do not retroactively attribute current-SHA results to the old commit. Changed ACs
+need fresh verification. Publish/read back a source-issue report with original
+identity, reviewer, criterion findings, actual evidence URLs and missing items.
+Return ready only when all required historical integration evidence is verified;
+otherwise blocked with the precise missing evidence and next actor/action.
+Do not edit state, fabricate receipts, reopen the issue or redo merged implementation.
+The coordinator alone reconciles state after independently verifying this report.
+This preflight report is not a current ticket/epic completion receipt or merge approval.
 
 ## Integrated epic mode
 

@@ -7,9 +7,11 @@
   "project_id": 87329027,
   "project_path": "gitlab-ai-hackathon/transcend-october-2026/43066631/showcase",
   "system_prompt_file": "ctx-design.md",
-  "system_prompt_sha256": "5002a37d8a926b9695726cb8b5fb769ea682da9286a4a30cc07fc7264a8eb062",
+  "system_prompt_sha256": "13af8f8b0c6ca7d07b882976f11c36fa800bb6f25b11e997e0d53d86b1f7d984",
   "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016255",
   "catalog_version": "1.4.0",
+  "pending_catalog_version": "1.5.0",
+  "pending_changes": "Local completion-boundary repair: specified design is separate from development preflight and enablement; complete contract migration and source-issue review receipts. Not yet merged, published or live-tested. Tool set unchanged.",
   "enabled_in_project": true,
   "operations": [
     "ctx-spec-interview",

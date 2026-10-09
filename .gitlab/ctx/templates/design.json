@@ -5,5 +5,5 @@
   "features": [{"id": "feature-name", "purpose": "REPLACE_WITH_BOUNDED_CAPABILITY", "tickets": ["E2-1", "E2-2"], "spec": "docs/design/feature-name/spec.md", "technical": "docs/design/feature-name/technical.md"}],
   "contracts": [{"id": "CONTRACT", "owner": "E2-1", "consumers": ["E2-2"], "document": "docs/design/feature-name/technical.md", "status": "pending", "stub_phase": "development-design"}],
   "wiring": {"ticket": "E2-2", "criteria": ["E2-2.AC1"]},
-  "decisions": [{"id": "Q1", "status": "open", "owner": "REPLACE_WITH_OWNER", "question": "REPLACE_WITH_REAL_UNRESOLVED_DECISION", "blocks": ["E2-1"]}]
+  "decisions": [{"id": "Q1", "status": "open", "stage": "design", "owner": "REPLACE_WITH_OWNER", "question": "REPLACE_WITH_REAL_UNRESOLVED_DECISION", "blocks": ["E2-1"]}]
 }

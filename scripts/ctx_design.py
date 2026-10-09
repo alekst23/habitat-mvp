@@ -39,7 +39,8 @@ def read(root, name):
     return candidate.read_text()
 
 
-def validate_epic(root, directory, ready=False):
+def validate_epic(root, directory, ready=False, handoff=False):
+    require(not (ready and handoff), "choose handoff or ready, not both")
     root, directory = Path(root).absolute(), Path(directory)
     relative = directory.relative_to(root).as_posix() if directory.is_absolute() else directory.as_posix()
     root = root.resolve()
@@ -74,7 +75,7 @@ def validate_epic(root, directory, ready=False):
     has_design = (root / relative / "design.json").exists()
     has_manifest = (root / relative / "acceptance.json").exists()
     if not has_design and not has_manifest:
-        require(not ready, "design pending")
+        require(not (ready or handoff), "design pending")
         return {"epic": epic, "status": "planning_only", "implementation_ready": False}
     design, manifest = document("design"), document("acceptance")
     require(type(design.get("version")) is int and design.get("version") in {1, 2} and
@@ -166,7 +167,7 @@ def validate_epic(root, directory, ready=False):
         for consumer in consumers:
             require(consumer in tickets and (consumer == owner or owner in ancestors(consumer)),
                     f"missing contract dependency: {cid}, {owner} -> {consumer}")
-        if ready:
+        if ready or handoff:
             require(contract["status"] == "specified", f"contract pending: {cid}")
     wiring = design.get("wiring", {})
     target = wiring.get("ticket")
@@ -183,6 +184,7 @@ def validate_epic(root, directory, ready=False):
     decisions = design.get("decisions")
     require(isinstance(decisions, list), "decision inventory required")
     decision_ids = set()
+    gates = {stage: [] for stage in ("design", "development", "enablement")}
     for decision in decisions:
         did = decision.get("id")
         require(isinstance(did, str) and did and did not in decision_ids, "duplicate/missing decision ID")
@@ -191,15 +193,29 @@ def validate_epic(root, directory, ready=False):
                 decision.get("question"), "decision needs status, owner and question")
         require(isinstance(decision.get("blocks"), list) and set(decision["blocks"]) <= set(tickets),
                 "invalid decision blocking scope")
+        stage = decision.get("stage", "design")  # Legacy decisions remain conservative.
+        require(isinstance(stage, str) and stage in gates, f"invalid decision stage: {did}")
+        if stage != "design":
+            safeguard = decision.get("safeguard")
+            require(isinstance(safeguard, str) and safeguard.strip(),
+                    f"later decision needs an explicit safeguard: {did}")
+        if decision["status"] == "open":
+            gates[stage].append(did)
+        if handoff and stage == "design":
+            require(decision["status"] == "resolved", f"open design decision: {did}")
         if ready:
             require(decision["status"] == "resolved", f"open decision: {did}")
-    if ready:
+    if ready or handoff:
         require(design["status"] == "specified", "design is still a draft")
+    if ready:
         require(not graph["blocked"], "plan has unresolved blocked tickets")
+    gates["blocked_tickets"] = sorted(tid for tid, ticket in tickets.items()
+                                      if ticket["status"] == "blocked")
     return {"epic": epic, "status": "structurally_valid", "scenarios": len(scenarios),
             "features": len(features),
             "feature_layout": "explicit" if design["version"] == 2 else "legacy_unclassified",
             "criteria": len(criteria), "ready_gate_passed": ready,
+            "handoff_gate_passed": handoff or ready, "gates": gates,
             "implementation_ready": False,
             "remaining": "Independent semantic design review and actual execution prerequisites remain required."}
 
@@ -209,7 +225,9 @@ def main():
     parser.add_argument("epic", nargs="?")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--all", action="store_true")
-    parser.add_argument("--ready", action="store_true")
+    gate = parser.add_mutually_exclusive_group()
+    gate.add_argument("--ready", action="store_true", help="Conservative all-gates structure check")
+    gate.add_argument("--handoff", action="store_true", help="Specified design; later gates remain reported")
     args = parser.parse_args()
     if bool(args.epic) == args.all:
         parser.error("supply one epic directory or --all")
@@ -219,7 +237,7 @@ def main():
     reports, failed = [], False
     for directory in directories:
         try:
-            reports.append(validate_epic(root, directory, args.ready))
+            reports.append(validate_epic(root, directory, args.ready, args.handoff))
         except (ValueError, OSError, KeyError, TypeError, AttributeError) as error:
             failed = True
             reports.append({"epic": str(directory), "status": "invalid", "error": str(error)})
