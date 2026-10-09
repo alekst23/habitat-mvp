@@ -104,6 +104,7 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         for requirement in ("design specified, development preflight passed",
                             "status to specified", "--handoff", "safeguard",
                             "unreadable MR comment", "not a failed review",
+                            "Get Merge Request's advertised include option", "notes/discussions",
                             "source issue", "does not require a documentation MR to remain Draft",
                             "Thin summaries", "one next human invocation"):
             self.assertIn(requirement, prompt)

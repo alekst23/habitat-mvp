@@ -169,9 +169,13 @@ or its enablement failure as a reason not to obtain a design review.
 
 ### Readable review receipts
 
-The Design chat tool set can read issue notes, not MR comments. An unreadable MR
-reference stays reported/unverified; that is neither a failed review nor unfinished
-design. Development uses its MR/API read tools to inspect supplied references. A
+The live catalog's existing Get Merge Request tool advertises notes/discussions
+through its include option (verified 2026-10-09). Request those facets using the
+native schema and pagination, then locate the supplied note ID; a missing standalone
+note-by-ID tool is not a blocker. Read author, body and reviewed SHA rather than
+inferring them from the URL or base MR metadata. If the deployed tool actually cannot
+return the note, retain its reference as unverified, not a failed review or unfinished
+design. Development also uses its MR/API tools to inspect supplied references. A
 brief human "looks correct" is product acceptance, not a detailed technical review.
 Verify actual reviewer independence, full report, exact design SHA, scope and
 findings. If absent/stale, obtain the existing independent reviewer delegation.
