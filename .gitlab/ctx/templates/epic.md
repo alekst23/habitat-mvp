@@ -14,6 +14,16 @@ coverage must be checked at the final integrated SHA before whole-epic review.
 
 ## Integration and wiring
 
+## Design progress
+
+Design fills this in; Planning may leave it pending. It is a resume cursor, not
+execution state or readiness evidence. Verify against files/notes/head on resume.
+
+| Feature and document links | Behavior | Contracts | Ticket/AC mapping | Open decision IDs |
+|---|---|---|---|---|
+
+Next specific design action/question; reason for pause if any:
+
 ## Waves
 
 Maintain version-2 state.json; derive ready tickets with the workflow helper.

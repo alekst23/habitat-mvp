@@ -140,6 +140,64 @@ class DesignHandoffTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "symlink"):
             validate_epic(self.root, self.directory)
 
+    def use_feature_map(self):
+        self.design["version"] = 2
+        self.design["features"][0].update(
+            id="trust", purpose="Reserve budget and expose denials.", tickets=["E2-1", "E2-2"])
+
+    def test_feature_map_supports_single_feature_and_many_to_many_tickets(self):
+        self.use_feature_map()
+        self.save()
+        result = validate_epic(self.root, self.directory)
+        self.assertEqual(result["feature_layout"], "explicit")
+        self.assertEqual(result["features"], 1)
+        self.design["features"].append({
+            "id": "funding", "purpose": "Authorize funding independently of budget reservation.",
+            "spec": "docs/design/funding/spec.md", "technical_not_applicable": "Behavioral clarification only.",
+            "tickets": ["E2-2"]})
+        self.put("docs/design/README.md", "[Trust](trust/spec.md)\n[Funding](funding/spec.md)\n")
+        self.put("docs/design/funding/spec.md", "# Funding\n**F2-S1:** Given authorization, when verified, then credit once.\n")
+        self.manifest["criteria"][1]["scenario"] = "F1-S2,F2-S1"
+        self.save()
+        result = validate_epic(self.root, self.directory)
+        self.assertEqual(result["features"], 2)
+        self.assertEqual(result["scenarios"], 3)
+
+    def test_feature_map_rejects_missing_metadata_paths_and_wrong_ticket_coverage(self):
+        self.use_feature_map()
+        feature = copy.deepcopy(self.design["features"][0])
+        cases = [
+            ({"id": "../trust"}, "feature identity"),
+            ({"purpose": " "}, "feature purpose"),
+            ({"spec": "docs/plan/E2/spec.md"}, "feature spec path"),
+            ({"technical": "docs/design/umbrella/technical.md"}, "feature technical path"),
+            ({"tickets": []}, "feature tickets"),
+            ({"tickets": ["E2-1", "E2-1"]}, "feature tickets"),
+            ({"tickets": ["E2-9"]}, "feature tickets"),
+            ({"tickets": ["E2-1"]}, "feature ticket coverage"),
+        ]
+        for delta, message in cases:
+            with self.subTest(delta=delta):
+                self.design["features"][0] = {**feature, **delta}
+                self.save()
+                with self.assertRaisesRegex(ValueError, message):
+                    validate_epic(self.root, self.directory)
+        self.design["features"][0] = copy.deepcopy(feature)
+        del self.design["features"][0]["purpose"]
+        self.save()
+        with self.assertRaisesRegex(ValueError, "feature purpose"):
+            validate_epic(self.root, self.directory)
+        self.design["features"][0] = feature
+        self.design["features"].append(copy.deepcopy(feature))
+        self.save()
+        with self.assertRaisesRegex(ValueError, "feature identity"):
+            validate_epic(self.root, self.directory)
+
+    def test_legacy_handoff_is_readable_without_claiming_explicit_feature_layout(self):
+        result = validate_epic(self.root, self.directory)
+        self.assertEqual(result["feature_layout"], "legacy_unclassified")
+        self.assertEqual(result["scenarios"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

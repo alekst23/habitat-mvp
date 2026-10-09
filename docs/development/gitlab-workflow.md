@@ -10,7 +10,12 @@ Development v1.3.0 is published/enabled after MR !12 merged at `04a57ddb`; its f
 YAML readback matches the tested source except the final newline. It adds bounded
 repair and strict current-SHA AC verification. CTX Design v1.3.0 is also published/enabled; its full saved prompt
 matches the merged source. Private visibility, tools and external-server settings
-were unchanged. A new Design chat is required to exercise the revised behavior.
+were unchanged. Subsequent MR !8/chat inspection found fragmented continuation and
+one umbrella feature pair. **Design v1.4.0 is now a local publication candidate**:
+guided progression, explicit feature/ticket mapping, feature-local documents and
+clear pause/completion rules. It is not yet the registered prompt, and this repair
+does not reorganize !8 while its Design chat has a pending write. See
+[session/layout and publication requirements](design-readiness.md).
 
 Workflow [MR !9](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/9)
 merged into main at 090d153. E2 repair
@@ -98,13 +103,25 @@ explicitly requests read-only brainstorming. Useful draft checkpoints can be sav
 with open questions clearly marked. Unresolved decisions block dependent execution,
 not persistence. A direct "save" request should not cause another approval loop.
 
-To use the corrected agent, start a **new chat → CTX Design** and provide the plan:
+The v1.4.0 candidate also owns progression after each answer: save/read back,
+advance unblocked work, then ask the next question in the same response. Its
+_epic.md Design progress cursor tracks feature-level behavior/contracts/AC mapping
+and the next action. Distinct capabilities use separate concept directories, with
+version-2 design.json mapping them to tickets. Shared contracts are linked, not
+copied. Routine saves do not end the session or require another "continue".
+Configured GitLab tool approvals still apply; prompt changes do not bypass them.
+
+After the candidate is merged, trusted epic helpers synchronized and the existing
+agent republished/read back, start a **new chat → CTX Design** with the plan:
 
 > Design the scoped tickets for this epic. Read the existing plan and design note,
-> reuse settled decisions, and interview me only about unresolved choices. Save the
-> spec, technical design, ticket Design sections and acceptance manifest on the
+> reuse settled decisions, map the distinct features, and guide me through only
+> unresolved choices. After each answer, advance the design and ask the next
+> question without waiting for "continue". Save feature-local specs/technical
+> designs, ticket Design sections and the acceptance manifest on the
 > existing epic branch. Verify saved files and return their links and commit SHA.
-> Do not implement or start a flow.
+> Preserve scenario/AC IDs when reorganizing existing documents. Do not implement
+> or start a flow.
 
 For existing E2, supply the verified epic/source/note links instead of recreating
 the plan. The agent must verify the source issue separately from epic #2. Only
