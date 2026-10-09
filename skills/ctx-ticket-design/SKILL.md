@@ -10,6 +10,12 @@ manifest, design.json and dependency contracts. Explore actual source and siblin
 patterns before claiming reuse. A committed behavioral spec is required to complete
 design; Planning may create design-pending tickets earlier.
 
+Resolve relevant feature specs through design.json's feature/ticket map; a ticket
+may consume several features and a feature may span tickets. Link exact feature
+scenarios and canonical technical contract sections, not an entire umbrella MVP
+document or copied contract definitions. After initial grounding, load the current
+slice and its dependencies; keep the epic-wide reconciliation in ctx-epic-design.
+
 ## Chat Design output
 
 Save on the verified epic branch, across all scoped tickets when requested:

@@ -65,6 +65,10 @@ continue. A runner must not wait for an interactive terminal response.
 
 CTX Planning and CTX Design provide the conversational entry points in Duo Chat.
 They reuse existing procedures but ask questions in chat and wait for replies.
+Design owns the session progression: after saving an answer it advances unblocked
+work and asks the next concrete question in the same response, rather than waiting
+for "continue". It maintains a feature-level Design progress cursor in _epic.md,
+with explicit pause reasons and completion criteria. Tool approval controls remain.
 They return ordinary prose, not ambient routing tokens. The order is **Planning ->
 Design -> Development**. Planning previews/approves and saves scope, epic/tickets,
 dependencies and plan state on a non-default branch. Tickets can be Design pending.
@@ -92,6 +96,8 @@ authority to expand credentials, targets, spending, or permitted actions.
 The detailed [design handoff requirements](design-readiness.md) are normative.
 Preserve the ordered interview, typed contracts, process topology, configuration,
 integration smoke and independent semantic review. Chat Design saves documentation;
+distinct capabilities have feature-local spec/technical pairs with a many-to-many
+feature/ticket map, not an umbrella pair solely because they share one epic.
 Development prepares typed stubs before tests. CI validates generated handoffs with
 scripts/ctx_design.py; a structural pass never grants implementation authority.
 

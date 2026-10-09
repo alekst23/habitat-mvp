@@ -86,6 +86,19 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertIn("Design pending", ticket)
         self.assertIn("block ticket creation, but it does block implementation", ticket)
 
+    def test_design_session_contract_and_feature_map_are_not_checkpoint_handoffs(self):
+        prompt = (AGENTS / "ctx-design.md").read_text()
+        for requirement in ("Own the session", "Design progress", "in the same response",
+                            "Treat save receipts as progress", "version-2 design.json",
+                            "A feature can span tickets", "not automatically one feature",
+                            "GitLab tool approval cards remain mandatory",
+                            "do not reload every feature", "epic-wide consistency pass"):
+            self.assertIn(requirement.lower(), prompt.lower())
+        self.assertNotIn("Finish a save with normal prose", prompt)
+        template = json.loads((ROOT / ".gitlab/ctx/templates/design.json").read_text())
+        self.assertEqual(template["version"], 2)
+        self.assertTrue({"id", "purpose", "tickets", "spec", "technical"} <= template["features"][0].keys())
+
 
 if __name__ == "__main__":
     unittest.main()

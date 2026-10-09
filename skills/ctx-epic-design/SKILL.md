@@ -13,12 +13,18 @@ distinguish missing code from verified reuse. Use ctx-spec-interview's full tree
 
 ## Produce design, not a summary
 
-1. Update concept-named specs and docs/design/README.md. Preserve requirements and
-   stable scenario IDs; record the exact delta from prior design.
-2. Write technical.md for new interfaces/nontrivial integration. Define contract
+1. Map independent capabilities to concept-named directories before writing. Use
+   docs/design/<feature>/spec.md and feature-local technical.md, not one umbrella
+   pair for a whole multi-feature epic. Update docs/design/README.md and version-2
+   design.json's id/purpose/tickets/spec/technical inventory. Tickets and features
+   are many-to-many; do not create scope, renumber, or split mechanically per ticket.
+   Preserve requirements and stable scenario IDs; record the exact delta.
+2. Write feature-local technical.md for new interfaces/nontrivial integration. Define contract
    names, fields/types, request/results/errors, invariants, owner and consumers,
    idempotency/recovery behavior and intended source location. "Typed tools" or
-   "atomic ledger" is not a contract definition.
+   "atomic ledger" is not a contract definition. Each contract has one authoritative
+   feature document; consumers link to its section. Shared architecture/topology
+   may have a small overview in docs/design/architecture.md, not a second full spec.
 3. Add **Process topology**: component, runtime process, construction/entry point,
    state owner, authenticated cross-process channel and failure behavior. Name the
    channel (HTTP, table/outbox, stream, etc.), not assumed shared memory. State when
@@ -37,6 +43,31 @@ distinguish missing code from verified reuse. Use ctx-spec-interview's full tree
    scenario to ticket ACs; preserve IDs. Methods: test, browser, inspection.
    Inspection requires inspection_reason. Structural validation is not semantic
    completeness or application evidence.
+
+## Conversational continuity
+
+In chat own the progression across the scoped epic, not one question/commit at a
+time. Track a compact Design progress section in _epic.md: feature documents,
+behavior/contracts/ticket-mapping progress, unresolved decision IDs and next action.
+Update it alongside coherent document saves, without changing execution statuses.
+Resume from verified files and decisions, not stale cursor text. Read feature-local
+context and direct contract dependencies after initial grounding; finish with an
+epic-wide consistency pass. Required procedure reads and exact-SHA saved-file
+readback remain mandatory.
+
+After an answer, reconcile the affected design, finish unblocked routine work,
+save/read back when useful, and ask the next material question in the same response.
+Do not end on a checkpoint receipt or ask permission to continue ordinary work.
+Only pause for a concrete unanswered decision, actual permission/tool/runtime
+blocker, explicit user pause, or completed Design handoff. State why and the exact
+next action. Honor configured tool approval cards; no unattended/self-resuming chat
+promise. Record unavailable external evidence once with owner and affected scope,
+then continue independent work. Do not invent provider verification or review.
+
+Before completion check every mapped feature's behavior/failures, technical
+contracts/applicability, ticket/AC coverage and saved files; reconcile CI if available.
+Separate incomplete design work from external evidence, independent review and
+Development prerequisites. No Planning/Development detour to finish Design's saves.
 
 ## Reconcile without erasing history
 
@@ -64,7 +95,13 @@ and inspect actual job results; never claim execution happened. Use --ready only
 for fully specified handoffs with resolved decision/state gates. A pass still does
 not replace independent review or execution preflight.
 
+For legacy umbrella documents, move existing sections without summarizing away
+detail, preserving IDs/decisions/evidence. Update index, contract inventory and all
+ticket/epic pointers in one coherent change. Retain historical navigation where
+needed, without duplicate scenario definitions. Resolve concurrent writers first.
+
 Commit on the verified epic branch with concurrency guards; read every changed
 file at the returned SHA. Report saved draft versus specified design, file/commit
-links, checks and remaining review/decisions. Notes do not replace artifacts.
+links, checks and remaining review/decisions. A checkpoint report includes the next
+question/action; it is not the final handoff. Notes do not replace artifacts.
 Do not dispatch implementation.

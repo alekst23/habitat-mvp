@@ -46,8 +46,16 @@ CTX Planning and CTX Design prompts/registration records live in
 publishes approved scope, epics, tickets, dependencies and state, marking Design
 pending. Design interviews and commits specs, technical/ticket design and the
 acceptance manifest on the epic branch, verifying files at the returned commit SHA.
+Design owns progression across the scoped session: map independent features,
+interview, specify contracts, reconcile tickets/ACs, self-check and hand off. After
+each answer, advance unblocked work and ask the next question in the same response
+as the save receipt; no routine "continue" prompts. Track Design progress in the
+epic, use feature-local spec/technical pairs and version-2 design.json mappings,
+and preserve IDs/decisions when splitting old umbrella documents. Version-1 designs
+remain readable as legacy_unclassified; semantic feature boundaries need review.
 An issue note reports that save; it does not replace it. Neither starts
-implementation or flows. Both return ordinary prose and wait for replies;
+implementation or flows. Both return ordinary prose and wait when asking a question
+or facing a real blocker, not merely after a routine Design checkpoint;
 terminal-token and checkpoint/abort rules apply to ambient components, not chat.
 Neither chat agent has a shell: helper validation requires actual runner/human
 evidence. Pending checks do not prevent scope/design saves or design conversation,
@@ -60,6 +68,9 @@ scripts/ctx_design.py in CI. Structural checks do not replace independent semant
 design review. Chat Design owns typed contract documentation; Development's design
 worker creates/reuses executable contract stubs and minimal port fakes before tests.
 CTX Design and Development v1.3.0 are published with full prompt/YAML readback.
+Design v1.4.0 continuity/layout changes are local only, pending merge/helper
+synchronization and catalog publication. MR !8's current documents are not migrated
+by this workflow repair; resolve its concurrent Design writer before reorganizing.
 The revised Planning prompt remains a publication candidate; do not infer activation
 or successful execution merely from merge or catalog acceptance.
 

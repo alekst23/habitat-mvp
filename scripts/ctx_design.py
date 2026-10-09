@@ -77,7 +77,7 @@ def validate_epic(root, directory, ready=False):
         require(not ready, "design pending")
         return {"epic": epic, "status": "planning_only", "implementation_ready": False}
     design, manifest = document("design"), document("acceptance")
-    require(type(design.get("version")) is int and design.get("version") == 1 and
+    require(type(design.get("version")) is int and design.get("version") in {1, 2} and
             design.get("epic") == epic and manifest.get("epic") == epic,
             "design/acceptance epic identity mismatch")
     require(design.get("status") in {"draft", "specified"}, "invalid design status")
@@ -86,13 +86,31 @@ def validate_epic(root, directory, ready=False):
     scenarios, technical_paths = set(), set()
     features = design.get("features")
     require(isinstance(features, list) and features, "features required")
+    feature_ids, feature_scenarios = set(), []
     index = read(root, "docs/design/README.md")
     for feature in features:
+        require(isinstance(feature, dict), "feature must be an object")
+        if design["version"] == 2:
+            fid = feature.get("id")
+            require(isinstance(fid, str) and re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", fid)
+                    and fid not in feature_ids, "invalid/duplicate feature identity")
+            feature_ids.add(fid)
+            require(isinstance(feature.get("purpose"), str) and feature["purpose"].strip(),
+                    f"feature purpose required: {fid}")
+            require(feature.get("spec") == f"docs/design/{fid}/spec.md", f"invalid feature spec path: {fid}")
+            if feature.get("technical"):
+                require(feature["technical"] == f"docs/design/{fid}/technical.md",
+                        f"invalid feature technical path: {fid}; link shared contracts, do not share the whole file")
+            assigned = feature.get("tickets")
+            require(isinstance(assigned, list) and assigned and
+                    all(isinstance(t, str) and t in tickets for t in assigned) and
+                    len(assigned) == len(set(assigned)), f"invalid feature tickets: {fid}")
         spec = read(root, feature["spec"])
         ids = re.findall(r"^\*\*(" + SCENARIO + r"):?\*\*:?[ \t]+", spec, re.MULTILINE)
         require(ids and len(ids) == len(set(ids)) and not (scenarios & set(ids)),
                 "missing/duplicate stable scenario definitions")
         scenarios.update(ids)
+        feature_scenarios.append(set(ids))
         require(feature["spec"].removeprefix("docs/design/") in index, "feature missing from design index")
         if feature.get("technical"):
             technical = read(root, feature["technical"])
@@ -115,6 +133,12 @@ def validate_epic(root, directory, ready=False):
         require(set(refs) <= scenarios, f"unknown scenario mapping: {criterion['id']}")
         mapped.update(refs)
     require(mapped == scenarios, f"unmapped spec scenarios: {sorted(scenarios - mapped)}")
+    if design["version"] == 2:
+        for feature, ids in zip(features, feature_scenarios):
+            actual = {c["id"].split(".")[0] for c in criteria
+                      if ids & {s.strip() for s in c["scenario"].split(",")}}
+            require(set(feature["tickets"]) == actual,
+                    f"feature ticket coverage mismatch: {feature['id']}; expected {sorted(actual)}")
     for tid, ticket in tickets.items():
         body = read(root, f"{relative}/{tid}.md")
         require(body.startswith(f"# {tid}:"), f"ticket heading mismatch: {tid}")
@@ -173,6 +197,8 @@ def validate_epic(root, directory, ready=False):
         require(design["status"] == "specified", "design is still a draft")
         require(not graph["blocked"], "plan has unresolved blocked tickets")
     return {"epic": epic, "status": "structurally_valid", "scenarios": len(scenarios),
+            "features": len(features),
+            "feature_layout": "explicit" if design["version"] == 2 else "legacy_unclassified",
             "criteria": len(criteria), "ready_gate_passed": ready,
             "implementation_ready": False,
             "remaining": "Independent semantic design review and actual execution prerequisites remain required."}

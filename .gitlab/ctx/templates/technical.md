@@ -1,5 +1,9 @@
 # Feature technical design
 
+This feature's technical design. Link its spec and consumed contracts in their
+canonical feature documents. Keep shared architecture in a short linked overview;
+do not collect every feature's contracts here or duplicate them in every consumer.
+
 ## Contracts
 
 Name each contract, owner ticket, consumers and proposed/existing source location.

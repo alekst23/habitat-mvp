@@ -1,5 +1,9 @@
 # Feature
 
+One bounded capability per concept-named directory, not an entire multi-feature
+epic/MVP. Inventory its purpose and ticket mappings in design.json first. Link
+related capabilities; do not duplicate their scenario definitions or renumber IDs.
+
 ## Intent and observable success
 
 ## Preconditions
