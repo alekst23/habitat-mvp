@@ -239,12 +239,20 @@ startup path and observable evidence, not just a demonstration checklist.
 
 ## Publication
 
-Completion-boundary repair is merged and published (2026-10-09 UTC). Workflow
+Current publication (2026-10-09 UTC): Design v1.6.0 and Development v1.5.0 are
+enabled/private and their full prompt/YAML match merged source, apart from the
+trimmed final newline. Workflow !20 merged at 2ffcb740; helper-sync !21 merged onto
+E2 at 849c3450, without product-document or execution-state changes. Both pipelines
+and 139 local tests passed. Tools, external MCP settings, service account and
+triggers are unchanged. No chat/flow was launched; !8 remains open. Follow the
+[Design closure test](design-closure.md#activation-and-e2-test) in a fresh chat.
+
+Earlier completion-boundary repair (2026-10-09 UTC): workflow
 MR !17 merged into main at f6447be; E2 document/helper repair MR !18 merged into
 ctx/epic-i2 at 5b526720. Pipelines 2931358538 and 2931376845 passed, as did 127 local
 workflow tests and outgoing secret scans. E2's --handoff check validates six
 features, 48 scenarios and 14 criteria; Q2 enablement and E2-1 remain open.
-The existing Design v1.5.0 and Development v1.4.0 entries are enabled/private,
+Design v1.5.0 and Development v1.4.0 were enabled/private,
 with full prompt/YAML readback matching the tested sources except their final
 newlines. Tools, external MCP settings, service account and triggers were preserved.
 Native handoff/review behavior still needs validation; no chat/flow was launched

@@ -150,6 +150,13 @@ ONLY its routing token. Publish/read back details before returning checkpoint.
 
 ## Activation and E2 test
 
+Publication verified 2026-10-09 UTC: workflow !20 merged at 2ffcb740; helper-sync
+!21 merged onto E2 at 849c3450. Both pipelines and 139 local tests passed. Existing
+Design v1.6.0 and Development v1.5.0 are enabled/private; complete saved prompt/YAML
+match source except the final newline. Tools, MCP settings, bot and triggers are
+unchanged. E2 product documents are untouched and !8 remains open. No chat or flow
+was started. **Step 1 is complete for these versions; start the live test at step 2.**
+
 1. Merge the reviewed workflow change, synchronize the same trusted helpers/guides
    into ctx/epic-i2 without changing product requirements, and run CI. Publish/read
    back Design v1.6.0 and Development v1.5.0 in the existing catalog entries. Preserve

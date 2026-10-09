@@ -1,18 +1,18 @@
 # CTX single-shot Development
 
-Status: **CTX Development v1.4.0 published and enabled on 2026-10-09**, retaining
-the version-2 repair/verification protocol and adding ordered Design preflight.
-[MR !17](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/17)
-merged at `f6447be`; [pipeline 2931358538](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2931358538)
-passed. MR !18 synchronized E2 documents/helpers at `5b526720`, with pipeline
-2931376845 passing. All 127 local workflow tests and outgoing secret scans passed.
+Status: **CTX Development v1.5.0 published and enabled on 2026-10-09**, retaining
+version-2 repair/verification and adding Design-only closure and token-match routing.
+[MR !20](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/20)
+merged at `2ffcb740`; [pipeline 2932009307](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2932009307)
+passed. MR !21 synchronized E2 helpers at `849c3450`, with pipeline
+2932047796 passing. All 139 local workflow tests and outgoing secret scans passed.
 Full saved YAML matched the tested source, with only its final newline trimmed.
 Private visibility, enabled state, service account and active triggers were preserved.
 Source and saved hashes are recorded in `.gitlab/ctx/catalog.json`.
 
 No application work or flow run was dispatched by publication. Native repair-loop
-execution and the revised preflight remain unverified and need real evidence and
-application adapters. This replaces v1.3.0, published after MR !12; the historical
+execution, Design closure and checkpoint routing still need live validation;
+application execution also requires its adapters. This replaces v1.4.0; the historical
 v1.2.0 run stopped at preflight. Old sessions/journals retain their own rules.
 
 GitLab rejected the initial `on_delegation_error` UI logging event. The published
@@ -48,12 +48,12 @@ Existing GitLab identity, evidence and protected-merge rules take precedence.
 
 ## One invocation, multiple delegations
 
-Candidate v1.5.0 adds [Design-owned closure](design-closure.md) before execution.
+Published v1.5.0 adds [Design-owned closure](design-closure.md) before execution.
 Explicit mode=design-closure uses the same supervisor for review, public research
 and bounded document repairs, then checkpoints WITHOUT ticket claims/application
 implementation. Ordinary authorized execution continues through historical-evidence
-reconciliation and scoped gates only after reviewed closure. This candidate is not
-published merely by changing the repository; the status above describes v1.4.0.
+reconciliation and scoped gates only after reviewed closure. Merge, helper sync and
+full catalog readback are complete; that does not establish a passing native run.
 Review reports go to the source issue, which chat can read; do not require the user
 to manually transcribe an MR review or repeat the Design interview. Later enablement
 gates remain enforced and cannot replace actual AC evidence with fixture claims.
@@ -202,7 +202,7 @@ deterministic routing adapter normalizes that one final response. Managed worker
 return to the supervisor, not through standalone graph routers. `checkpoint` ends
 the session successfully without asserting the implementation is complete.
 
-The v1.5.0 candidate uses fixed token-match probes and the framework's documented
+Published v1.5.0 uses fixed token-match probes and the framework's documented
 execution_result success/failed, not equality with tool_responses. The actual
 [deterministic node](https://gitlab.com/gitlab-org/modelops/applied-ml/code-suggestions/ai-assist/-/blob/main/duo_workflow_service/agent_platform/v1/components/deterministic_step/nodes/deterministic_step_node.py)
 sets this status on tool success/exception; the

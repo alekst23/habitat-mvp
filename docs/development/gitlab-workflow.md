@@ -6,15 +6,15 @@ Design repair (2026-10-08): restored interview/technical-contract/wiring
 procedures, generated-artifact CI checks and explicit Development contract-stub
 preparation. Read [design handoff requirements](design-readiness.md). Planning
 v1.1.0 remains published, with its repair candidate pending catalog publication.
-**CTX Design v1.5.0 and Development v1.4.0 are published and enabled**
+**CTX Design v1.6.0 and Development v1.5.0 are published and enabled**
 (2026-10-09 UTC). Full prompt/YAML readback matches the tested source except the
-final newline. The update separates specified design from execution/enablement,
-adds ordered independent/historical review preflight and preserves bounded repair
-with current-SHA AC verification. Private visibility, all 18 Design tools, no
+final newline. Design owns review, official-source research and bounded document
+repair through explicit design-only mode in the existing supervisor. Current-SHA
+review is required for completion; execution/enablement remain separate. Private visibility, all 18 Design tools, no
 external MCP servers, Development service account and active triggers were preserved.
-Workflow MR !17 merged at f6447be; document/helper repair MR !18 merged onto
-ctx/epic-i2 at 5b526720. Pipelines 2931358538 and 2931376845 passed, as did 127 local
-workflow tests and outgoing secret scans. E2 has six canonical feature pairs,
+Workflow MR !20 merged at 2ffcb740; helper-sync MR !21 merged onto
+ctx/epic-i2 at 849c3450. Pipelines 2932009307 and 2932047796 passed, as did 139 local
+workflow tests and outgoing secret scans. E2 product files were untouched: six canonical feature pairs,
 48 mapped scenarios and 14 criteria. Its handoff check passes; Q2 enablement and
 E2-1 historical evidence remain open. MR !8 remains unmerged. No chat or flow was
 launched; native completion/review behavior still needs validation. See
@@ -50,7 +50,7 @@ run deterministic workflow checks and, once configured, application adapters.
 |---|---|---|
 | CTX Planning chat agent | Scope interview → epic/tickets, dependencies and plan state | Publish approved scope first; detailed design follows |
 | CTX Design chat agent | Design interview → committed spec, technical/ticket design and acceptance manifest | Owns file persistence/readback; no implementation or flow start |
-| `.gitlab/duo/flows/ctx-development.yml` | Single-shot supervisor → ticket SDLC/repair → reassess → epic validation/repair/MR | Published v1.4.0; serial fallback; historical preflight observed, revised preflight and delegated repair execution unverified |
+| `.gitlab/duo/flows/ctx-development.yml` | Design-only closure or single-shot ticket SDLC/repair → reassess → epic validation/repair/MR | Published v1.5.0; serial fallback; closure/checkpoint and delegated repair execution need native validation |
 | `.gitlab/duo/flows/ctx-delivery.yml` | Six delivery operations, stage evidence and candidate readiness review | Read/comment only; application adapters and deployment/approval integration are missing |
 
 Each of the 30 procedures is a repo skill at `skills/ctx-*/SKILL.md`, explicitly
@@ -92,17 +92,19 @@ deleted. The historical project was untouched. Do not re-enable it for normal us
 
 ## CTX Design: owns specifications and saving
 
-The new source candidates (Design v1.6.0, Development v1.5.0) close the missing
+The published revisions (Design v1.6.0, Development v1.5.0) implement the missing
 Design review/research/repair loop. Follow [design-closure](design-closure.md) for
 ownership, research tasks, bounded execution, concise reports, activation and the
 E2 smoke. Saved/specified artifacts are only review candidates; independent current-
 SHA review is required for Design completion. Explicit mode=design-closure uses
 the existing background runner without authorizing application implementation.
-These candidates still require merge/helper sync and catalog publication/readback.
+Merge/helper synchronization and full catalog readback are complete; the E2 live
+test remains pending. Configuration acceptance is not evidence of successful execution.
 
-Published Design v1.5.0 and Development v1.4.0 separate specified design, development preflight and
+These revisions preserve the separation of specified design, development preflight and
 provider enablement. See [the ordered handoff](design-readiness.md#completion-is-not-one-global-ready-flag).
-Development obtains independent/historical reviews and source-issue receipts;
+The runner obtains independent review under Design ownership, then historical
+execution reviews separately, publishing source-issue receipts;
 Design first tries Get Merge Request's include option for supplied notes/discussions;
 genuine access limitations do not turn completed design into a failed review.
 The reviewed procedures/helpers and E2 repairs are merged, and both catalog entries
@@ -224,7 +226,7 @@ operation reports to the source issue before returning a routing token. A GitLab
 session ending in `abort` can mean a documented missing prerequisite, not a crash.
 Resume with the explicit operation after resolving a genuine blocker. No flow
 automatically retriggers another flow. Historical v1.2.0 lacks the new bounded repair
-loop; published v1.4.0 repairs evidenced scoped defects internally
+loop; published v1.5.0 is configured to repair evidenced scoped defects internally
 in the same supervisor session, then re-verifies and obtains independent review.
 
 ### Final results are not handoff destinations
@@ -253,7 +255,7 @@ The standalone/legacy graphs use three fixed `DeterministicStepComponent` steps:
    emits only the `routing_token` field, without a newline. The native router
    reads `context:<agent>_routing_token.tool_responses`, never the raw answer.
 
-The Development v1.5.0 candidate instead uses prepare/capture followed by fixed
+Published Development v1.5.0 instead uses prepare/capture followed by fixed
 complete/checkpoint match probes. All gates read execution_result, never formatted
 tool output. A successful match consumes the source file and ends; an unsuccessful
 complete probe tries checkpoint; unknown/conflicting/blocked results and tool errors
@@ -294,8 +296,8 @@ python scripts/ctx_workflow.py validate
 python -m unittest discover -s tests/workflow -v
 ```
 
-Normalization is included in published Development v1.4.0, but has not been
-live-executor-validated there. Delivery catalog publication remains separate.
+Normalization and token-match probes are included in published Development v1.5.0,
+but have not been live-executor-validated there. Delivery publication remains separate.
 The local graph tests execute the literal commands from the YAML, including the
 hash check, and simulate the file-tool acknowledgment from GitLab's Go executor.
 They are not a substitute for catalog schema validation or a live executor test.
@@ -507,7 +509,7 @@ catalog publication does not merge those files into the checkout used by agents.
    browser CI job has its own Playwright image; see the browser guide for the distinction.
 4. Use CTX Planning/Design chat agents and update their existing registrations
    rather than creating duplicates. Keep the old planning flow disabled.
-   Development v1.4.0 is published/read back as recorded above. Check for a delivery
+   Development v1.5.0 is published/read back as recorded above. Check for a delivery
    registration before creating/enabling it, then verify the enabled versions.
    Do not register legacy YAML or individual skills.
 5. Review service-account permissions and begin with human-invoked flows on issues
