@@ -1,16 +1,19 @@
 # CTX single-shot Development
 
-Status: **CTX Development v1.3.0 published and enabled on 2026-10-08**, including
-the version-2 repair/verification protocol below. [MR !12](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/12)
-merged at `04a57ddb`; [pipeline 2927553756](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2927553756)
-passed. All 120 local workflow tests and staged/outgoing secret scans passed.
+Status: **CTX Development v1.4.0 published and enabled on 2026-10-09**, retaining
+the version-2 repair/verification protocol and adding ordered Design preflight.
+[MR !17](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/17)
+merged at `f6447be`; [pipeline 2931358538](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2931358538)
+passed. MR !18 synchronized E2 documents/helpers at `5b526720`, with pipeline
+2931376845 passing. All 127 local workflow tests and outgoing secret scans passed.
 Full saved YAML matched the tested source, with only its final newline trimmed.
 Private visibility, enabled state, service account and active triggers were preserved.
 Source and saved hashes are recorded in `.gitlab/ctx/catalog.json`.
 
 No application work or flow run was dispatched by publication. Native repair-loop
-execution remains unverified and needs real application adapters. This replaces
-v1.2.0, originally published after MR !6; old sessions/journals retain their own rules.
+execution and the revised preflight remain unverified and need real evidence and
+application adapters. This replaces v1.3.0, published after MR !12; the historical
+v1.2.0 run stopped at preflight. Old sessions/journals retain their own rules.
 
 GitLab rejected the initial `on_delegation_error` UI logging event. The published
 definition removes that unsupported event, and the local validator now rejects
@@ -45,7 +48,7 @@ Existing GitLab identity, evidence and protected-merge rules take precedence.
 
 ## One invocation, multiple delegations
 
-Local preflight repair (not yet published): follow the ordered protocol in
+Published v1.4.0 preflight: follow the ordered protocol in
 [design readiness](design-readiness.md#development-owned-preflight). A specified
 design starts --handoff, same-SHA independent design review, historical-evidence
 reconciliation, then scoped execution gates before journal creation/ticket claims.
