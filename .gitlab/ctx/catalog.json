@@ -85,7 +85,9 @@
       "publication_status": "Published and enabled as v1.3.0 on 2026-10-08 after MR !12 merged at 04a57ddb. Full saved YAML matched the tested source except GitLab trimming the final newline. Private visibility, service account and active Mention/Assign/Assign reviewer triggers were preserved.",
       "catalog_version": "1.3.0",
       "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234",
-      "definition_sha256": "5b620c4be51e86837f9a20b70ed9e033725a2b8e21bd948a943729b796b1173e",
+      "definition_sha256": "cba10c5134a3fe0bcf5b8a8b490322a938077dcb0e2f0c009d48ae7fb1f0ef87",
+      "pending_catalog_version": "1.4.0",
+      "pending_changes": "Local ordered preflight repair: handoff check, independent design review before ticket blockers, historical-evidence mode and source-issue receipts. Not yet merged, published or live-tested; tools and triggers unchanged.",
       "verification": "MR !12 pipeline 2927553756 passed; 120 local workflow tests and staged/outgoing secret scans passed. v1.3.0 catalog readback verified all YAML and enabled state. Historical v1.2.0 session 9174694 stopped at preflight. No new flow run was launched; version-2 repair still needs a controlled live failing-AC/fix/retest run with real application adapters.",
       "managed_terminal_tokens": {
         "design": [

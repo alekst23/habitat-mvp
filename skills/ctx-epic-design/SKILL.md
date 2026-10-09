@@ -90,18 +90,32 @@ inventing product rules? Record gaps. Independent semantic review is required be
 implementation readiness; self-review is not approval.
 
 With a shell run `python scripts/ctx_design.py docs/plan/E<epic-IID>` and the wave
-helper. CI automatically checks generated artifacts. Without a shell save drafts
-and inspect actual job results; never claim execution happened. Use --ready only
-for fully specified handoffs with resolved decision/state gates. A pass still does
-not replace independent review or execution preflight.
+helper. CI automatically checks generated artifacts. Without a shell save artifacts
+and inspect actual job results; never claim execution happened. Use --handoff for
+specified design with no open design-stage questions; --ready additionally requires
+all later decisions and blocked state resolved. Neither replaces semantic review.
+Set specified when the documents are complete, not only after Development gates
+pass. Later open decisions retain stage, owner, scope and a fail-closed safeguard.
+Missing stage means design; do not reclassify unknown behavior to evade completion.
 
 For legacy umbrella documents, move existing sections without summarizing away
 detail, preserving IDs/decisions/evidence. Update index, contract inventory and all
 ticket/epic pointers in one coherent change. Retain historical navigation where
 needed, without duplicate scenario definitions. Resolve concurrent writers first.
+Move complete contract tables, recovery/transaction rules and configuration, not
+summaries. Replace the old umbrella with section redirects and an immutable history
+link only after every substantive section has a canonical destination.
 
 Commit on the verified epic branch with concurrency guards; read every changed
 file at the returned SHA. Report saved draft versus specified design, file/commit
 links, checks and remaining review/decisions. A checkpoint report includes the next
 question/action; it is not the final handoff. Notes do not replace artifacts.
 Do not dispatch implementation.
+
+Design completion, documentation MR merge, implementation readiness and provider
+enablement are distinct. Missing independent/historical review or later provider
+evidence alone does not keep complete specifications in draft. Development obtains
+reviews and reconciles execution evidence; Design publishes one source-issue
+handoff with SHA, artifact links, actual CI, later gates/owners and the next human
+Development invocation. A supplied unreadable MR note is unverified, not failed;
+do not make manual copying or another interview the default exit path.

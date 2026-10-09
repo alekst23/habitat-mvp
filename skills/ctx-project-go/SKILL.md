@@ -13,6 +13,12 @@ project focus. Never silently authorize backlog or turn a ticket-only request in
 an epic run. Missing scope belongs to Planning; missing design intent to Design.
 They conduct interviews before execution. Development prepares minimal tests itself.
 
+Follow design-readiness.md's ordered preflight before journal initialization/claims:
+--handoff, independent design review, historical-evidence reconciliation, then
+scoped dependency/execution checks. Own review collection and source-issue receipts;
+missing review is not a request to repeat Design. Preserve enablement safeguards
+and real AC evidence requirements; do not edit fixed requests to bypass blockers.
+
 Use ctx-epic-run to enumerate the complete ready frontier. Delegate work to separate
 SDLC components, keeping shared project state and consolidation in the coordinator.
 Continue after ticket integration; process other ready work when one target blocks.

@@ -101,6 +101,12 @@ feature/ticket map, not an umbrella pair solely because they share one epic.
 Development prepares typed stubs before tests. CI validates generated handoffs with
 scripts/ctx_design.py; a structural pass never grants implementation authority.
 
+Design specified, documentation merge, development readiness and provider enablement
+are separate outcomes. Complete artifacts may hand off with explicit later gates;
+Development owns independent design review and historical evidence reconciliation
+before claims. Use --handoff for that boundary, not the conservative all-clear --ready.
+Keep guarded enablement decisions open; never fabricate evidence to end Design.
+
 Preserve the original hierarchy:
 
 - `docs/plan/project.md`: objective, active work, backlog, blockers, decisions, handoff.

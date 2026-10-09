@@ -92,6 +92,15 @@ deleted. The historical project was untouched. Do not re-enable it for normal us
 
 ## CTX Design: owns specifications and saving
 
+Completion-boundary repair is local and unpublished: Design candidate v1.5.0 and
+Development candidate v1.4.0 separate specified design, development preflight and
+provider enablement. See [the ordered handoff](design-readiness.md#completion-is-not-one-global-ready-flag).
+Development obtains independent/historical reviews and source-issue receipts;
+Design need not read MR comments or keep complete documents in draft for later gates.
+Merge reviewed procedures/helpers, sync the epic, and publish both existing catalog
+entries before testing this behavior. The v1.4.0 Design instructions below describe
+the preceding published revision, not proof that this repair is active.
+
 [CTX Design](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016255)
 runs **after Planning and before Development**. It applies `ctx-spec-interview`,
 `ctx-epic-design` and `ctx-ticket-design` across all scoped tickets in an epic.

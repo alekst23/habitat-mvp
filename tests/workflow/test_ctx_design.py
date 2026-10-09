@@ -121,6 +121,51 @@ class DesignHandoffTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "blocked"):
             validate_epic(self.root, self.directory, ready=True)
 
+    def test_design_handoff_separates_later_gates_without_waiving_them(self):
+        self.design["status"] = "specified"
+        self.design["decisions"][0].update(
+            stage="enablement", safeguard="Keep provider disabled; use local port fakes.")
+        self.state["tickets"][0].update(status="blocked", blocker_kind="evidence",
+                                         blocked_reason="Historical independent review missing")
+        self.save()
+        result = validate_epic(self.root, self.directory, handoff=True)
+        self.assertTrue(result.get("handoff_gate_passed"))
+        self.assertFalse(result["ready_gate_passed"])
+        self.assertFalse(result["implementation_ready"])
+        self.assertEqual(result["gates"]["enablement"], ["Q1"])
+        self.assertEqual(result["gates"]["blocked_tickets"], ["E2-1"])
+        # The legacy all-clear check is deliberately still conservative.
+        with self.assertRaisesRegex(ValueError, "open decision"):
+            validate_epic(self.root, self.directory, ready=True)
+        self.design["decisions"][0]["stage"] = "development"
+        self.save()
+        self.assertEqual(validate_epic(self.root, self.directory, handoff=True)["gates"]["development"], ["Q1"])
+
+    def test_handoff_rejects_unfinished_design_and_unsafe_gate_classification(self):
+        self.design["status"] = "specified"
+        self.save()
+        with self.assertRaisesRegex(ValueError, "open design decision"):
+            validate_epic(self.root, self.directory, handoff=True)
+        for stage in ("development", "enablement"):
+            with self.subTest(stage=stage):
+                self.design["decisions"][0]["stage"] = stage
+                self.save()
+                with self.assertRaisesRegex(ValueError, "safeguard"):
+                    validate_epic(self.root, self.directory)
+        self.design["decisions"][0].update(stage="unknown", safeguard="Disabled")
+        self.save()
+        with self.assertRaisesRegex(ValueError, "decision stage"):
+            validate_epic(self.root, self.directory)
+        self.design["decisions"][0].update(stage="enablement", safeguard="Disabled")
+        for field, value, message in (("status", "draft", "draft"),
+                                       ("contract", "pending", "contract pending")):
+            with self.subTest(field=field):
+                self.design["status"] = value if field == "status" else "specified"
+                self.design["contracts"][0]["status"] = value if field == "contract" else "specified"
+                self.save()
+                with self.assertRaisesRegex(ValueError, message):
+                    validate_epic(self.root, self.directory, handoff=True)
+
     def test_docs_only_can_justify_no_contracts_or_runtime_wiring(self):
         self.design["features"][0].pop("technical")
         self.design["features"][0]["technical_not_applicable"] = "Documentation correction only."

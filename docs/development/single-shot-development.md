@@ -45,6 +45,14 @@ Existing GitLab identity, evidence and protected-merge rules take precedence.
 
 ## One invocation, multiple delegations
 
+Local preflight repair (not yet published): follow the ordered protocol in
+[design readiness](design-readiness.md#development-owned-preflight). A specified
+design starts --handoff, same-SHA independent design review, historical-evidence
+reconciliation, then scoped execution gates before journal creation/ticket claims.
+Review reports go to the source issue, which chat can read; do not require the user
+to manually transcribe an MR review or repeat the Design interview. Later enablement
+gates remain enforced and cannot replace actual AC evidence with fixture claims.
+
 The existing `ctx-development` entry point becomes an `AgentComponent` supervisor
 using `subagents`, `delegate_task`, `final_response_tool` and `max_delegations: 64`.
 GitLab documents these in its [flow registry](https://docs.gitlab.com/user/duo_agent_platform/flows/claude-edit-v1-flow-registry/).

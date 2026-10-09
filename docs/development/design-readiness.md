@@ -68,6 +68,7 @@ Run from the repository root:
 ```sh
 python scripts/ctx_design.py docs/plan/E2
 python scripts/ctx_design.py --all
+python scripts/ctx_design.py docs/plan/E2 --handoff
 python scripts/ctx_design.py docs/plan/E2 --ready
 ```
 
@@ -75,8 +76,10 @@ The normal check permits explicitly saved drafts and unresolved decisions. It
 rejects invalid state/acceptance schemas, wrong waves, missing/unknown scenario
 mappings, unknown ticket identities, missing required documents, undeclared contract
 dependencies and incomplete wiring ownership. It does not judge contract semantics.
-The --ready check additionally rejects draft designs, pending contracts, open
-decisions and blocked plan records. Neither mode grants implementation authority.
+The --handoff check additionally rejects draft designs, pending contracts and open
+design-stage decisions. It reports, but does not clear, later gates and blocked
+tickets. The --ready check remains the conservative all-gates check: it rejects
+every open decision and blocked plan record as before. Neither grants authority.
 
 CI runs the normal structural check automatically on MRs/default branch and on
 branches with CTX_WORKFLOW_CHECKS=1. New E-numbered plan directories are checked;
@@ -87,7 +90,7 @@ design artifact exists, both are required. Never delete one to hide a failed des
 New/reorganized handoff metadata uses version 2, the actual epic ID, draft/specified
 status, features with id/purpose/tickets/spec and technical paths, contracts with id/owner/consumers/document/
 status/stub_phase, wiring with ticket/criteria, and decisions with id/status/owner/
-question/blocks. See the templates. Scenario definitions use **F1-S1:** followed by
+question/blocks and optional stage/safeguard. See the templates. Scenario definitions use **F1-S1:** followed by
 Given/When/Then; acceptance scenario fields contain exact comma-separated IDs.
 UI criteria require browser. Inspection uses method inspection plus inspection_reason,
 not a new method named justified_inspection. One focused check may prove many ACs.
@@ -109,6 +112,78 @@ ticket with wiring.not_applicable. Each requires a specific rationale; the revie
 checks its validity. New interfaces/components cannot use that path to evade wiring.
 
 ## Semantic review and execution gates
+
+### Completion is not one global ready flag
+
+| Outcome | Required | Does not require or authorize |
+|---|---|---|
+| Design specified | Complete canonical documents, resolved design decisions, consistent mappings, saved-file readback, self-check and truthful CI status | Independent technical review, historical evidence repair or provider enablement |
+| Documentation MR merge | Human acceptance and actual repository merge controls | Epic completion, implementation or deployment |
+| Development may claim a ticket | Design handoff, independent design review, scoped decisions/dependencies/evidence and safe execution prerequisites | Enabling unverified providers or changing CI policy |
+| Provider/connector enablement | Verified external facts, implemented safeguards, tested configuration and applicable human/protected controls | Inference from a design merge or sandbox funding |
+
+Set design.json status=specified when Design's document work is complete; pending
+review does not force draft. Keep incomplete design or unresolved behavior draft.
+Each decision has stage=design (default for legacy records), development, or
+enablement. Later stages require a nonempty safeguard explaining precisely what
+remains blocked/disabled, alongside the existing owner/question/affected tickets.
+This is classification, not permission: a reviewer must reject moving unknown
+behavior or unverified safety assumptions to enablement without a safe specified
+fallback. Unknown stage or absent safeguard fails validation. No automatic migration
+of old decisions, ticket status changes or review assertions occurs in the helper.
+
+Design's final source-issue report names the exact artifact SHA/MR/index, completed
+scope, actual structural CI (or pending), later gates with owners/unblock actions,
+and one next human Development invocation for that epic/SHA. Do not require a new
+Design chat, repeated provider questions or a manually collected review to hand off.
+The agent never changes merge controls or merges; missing later evidence alone is
+not a reason to insist a documentation MR remain Draft.
+
+### Development-owned preflight
+
+Use this order before creating the fixed execution request/journal or claiming tickets:
+
+1. Pin the coherent design SHA and run --handoff. Unfinished artifacts or open
+   design decisions return a precise finding to Design, not a generic restart.
+2. Reuse a verified same-SHA independent design review, or delegate epic_review
+   mode=design-readiness. Do this even if historical ticket evidence is blocked.
+3. Reconcile historically merged evidence through epic_review mode=historical-evidence
+   as needed. The coordinator verifies actual MR/ancestry, original ACs, source and
+   integration SHAs, CI and reviewer report. Update state only when the existing done
+   requirements are genuinely met; preserve historical metadata and original receipts.
+   Missing evidence produces a concrete owner/action, not repeated implementation.
+4. Assess affected tickets and dependencies against design/development gates. An open
+   enablement gate permits only otherwise-ready local/fixture development with its
+   safeguards enforced. Never dispatch to an unverified provider. If the intended
+   validation requires that provider, retain a verification blocker: fakes cannot
+   substitute for required integration/browser evidence or declare the ticket done.
+5. Pin reconciled state, manifest and design SHA in the execution request. No mutation
+   of an existing fixed request/journal to waive a blocker. Continue the SDLC only for
+   the verified ready scope; checkpoint actual remaining prerequisites with exact actions.
+
+All preflight delegations count against the existing engine limit. Publish/read back
+their reports on the resolved source issue, separately from ticket/epic completion
+receipts. A design review can be ready while implementation dependencies remain
+blocked. Do not use the all-gates --ready result as proof that a review happened,
+or its enablement failure as a reason not to obtain a design review.
+
+### Readable review receipts
+
+The live catalog's existing Get Merge Request tool advertises notes/discussions
+through its include option (verified 2026-10-09). Request those facets using the
+native schema and pagination, then locate the supplied note ID; a missing standalone
+note-by-ID tool is not a blocker. Read author, body and reviewed SHA rather than
+inferring them from the URL or base MR metadata. If the deployed tool actually cannot
+return the note, retain its reference as unverified, not a failed review or unfinished
+design. Development also uses its MR/API tools to inspect supplied references. A
+brief human "looks correct" is product acceptance, not a detailed technical review.
+Verify actual reviewer independence, full report, exact design SHA, scope and
+findings. If absent/stale, obtain the existing independent reviewer delegation.
+Publish/read back its full source-issue note with identity, verdict, findings and
+original reference when applicable. A mirrored report identifies the original
+reviewer and coordinator as transcriber; copying cannot create independence.
+If access fails, report the exact access remedy/owner once, not an endless request
+for the user to paste comments. No broader chat tools or permissions are required.
 
 An independent reviewer reads the actual specs, contracts, tickets and plan at the
 design SHA. The reviewer checks that each criterion actually proves its scenario,
@@ -153,17 +228,25 @@ startup path and observable evidence, not just a demonstration checklist.
 
 ## Publication
 
+Local completion-boundary repair (2026-10-09) is not yet merged or published.
+It changes both the Design prompt and Development preflight, plus the helper and
+shared procedures. Review/merge the workflow repair, synchronize trusted helpers
+onto E2, then merge the separate product-document repair into the epic branch.
+Publish/read back both existing catalog entries (Design candidate v1.5.0,
+Development candidate v1.4.0), preserving tools, visibility and triggers. Verify
+native handoff/review behavior before claiming success; no flow is launched here.
+
 Design v1.4.0 is published/enabled with full prompt readback (2026-10-09 UTC).
 Workflow MR !14 merged at 9f5ccbf and helper-sync MR !15 merged onto E2 at a58e623;
-both pipelines passed. Product documents were preserved, not reorganized. Live
-continuation/layout behavior remains to be checked in the user's fresh chat.
+both pipelines passed. That publication preserved product documents. The subsequent
+live Design run at 97d7e2cb split features but left full contracts in the old umbrella
+and stalled on review/enablement gates; this is the evidence motivating this repair.
 
 For subsequent revisions, review and merge the procedures, templates and helper
-first. A maintainer must synchronize existing epics' trusted helper
-revision before Design writes version-2 design.json; the chat agent cannot change
-scripts/CI itself. Then publish/read back the existing Design catalog entry, keeping
-its tool/access settings. No Planning or Development republish is needed for this
-Design prompt repair; their independent pending work stays separate.
+first. A maintainer must synchronize existing epics' trusted helper revision before
+using new handoff semantics; the chat agent cannot change scripts/CI itself. Then
+publish/read back the existing Design and Development catalog entries, keeping
+their tool/access settings. Planning stays unchanged.
 Do not run the obsolete catalog against new unreviewed policy or claim a repository
 edit updates the registered agent. Keep prior catalog versions for rollback.
 

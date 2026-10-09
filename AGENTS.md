@@ -67,11 +67,17 @@ requirements. Generated E-numbered plans and design handoffs are checked by
 scripts/ctx_design.py in CI. Structural checks do not replace independent semantic
 design review. Chat Design owns typed contract documentation; Development's design
 worker creates/reuses executable contract stubs and minimal port fakes before tests.
+The local completion repair adds --handoff for specified design with explicit later
+gates; --ready remains all-clear and conservative. Development obtains independent
+design/historical reviews before ticket claims and publishes source-issue receipts.
+Missing execution/enablement evidence alone does not keep complete design in draft.
+This changes both catalog definitions; publication and native validation are pending.
 CTX Design v1.4.0 and Development v1.3.0 are published with full prompt/YAML readback.
 Design continuity/layout MR !14 merged into main at 9f5ccbf; helper-sync MR !15
 merged into ctx/epic-i2 at a58e623. Both pipelines passed. All existing E2 product
-documents were preserved. MR !8 remains unmerged; start a fresh Design chat to
-reorganize its feature documents and validate the revised conversation behavior.
+documents were preserved. The subsequent E2 feature split at 97d7e2cb retained
+detail in a legacy umbrella; a separate local product-document repair now moves
+full contracts and leaves section redirects. MR !8 has not been merged by this repair.
 The revised Planning prompt remains a publication candidate; do not infer activation
 or successful execution merely from merge or catalog acceptance.
 

@@ -99,6 +99,25 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertEqual(template["version"], 2)
         self.assertTrue({"id", "purpose", "tickets", "spec", "technical"} <= template["features"][0].keys())
 
+    def test_design_completion_does_not_wait_for_execution_or_unreadable_mr_notes(self):
+        prompt = (AGENTS / "ctx-design.md").read_text()
+        for requirement in ("design specified, development preflight passed",
+                            "status to specified", "--handoff", "safeguard",
+                            "unreadable MR comment", "not a failed review",
+                            "Get Merge Request's advertised include option", "notes/discussions",
+                            "source issue", "does not require a documentation MR to remain Draft",
+                            "Thin summaries", "one next human invocation"):
+            self.assertIn(requirement, prompt)
+        flow = (ROOT / ".gitlab/duo/flows/ctx-development.yml").read_text()
+        for requirement in ("ctx_design.py --handoff", "BEFORE assessing",
+                            "mode=historical-evidence", "do not send review collection to Design",
+                            "then return. No epic completion claim"):
+            self.assertIn(requirement, flow)
+        review = (ROOT / "skills/ctx-epic-review/SKILL.md").read_text()
+        for requirement in ("exact design SHA", "source-issue", "original ACs",
+                            "Changed ACs", "Do not edit state", "safeguards"):
+            self.assertIn(requirement, review)
+
 
 if __name__ == "__main__":
     unittest.main()
