@@ -8,13 +8,16 @@ preparation. Read [design handoff requirements](design-readiness.md). Planning
 v1.1.0 remains published, with its repair candidate pending catalog publication.
 Development v1.3.0 is published/enabled after MR !12 merged at `04a57ddb`; its full
 YAML readback matches the tested source except the final newline. It adds bounded
-repair and strict current-SHA AC verification. CTX Design v1.3.0 is also published/enabled; its full saved prompt
-matches the merged source. Private visibility, tools and external-server settings
-were unchanged. Subsequent MR !8/chat inspection found fragmented continuation and
-one umbrella feature pair. **Design v1.4.0 is now a local publication candidate**:
-guided progression, explicit feature/ticket mapping, feature-local documents and
-clear pause/completion rules. It is not yet the registered prompt, and this repair
-does not reorganize !8 while its Design chat has a pending write. See
+repair and strict current-SHA AC verification. **CTX Design v1.4.0 is published
+and enabled** (2026-10-09 UTC): guided progression, explicit feature/ticket mapping,
+feature-local documents and clear pause/completion rules. Its full saved prompt
+matches the merged source except GitLab trimming the final newline. Private
+visibility, all 18 tools and no external MCP servers were preserved. Workflow
+MR !14 merged at 9f5ccbf; helper-sync MR !15 merged onto ctx/epic-i2 at a58e623.
+Pipelines 2928830662 and 2928845822 passed. All 124 local workflow tests passed;
+E2 has 48 mapped scenarios and 14 criteria. Its product documents are unchanged
+from e0c2195. MR !8 is not merged or reorganized; the user will validate guided
+continuation and feature splitting in a fresh Design chat. No session was launched. See
 [session/layout and publication requirements](design-readiness.md).
 
 Workflow [MR !9](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/9)
@@ -103,7 +106,7 @@ explicitly requests read-only brainstorming. Useful draft checkpoints can be sav
 with open questions clearly marked. Unresolved decisions block dependent execution,
 not persistence. A direct "save" request should not cause another approval loop.
 
-The v1.4.0 candidate also owns progression after each answer: save/read back,
+The published v1.4.0 contract also owns progression after each answer: save/read back,
 advance unblocked work, then ask the next question in the same response. Its
 _epic.md Design progress cursor tracks feature-level behavior/contracts/AC mapping
 and the next action. Distinct capabilities use separate concept directories, with
@@ -111,8 +114,8 @@ version-2 design.json mapping them to tickets. Shared contracts are linked, not
 copied. Routine saves do not end the session or require another "continue".
 Configured GitLab tool approvals still apply; prompt changes do not bypass them.
 
-After the candidate is merged, trusted epic helpers synchronized and the existing
-agent republished/read back, start a **new chat → CTX Design** with the plan:
+The repair is merged, E2's trusted helpers synchronized, and the existing agent
+republished/read back. Start a **new chat → CTX Design** with the plan:
 
 > Design the scoped tickets for this epic. Read the existing plan and design note,
 > reuse settled decisions, map the distinct features, and guide me through only

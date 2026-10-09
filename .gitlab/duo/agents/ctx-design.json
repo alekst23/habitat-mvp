@@ -9,7 +9,7 @@
   "system_prompt_file": "ctx-design.md",
   "system_prompt_sha256": "5002a37d8a926b9695726cb8b5fb769ea682da9286a4a30cc07fc7264a8eb062",
   "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016255",
-  "catalog_version": "1.3.0",
+  "catalog_version": "1.4.0",
   "enabled_in_project": true,
   "operations": [
     "ctx-spec-interview",
@@ -54,7 +54,7 @@
   ],
   "external_mcp_servers": [],
   "trigger": "Duo Chat agent picker; no mention/assignment/flow trigger",
-  "publication_status": "Continuity and feature-layout repair is a repository candidate, not yet published. catalog_version and published_system_prompt_sha256 identify the last verified v1.3.0 registration. Merge/review procedures and synchronize trusted epic helpers for design.json v2 before publishing this prompt. No tools/access settings changed.",
+  "publication_status": "Published and enabled v1.4.0 on 2026-10-09 UTC after workflow MR !14 merged at 9f5ccbf and helper-sync MR !15 merged onto ctx/epic-i2 at a58e623. Full saved prompt equals the committed source except GitLab trimming its final newline. Private visibility, all 18 tools and no external MCP servers retained. No Design session or flow launched.",
   "verification": {
     "chat_interview_smoke": "passed 2026-10-07; source issue 10; project, issue, repository-file and issue-note reads observed; normal prose plus one design question with options; no write or flow-start call",
     "issue_note_save_readback": "user reports an earlier note on epic 2; revised commit-and-readback path not yet exercised",
@@ -62,8 +62,8 @@
     "ownership_smoke": "passed 2026-10-07 on v1.2.0 in fresh Duo Chat: owns spec/ticket/manifest commits, exact-SHA file readback, saves drafts with open questions, no Planning/Development detour for saving, does not promise epic-wide execution; no writes or jobs requested/observed",
     "v1_3_configuration_readback": "2026-10-08: full saved prompt matched e2361c272fa17c82dc97415896405a4365760c5b5ae5df0009da2e51d676f6c2 (repository trailing newline normalized); UI shows v1.3.0, enabled, private, unchanged tools and no external MCP servers.",
     "v1_3_design_feedback": "Observed MR !8/chat at 023ec3f: saves repeatedly ended without the next question; user supplied continue/go prompts. Eleven scenario groups remained in habitat-foundation/spec.md and one technical.md. Current run preserves useful decisions but does not establish guided continuation or feature-level decomposition.",
-    "v1_4_session_and_layout": "Pending publication and fresh-chat validation. Local structural tests and prompt guardrails are not proof of live agent behavior. MR !8 is not reorganized by this workflow-only repair."
+    "v1_4_configuration_readback": "2026-10-09 UTC: UI shows enabled/private v1.4.0 with the same 18 tools and no external MCP servers. Full 16651-byte saved prompt SHA-256 is 92eeeeaa15440545b66d82934ef955752293f526be148ff4ce35693eb38587d2; appending the repository final newline exactly matches system_prompt_sha256. MR !14 pipeline 2928830662 and helper-sync MR !15 pipeline 2928845822 passed; 124 local workflow tests and staged/outgoing secret scans passed. E2 validates 48 scenarios and 14 criteria; product docs/plan files are unchanged from e0c2195.",
+    "v1_4_session_and_layout": "Fresh-chat behavior validation remains for the user's next Design run. Configuration readback and local tests are not proof of live guided continuation or feature decomposition. MR !8 remains unmerged and its feature documents are not reorganized by publication."
   },
-  "published_system_prompt_sha256": "e2361c272fa17c82dc97415896405a4365760c5b5ae5df0009da2e51d676f6c2",
-  "pending_catalog_version": "1.4.0"
+  "published_system_prompt_sha256": "5002a37d8a926b9695726cb8b5fb769ea682da9286a4a30cc07fc7264a8eb062"
 }
