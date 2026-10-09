@@ -118,6 +118,20 @@ class ChatAgentRegistrationTests(unittest.TestCase):
                             "Changed ACs", "Do not edit state", "safeguards"):
             self.assertIn(requirement, review)
 
+    def test_design_owns_closure_and_has_a_concrete_research_handoff(self):
+        prompt = (AGENTS / "ctx-design.md").read_text()
+        flow = (ROOT / ".gitlab/duo/flows/ctx-development.yml").read_text()
+        guide = (ROOT / "docs/development/design-closure.md").read_text()
+        for term in ("mode=design-closure", "mode=feasibility-research", "120 words",
+                     "not Design completion", "fresh independent review", "source-issue receipt"):
+            self.assertIn(term, prompt)
+        for term in ("mode=design-repair", "scripts/ctx_design_closure.py", "THREE repair",
+                     "TWO research", "STOPs", "ctx_research.py", "no code/stubs/tests/CI/policy"):
+            self.assertIn(term, flow)
+        for term in ("Reddit", "PayPal", "Render", "Browserbase", "source_urls", "fallback",
+                     "BEFORE delegate_task", "no ticket claims"):
+            self.assertIn(term, guide)
+
 
 if __name__ == "__main__":
     unittest.main()

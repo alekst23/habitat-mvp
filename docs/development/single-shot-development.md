@@ -48,10 +48,12 @@ Existing GitLab identity, evidence and protected-merge rules take precedence.
 
 ## One invocation, multiple delegations
 
-Published v1.4.0 preflight: follow the ordered protocol in
-[design readiness](design-readiness.md#development-owned-preflight). A specified
-design starts --handoff, same-SHA independent design review, historical-evidence
-reconciliation, then scoped execution gates before journal creation/ticket claims.
+Candidate v1.5.0 adds [Design-owned closure](design-closure.md) before execution.
+Explicit mode=design-closure uses the same supervisor for review, public research
+and bounded document repairs, then checkpoints WITHOUT ticket claims/application
+implementation. Ordinary authorized execution continues through historical-evidence
+reconciliation and scoped gates only after reviewed closure. This candidate is not
+published merely by changing the repository; the status above describes v1.4.0.
 Review reports go to the source issue, which chat can read; do not require the user
 to manually transcribe an MR review or repeat the Design interview. Later enablement
 gates remain enforced and cannot replace actual AC evidence with fixture claims.
@@ -199,6 +201,18 @@ The supervisor's final token is `complete`, `checkpoint` or `blocked`. Its exist
 deterministic routing adapter normalizes that one final response. Managed workers
 return to the supervisor, not through standalone graph routers. `checkpoint` ends
 the session successfully without asserting the implementation is complete.
+
+The v1.5.0 candidate uses fixed token-match probes and the framework's documented
+execution_result success/failed, not equality with tool_responses. The actual
+[deterministic node](https://gitlab.com/gitlab-org/modelops/applied-ml/code-suggestions/ai-assist/-/blob/main/duo_workflow_service/agent_platform/v1/components/deterministic_step/nodes/deterministic_step_node.py)
+sets this status on tool success/exception; the
+[command executor](https://gitlab.com/gitlab-org/modelops/applied-ml/code-suggestions/ai-assist/-/blob/main/duo_workflow_service/executor/action.py)
+raises action errors. Parser source is hash-pinned, model text remains file data,
+unknown/conflicting signals abort, and success consumes only that scratch file.
+Regression tests include decorated output and command/write/parser failures.
+Native deployment still needs a checkpoint smoke; session 9270082 failed after
+prepare and before capture, so the new adapter removes output-format dependence
+without claiming the old runtime's exact wrapping was observed.
 
 ## Version-2 verification and repair
 

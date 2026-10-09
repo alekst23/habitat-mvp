@@ -84,8 +84,10 @@
       "runtime_parallelism": "serial-fallback; native parallel delegation unverified",
       "publication_status": "Published and enabled as v1.4.0 on 2026-10-09 after MR !17 merged at f6447be and E2 document/helper repair MR !18 merged onto ctx/epic-i2 at 5b526720. Full saved YAML matched the tested source except GitLab trimming the final newline. Private visibility, service account and active Mention/Assign/Assign reviewer triggers were preserved.",
       "catalog_version": "1.4.0",
+      "pending_catalog_version": "1.5.0",
+      "pending_changes": "Design-only closure mode with review/research/document repair and durable bounded records; concise reports; fixed token-match routing via execution_result. Requires merge, helper sync and catalog publication/readback; no native smoke claimed.",
       "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234",
-      "definition_sha256": "cba10c5134a3fe0bcf5b8a8b490322a938077dcb0e2f0c009d48ae7fb1f0ef87",
+      "definition_sha256": "8304cfd2cd36e024fd65e56f1ded8ccc9b6f07718fbd2a362041eeefabe932f3",
       "verification": "MR !17 pipeline 2931358538 and MR !18 pipeline 2931376845 passed; 127 local workflow tests and outgoing secret scans passed. v1.4.0 catalog readback verified the full 40843-byte saved YAML and enabled state. Historical v1.2.0 session 9174694 stopped at preflight. No new flow run was launched; ordered preflight and the version-2 repair loop still need native validation with real evidence/application adapters.",
       "managed_terminal_tokens": {
         "design": [

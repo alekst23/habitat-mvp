@@ -20,6 +20,17 @@ findings and verdict; read it back. This is not implementation evidence, a ticke
 review, a merge approval or the final epic review. Do not require unbuilt application
 tests for design review. Normal integrated-epic mode below remains unchanged.
 
+For design-closure follow docs/development/design-closure.md. Publish structured
+findings with stable id, kind, summary, tickets, owner and exact action; research
+also needs question/source_urls/deliverable/fallback, enablement needs safeguard.
+Review official-source evidence against its precise claim and distinguish public
+documentation from account/live observations. Classify ordinary technical details
+as technical, not questions for the user. Return fresh same-SHA review after every
+repair; a builder's resolved_findings list is not proof of resolution. Only legitimate
+later enablement gates may remain with verdict ready. Retain original findings in
+history, not active findings silently relabeled to pass. Lead the saved note with a
+<=120-word status/blocker/owner/next-action summary; final output remains the token.
+
 ## Historical evidence mode
 
 For mode=historical-evidence, independently inspect the named historically merged

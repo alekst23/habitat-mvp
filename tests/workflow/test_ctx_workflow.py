@@ -55,7 +55,7 @@ class FlowTests(unittest.TestCase):
         self.registration = json.loads((ROOT / "tests/workflow/fixtures/single-ticket-registration.json").read_text())
         self.flow = ctx.read_yaml(ROOT / path)
 
-    def route_response(self, source, response, *, stale=False, tampered=False, write_error=False):
+    def route_response(self, source, response, *, stale=False, tampered=False, write_error=False, wrapped=False):
         """Exercise the actual YAML graph, including fixed tools, without GitLab writes."""
         components = {c["name"]: c for c in self.flow["components"]}
         routers = {r["from"]: r for r in self.flow["routers"]}
@@ -94,16 +94,20 @@ class FlowTests(unittest.TestCase):
                 if component["tool_name"] == "create_file_with_contents":
                     if write_error:
                         output = "Action error: file is gitignored"
+                        success = False
                     else:
                         (root / args["file_path"]).write_text(args["contents"])
                         output = "File written successfully"
+                        success = True
                 else:
                     self.assertEqual(component["tool_name"], "run_command")
                     self.assertEqual(args["program"], "python3")
                     process = subprocess.run([sys.executable, *shlex.split(args["args"])],
                                              cwd=root, text=True, capture_output=True, timeout=10)
                     output = process.stdout if process.returncode == 0 else process.stderr
-                state[target] = {"tool_responses": output}
+                    success = process.returncode == 0
+                state[target] = {"tool_responses": f"<tool_output>{output}</tool_output>" if wrapped else output,
+                                 "execution_result": "success" if success else "failed"}
                 current = target
             self.fail("routing adapter did not terminate")
 

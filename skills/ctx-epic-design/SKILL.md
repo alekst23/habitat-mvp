@@ -6,7 +6,7 @@ description: Turn planned scope into coherent behavioral, technical and ticket d
 # Epic design
 
 Read AGENTS.md, docs/development/ctx-contract.md and
-docs/development/design-readiness.md. Ground project/source/epic identities and
+docs/development/design-readiness.md and docs/development/design-closure.md. Ground project/source/epic identities and
 read every scoped ticket, state, issue note, existing spec and active MR at coherent
 SHAs. Read the actual templates. Explore source contracts and composition roots;
 distinguish missing code from verified reuse. Use ctx-spec-interview's full tree.
@@ -112,10 +112,14 @@ links, checks and remaining review/decisions. A checkpoint report includes the n
 question/action; it is not the final handoff. Notes do not replace artifacts.
 Do not dispatch implementation.
 
-Design completion, documentation MR merge, implementation readiness and provider
-enablement are distinct. Missing independent/historical review or later provider
-evidence alone does not keep complete specifications in draft. Development obtains
-reviews and reconciles execution evidence; Design publishes one source-issue
-handoff with SHA, artifact links, actual CI, later gates/owners and the next human
-Development invocation. A supplied unreadable MR note is unverified, not failed;
-do not make manual copying or another interview the default exit path.
+Specified means ready for review, not Design complete. Design owns closure through
+independent semantic review and bounded technical repair at the current SHA. Follow
+design-closure.md: exact research requests, source evidence and safe fallbacks,
+fresh review after edits, durable counters and a <=120-word status/action summary.
+Chat saves/repairs its own documents; missing shell/research/reviewer capabilities
+use one human invocation of the existing supervisor in mode=design-closure, which
+cannot implement application code. Do not call that tool handoff Design complete.
+Only product decisions or actual access/authority gaps go to the user; ordinary
+technical findings remain agent work. Historical execution/enablement evidence
+stays separate. An unreadable MR note is unverified, not failed; use source-issue
+reports, not repeated manual copying. Merge/implementation approvals remain separate.

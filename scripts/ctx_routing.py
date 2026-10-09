@@ -82,10 +82,11 @@ def response_path(component):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("prepare", "normalize"))
+    parser.add_argument("action", choices=("prepare", "normalize", "match"))
     parser.add_argument("--component", required=True)
     parser.add_argument("--allowed", required=True)
     parser.add_argument("--token-only", action="store_true")
+    parser.add_argument("--expect", choices=sorted(TOKENS))
     args = parser.parse_args()
     try:
         path = response_path(args.component)
@@ -105,6 +106,11 @@ def main():
         current = path.lstat()
         if (current.st_dev, current.st_ino) != (identity.st_dev, identity.st_ino):
             raise RoutingError("routing scratch changed during normalization")
+        if args.action == "match":
+            if args.expect not in args.allowed.split(","):
+                raise RoutingError("expected token outside component allowlist")
+            if result["routing_token"] != args.expect:
+                return 1  # A fixed next probe can inspect the same immutable response.
         path.unlink()  # Only the exact, consumed scratch file; no recursive cleanup.
         # Native GitLab routes this field verbatim; no trailing newline or diagnostic text.
         sys.stdout.write(result["routing_token"] if args.token_only else json.dumps(result))

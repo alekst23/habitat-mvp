@@ -103,7 +103,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
         coordinate --allowed design,tests,implementation,browser,integrate,epic,checkpoint,blocked --token-only
@@ -133,7 +133,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
         coordinate --allowed design,tests,implementation,browser,integrate,epic,checkpoint,blocked --token-only
@@ -150,7 +150,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
         design --allowed ready,blocked --token-only
@@ -180,7 +180,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
         design --allowed ready,blocked --token-only
@@ -197,7 +197,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
         tests --allowed ready,blocked --token-only
@@ -227,7 +227,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
         tests --allowed ready,blocked --token-only
@@ -244,7 +244,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
         implementation --allowed ready,blocked --token-only
@@ -274,7 +274,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
         implementation --allowed ready,blocked --token-only
@@ -291,7 +291,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
         browser --allowed ready,blocked --token-only
@@ -321,7 +321,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
         browser --allowed ready,blocked --token-only
@@ -338,7 +338,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
         review --allowed ready,blocked --token-only
@@ -368,7 +368,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
         review --allowed ready,blocked --token-only
@@ -385,7 +385,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
         integrate --allowed more,complete,blocked --token-only
@@ -415,7 +415,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
         integrate --allowed more,complete,blocked --token-only
@@ -432,7 +432,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
         epic_review --allowed ready,blocked --token-only
@@ -462,7 +462,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
         epic_review --allowed ready,blocked --token-only
@@ -479,7 +479,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' prepare --component
         close --allowed ready,blocked --token-only
@@ -509,7 +509,7 @@ components:
     - from: python3
       as: program
       literal: true
-    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="2bd21ed54393855e1529efbf7f0c3f95acfa5594806eab0aa0e3aef6ab67d8c1";
+    - from: -I -c 'import hashlib,pathlib,sys; source=pathlib.Path("scripts/ctx_routing.py").read_bytes(); digest="45a8ceda5b0109fd78ed0c1ab89ec2e7c24e02ea2ec6d6cec57f96d998f09107";
         actual=hashlib.sha256(source).hexdigest(); sys.exit("CTX routing parser digest mismatch") if actual != digest
         else None; exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})' normalize --component
         close --allowed ready,blocked --token-only
