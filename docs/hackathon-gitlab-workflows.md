@@ -52,6 +52,11 @@ Its issue note reports the save, not a substitute for it. It does not send users
 Planning or Development merely to save specifications. Only genuine scope changes
 return to Planning. Chat checkpoints can be saved drafts with explicit open questions.
 The original planning flow is retired, not another required background step.
+The [Design closure contract](development/design-closure.md) retains stage ownership
+through independent review, official-source research and bounded document repair.
+Its publication candidate uses the existing background supervisor in explicit
+design-only mode; it is not another bot or permission to implement. Saved artifacts
+are review candidates, not completion. The guide includes activation and E2 testing.
 The chat contributes Plan/design preparation; it does not establish implementation
 or delivery-stage evidence. See [usage and boundaries](development/gitlab-workflow.md#ctx-design-conversational-entry-point).
 

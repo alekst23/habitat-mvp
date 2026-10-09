@@ -217,6 +217,7 @@ def validate_epic(root, directory, ready=False, handoff=False):
             "criteria": len(criteria), "ready_gate_passed": ready,
             "handoff_gate_passed": handoff or ready, "gates": gates,
             "implementation_ready": False,
+            "design_complete": False,
             "remaining": "Independent semantic design review and actual execution prerequisites remain required."}
 
 

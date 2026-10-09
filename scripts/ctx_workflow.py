@@ -121,7 +121,7 @@ def validate_skill_terminal_tokens(flow, skills):
                         f"skill terminal tokens differ from {prompt['prompt_id']}: {path}")
 
 
-def routing_adapter_components(name, tokens):
+def routing_adapter_components(name, tokens, status_routing=False):
     """Only fixed tools may normalize responses; model output is never executable input."""
     terminal_token_set(tokens, name)
     digest = hashlib.sha256((ROOT / "scripts/ctx_routing.py").read_bytes()).hexdigest()
@@ -134,22 +134,42 @@ def routing_adapter_components(name, tokens):
         'exec(compile(source,"scripts/ctx_routing.py","exec"),{"__name__":"__main__"})'
     )
 
-    def command(suffix, action):
+    def command(suffix, action, expect=None):
         argv = ["-I", "-c", bootstrap, action, "--component", name,
                 "--allowed", ",".join(tokens), "--token-only"]
+        if expect is not None:
+            argv.extend(["--expect", expect])
         return {"name": name + suffix, "type": "DeterministicStepComponent",
                 "tool_name": "run_command", "toolset": ["run_command"], "inputs": [
                     {"from": "python3", "as": "program", "literal": True},
                     {"from": shlex.join(argv), "as": "args", "literal": True}],
                 "ui_log_events": ["on_tool_execution_failed"]}
 
-    return [command("_routing_prepare", "prepare"),
+    result = [command("_routing_prepare", "prepare"),
             {"name": name + "_routing_capture", "type": "DeterministicStepComponent",
              "tool_name": "create_file_with_contents", "toolset": ["create_file_with_contents"],
              "inputs": [{"from": f"context:{name}.final_answer", "as": "contents"},
                         {"from": f"ctx-routing-{name}.input", "as": "file_path", "literal": True}],
-             "ui_log_events": ["on_tool_execution_failed"]},
-            command("_routing_token", "normalize")]
+             "ui_log_events": ["on_tool_execution_failed"]}]
+    if status_routing:
+        require(name == "coordinate" and tokens == ["complete", "checkpoint", "blocked"],
+                "unsupported status routing terminal tokens")
+        return result + [command("_routing_complete", "match", "complete"),
+                         command("_routing_checkpoint", "match", "checkpoint")]
+    return result + [command("_routing_token", "normalize")]
+
+
+def supervisor_routers():
+    """Route on the framework status, never runner-specific command output wrappers."""
+    def gate(suffix, success, failed="abort"):
+        name = "coordinate_routing_" + suffix
+        return {"from": name, "condition": {"input": f"context:{name}.execution_result",
+                "routes": {"success": success, "failed": failed, "default_route": "abort"}}}
+    return [{"from": "coordinate", "to": "coordinate_routing_prepare"},
+            gate("prepare", "coordinate_routing_capture"),
+            gate("capture", "coordinate_routing_complete"),
+            gate("complete", "end", "coordinate_routing_checkpoint"),
+            gate("checkpoint", "end")]
 
 
 def routing_adapter_routers(name, routes):
@@ -167,12 +187,20 @@ def routing_adapter_routers(name, routes):
 def sync_routing(root=ROOT):
     """Mechanical regeneration of fixed adapters; preserves hand-written agent prompts."""
     catalog = json.loads((root / ".gitlab/ctx/catalog.json").read_text())
-    for filename, registration in catalog["flows"].items():
+    registrations = dict(catalog["flows"])
+    legacy = root / "tests/workflow/fixtures/single-ticket-registration.json"
+    if legacy.exists():
+        registrations[".gitlab/duo/legacy/ctx-development-single-ticket.yml"] = json.loads(legacy.read_text())
+    for filename, registration in registrations.items():
         path = root / filename
         text = path.read_text()
         flow = read_yaml(path)
         components, routers = [], []
         for name, tokens in registration["terminal_tokens"].items():
+            if registration.get("mode") == "bounded-supervisor":
+                components.extend(routing_adapter_components(name, tokens, status_routing=True))
+                routers.extend(supervisor_routers())
+                continue
             source = next(r for r in flow["routers"]
                           if r["from"] in (name, name + "_routing_token") and "condition" in r)
             components.extend(routing_adapter_components(name, tokens))
@@ -216,7 +244,7 @@ def validate_flow(flow, registration):
         require(registration.get("max_delegations") == 64, "supervisor delegation budget required")
     helpers = [c for c in components if c["type"] != "AgentComponent"]
     expected_helpers = [c for name, tokens in declared.items()
-                        for c in routing_adapter_components(name, tokens)]
+                        for c in routing_adapter_components(name, tokens, status_routing=supervisor)]
     prompts = {p["prompt_id"]: p for p in flow["prompts"]}
     require(len(prompts) == len(flow["prompts"]), "duplicate prompt id")
     used_prompts = set()
@@ -279,6 +307,11 @@ def validate_flow(flow, registration):
 
     graph = {}
     routers = {r["from"]: r for r in flow["routers"]}
+    if supervisor:
+        require(flow["routers"] == supervisor_routers(), "supervisor routing differs from status contract")
+        require(declared["coordinate"] == ["complete", "checkpoint", "blocked"], "invalid supervisor tokens")
+        require(documented_terminal_tokens(prompts["coordinate_prompt"]["prompt_template"]["system"],
+                "coordinate") == set(declared["coordinate"]), "supervisor terminal tokens differ")
     for router in flow["routers"]:
         source = router["from"]
         require(source in names and source not in graph, "unknown/duplicate router source")
@@ -291,7 +324,8 @@ def validate_flow(flow, registration):
         require(set(router) == {"from", "condition"}, "unsupported adapter router")
         condition = router["condition"]
         require(set(condition) == {"input", "routes"}, "invalid router condition")
-        require(condition["input"] == f"context:{source}.tool_responses", "wrong routing input")
+        field = "execution_result" if supervisor else "tool_responses"
+        require(condition["input"] == f"context:{source}.{field}", "wrong routing input")
         routes = condition["routes"]
         require(routes.get("default_route") == "abort", "unknown answers must abort")
         require(all(target in {*names, "end", "abort"} for target in routes.values()),

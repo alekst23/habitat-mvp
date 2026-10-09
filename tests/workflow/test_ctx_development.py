@@ -98,6 +98,9 @@ class SupervisorFlowTests(unittest.TestCase):
         probe.flow = ctx.read_yaml(ROOT / ".gitlab/duo/flows/ctx-development.yml")
         self.assertEqual(probe.route_response("coordinate", "Saved report.\ncomplete\n"), "end")
         self.assertEqual(probe.route_response("coordinate", "checkpoint"), "end")
+        self.assertEqual(probe.route_response("coordinate", "Saved detailed note.\ncheckpoint\n", wrapped=True), "end")
+        for failure in ("stale", "tampered", "write_error"):
+            self.assertEqual(probe.route_response("coordinate", "checkpoint", wrapped=True, **{failure: True}), "abort")
         for response in ("blocked", "ready", "checkpoint\ncomplete", "unknown"):
             self.assertEqual(probe.route_response("coordinate", response), "abort")
 

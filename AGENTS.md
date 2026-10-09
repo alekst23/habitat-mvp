@@ -63,13 +63,20 @@ but must not be reported as implementation readiness. Only real scope/decomposit
 changes return to Planning; never send users there merely to save Design's work.
 
 Read docs/development/design-readiness.md for restored interview/contract/wiring
-requirements. Generated E-numbered plans and design handoffs are checked by
+requirements and docs/development/design-closure.md for Design-owned review,
+public-documentation research and bounded document repair. Specified means a
+review candidate, not Design complete. The existing supervisor's explicit
+mode=design-closure cannot claim tickets or implement the app; it ends with a
+verified checkpoint after closure or a precise decision/access blocker. The new
+Design v1.6.0/Development v1.5.0 sources are publication candidates, not live yet.
+Generated E-numbered plans and design handoffs are checked by
 scripts/ctx_design.py in CI. Structural checks do not replace independent semantic
 design review. Chat Design owns typed contract documentation; Development's design
 worker creates/reuses executable contract stubs and minimal port fakes before tests.
 The completion repair adds --handoff for specified design with explicit later
-gates; --ready remains all-clear and conservative. Development obtains independent
-design/historical reviews before ticket claims and publishes source-issue receipts.
+gates; --ready remains all-clear and conservative. The runner obtains independent
+design review/repair under Design ownership, then historical execution reviews
+before ticket claims, publishing source-issue receipts.
 Missing execution/enablement evidence alone does not keep complete design in draft.
 CTX Design v1.5.0 and Development v1.4.0 are published/enabled with full prompt/YAML
 readback (2026-10-09 UTC); native behavior validation remains pending. Workflow

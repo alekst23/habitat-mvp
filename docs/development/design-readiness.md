@@ -115,9 +115,13 @@ checks its validity. New interfaces/components cannot use that path to evade wir
 
 ### Completion is not one global ready flag
 
+The [Design-owned closure loop](design-closure.md) is normative. It adds the missing
+review/research/repair boundary: a specified design is only a review candidate.
+
 | Outcome | Required | Does not require or authorize |
 |---|---|---|
 | Design specified | Complete canonical documents, resolved design decisions, consistent mappings, saved-file readback, self-check and truthful CI status | Independent technical review, historical evidence repair or provider enablement |
+| Design complete | Current-SHA structural/handoff checks and independent semantic review, no unresolved design findings, verified closure report | Ticket claims, historical execution evidence or provider enablement |
 | Documentation MR merge | Human acceptance and actual repository merge controls | Epic completion, implementation or deployment |
 | Development may claim a ticket | Design handoff, independent design review, scoped decisions/dependencies/evidence and safe execution prerequisites | Enabling unverified providers or changing CI policy |
 | Provider/connector enablement | Verified external facts, implemented safeguards, tested configuration and applicable human/protected controls | Inference from a design merge or sandbox funding |
@@ -132,21 +136,26 @@ behavior or unverified safety assumptions to enablement without a safe specified
 fallback. Unknown stage or absent safeguard fails validation. No automatic migration
 of old decisions, ticket status changes or review assertions occurs in the helper.
 
-Design's final source-issue report names the exact artifact SHA/MR/index, completed
-scope, actual structural CI (or pending), later gates with owners/unblock actions,
-and one next human Development invocation for that epic/SHA. Do not require a new
-Design chat, repeated provider questions or a manually collected review to hand off.
+Design's candidate report names the exact artifact SHA/MR/index, actual structural
+CI, outstanding review/research work and one human mode=design-closure invocation
+for missing runner capabilities. This is not a completed Design handoff. Its final
+completion report requires same-SHA independent approval and read-back closure
+evidence. Neither repeated provider questions nor manually collecting a review is
+the default handoff. Keep detailed evidence behind a concise status/action summary.
 The agent never changes merge controls or merges; missing later evidence alone is
 not a reason to insist a documentation MR remain Draft.
 
-### Development-owned preflight
+### Design closure followed by Development preflight
 
 Use this order before creating the fixed execution request/journal or claiming tickets:
 
-1. Pin the coherent design SHA and run --handoff. Unfinished artifacts or open
-   design decisions return a precise finding to Design, not a generic restart.
+1. Pin the coherent design SHA, validate structure and enter the design-closure
+   loop. Technical findings invoke bounded document repair, public facts invoke
+   research, product decisions invoke a precise question; no generic restart.
 2. Reuse a verified same-SHA independent design review, or delegate epic_review
    mode=design-readiness. Do this even if historical ticket evidence is blocked.
+   Re-review after every repair, require --handoff and verified closure before
+   proceeding. Explicit mode=design-closure ends here with checkpoint and no claims.
 3. Reconcile historically merged evidence through epic_review mode=historical-evidence
    as needed. The coordinator verifies actual MR/ancestry, original ACs, source and
    integration SHAs, CI and reviewer report. Update state only when the existing done
@@ -194,9 +203,11 @@ structurally green JSON file, self-check or file readback cannot replace this re
 
 The coordinator reuses a verified independent review at the same design SHA or
 delegates the existing read/comment-only epic_review component in design-readiness
-mode before ticket claims. No new bot is required. It saves that review separately
-from ticket journal receipts, counts the delegation against the engine cap, and
-still performs the normal final integrated-epic review after implementation.
+mode before ticket claims. No new bot is required. It repairs/researches design
+findings through the existing design worker and repeats independent review under
+design-closure.md's budgets. It saves review separately from ticket journal receipts,
+counts every delegation against the engine cap, and still performs the normal
+final integrated-epic review after implementation.
 
 Development reconciles the review and live dependencies before preparing contract
 stubs. Reuse correct stubs; otherwise create only specified models/interfaces and

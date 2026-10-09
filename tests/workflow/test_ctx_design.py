@@ -130,6 +130,7 @@ class DesignHandoffTests(unittest.TestCase):
         self.save()
         result = validate_epic(self.root, self.directory, handoff=True)
         self.assertTrue(result.get("handoff_gate_passed"))
+        self.assertFalse(result["design_complete"])
         self.assertFalse(result["ready_gate_passed"])
         self.assertFalse(result["implementation_ready"])
         self.assertEqual(result["gates"]["enablement"], ["Q1"])

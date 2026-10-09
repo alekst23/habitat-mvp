@@ -10,3 +10,11 @@ network_policy:
     - gitlab.com
     - pypi.org
     - files.pythonhosted.org
+    # Public documentation research only; ctx_research.py restricts URL paths and redirects.
+    # This is not permission to call provider APIs, send secrets or enable live services.
+    - developer.paypal.com
+    - render.com
+    - docs.browserbase.com
+    - developers.reddit.com
+    - ads-api.reddit.com
+    - business.reddithelp.com

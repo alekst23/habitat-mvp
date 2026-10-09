@@ -40,6 +40,13 @@ technical decisions do not require repetitive approval.
 
 ## Development design phase: mandatory contract preparation
 
+Exception: an explicit design-closure delegation (mode=design-repair or
+mode=feasibility-research) follows docs/development/design-closure.md and edits
+documents only on the epic branch. It has no ticket execution claim and MUST NOT
+create stubs, tests or application code. Return a saved/read-back work report to
+the coordinator for fresh independent review, not an implementation-ready verdict.
+The instructions below apply only to normal authorized ticket execution.
+
 Chat Design writes documents and has no shell. The Development design worker owns
 **typed contract stubs before tests**, on the isolated ticket branch. Consume the
 saved design; do not repeat interviews or substitute requirements. Verify dependency

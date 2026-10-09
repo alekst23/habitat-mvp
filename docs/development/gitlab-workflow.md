@@ -92,6 +92,14 @@ deleted. The historical project was untouched. Do not re-enable it for normal us
 
 ## CTX Design: owns specifications and saving
 
+The new source candidates (Design v1.6.0, Development v1.5.0) close the missing
+Design review/research/repair loop. Follow [design-closure](design-closure.md) for
+ownership, research tasks, bounded execution, concise reports, activation and the
+E2 smoke. Saved/specified artifacts are only review candidates; independent current-
+SHA review is required for Design completion. Explicit mode=design-closure uses
+the existing background runner without authorizing application implementation.
+These candidates still require merge/helper sync and catalog publication/readback.
+
 Published Design v1.5.0 and Development v1.4.0 separate specified design, development preflight and
 provider enablement. See [the ordered handoff](design-readiness.md#completion-is-not-one-global-ready-flag).
 Development obtains independent/historical reviews and source-issue receipts;
@@ -235,7 +243,7 @@ signals, duplicate JSON fields, unknown fields/tokens and trailing prose are
 rejected. The routing token itself must be outside code fences. No aliases,
 case-folding or guesses at intent are allowed.
 
-Every agent is followed by three fixed `DeterministicStepComponent` steps:
+The standalone/legacy graphs use three fixed `DeterministicStepComponent` steps:
 
 1. `<agent>_routing_prepare` refuses an existing/symlinked scratch path.
 2. `<agent>_routing_capture` saves the raw final answer using the file tool. Only
@@ -244,6 +252,13 @@ Every agent is followed by three fixed `DeterministicStepComponent` steps:
 3. `<agent>_routing_token` runs the pinned parser, consumes the scratch file and
    emits only the `routing_token` field, without a newline. The native router
    reads `context:<agent>_routing_token.tool_responses`, never the raw answer.
+
+The Development v1.5.0 candidate instead uses prepare/capture followed by fixed
+complete/checkpoint match probes. All gates read execution_result, never formatted
+tool output. A successful match consumes the source file and ends; an unsuccessful
+complete probe tries checkpoint; unknown/conflicting/blocked results and tool errors
+cannot produce a successful match. See the [runtime contract](single-shot-development.md#progress-journal-protocol).
+Managed workers return to their supervisor, not through these graph adapters.
 
 These are tool steps, not more bots or LLM prompts. Review agents still have only
 read/comment permissions. Normalizer commands and paths are fixed by the catalog

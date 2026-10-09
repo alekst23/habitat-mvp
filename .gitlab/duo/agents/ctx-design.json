@@ -7,9 +7,11 @@
   "project_id": 87329027,
   "project_path": "gitlab-ai-hackathon/transcend-october-2026/43066631/showcase",
   "system_prompt_file": "ctx-design.md",
-  "system_prompt_sha256": "908e663c32d69f9bce535cc5538a34ab17963ed5658b52eb279a5c2743eeee49",
+  "system_prompt_sha256": "c319d2534b8cb4b10a60adbb84d429c7557ddce5e9698c5627da2a3d841b441b",
   "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016255",
   "catalog_version": "1.5.0",
+  "pending_catalog_version": "1.6.0",
+  "pending_changes": "Design retains review/research/repair ownership; specified is a review candidate, not completion. Concrete design-closure runner invocation, provider research tasks and concise reports. Requires workflow merge, epic helper sync and catalog publication/readback; not active yet.",
   "enabled_in_project": true,
   "operations": [
     "ctx-spec-interview",

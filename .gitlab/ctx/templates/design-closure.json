@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "mode": "design-closure",
+  "project_id": 87329027,
+  "source_issue_iid": 10,
+  "epic": "E2",
+  "branch": "ctx/epic-i2",
+  "candidate_sha": "REPLACE_WITH_VERIFIED_FULL_SHA",
+  "structural_sha": null,
+  "handoff_sha": null,
+  "review": null,
+  "repairs": [],
+  "research_attempts": [],
+  "active": null
+}
