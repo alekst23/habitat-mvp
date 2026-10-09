@@ -153,9 +153,13 @@ startup path and observable evidence, not just a demonstration checklist.
 
 ## Publication
 
-This continuity/layout repair is a Design v1.4.0 publication candidate; v1.3.0
-remains the recorded published agent. Review and merge the procedures, templates
-and helper first. A maintainer must synchronize existing epics' trusted helper
+Design v1.4.0 is published/enabled with full prompt readback (2026-10-09 UTC).
+Workflow MR !14 merged at 9f5ccbf and helper-sync MR !15 merged onto E2 at a58e623;
+both pipelines passed. Product documents were preserved, not reorganized. Live
+continuation/layout behavior remains to be checked in the user's fresh chat.
+
+For subsequent revisions, review and merge the procedures, templates and helper
+first. A maintainer must synchronize existing epics' trusted helper
 revision before Design writes version-2 design.json; the chat agent cannot change
 scripts/CI itself. Then publish/read back the existing Design catalog entry, keeping
 its tool/access settings. No Planning or Development republish is needed for this
