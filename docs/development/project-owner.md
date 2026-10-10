@@ -71,8 +71,10 @@ pass for old work. Preserve historical merges while reconciling missing evidence
 
 An active writer owns its files and claims. Read notes, branch movement and
 controller state before editing; if ownership is uncertain, do not race or replace
-that work. Without a live session-read tool, chat cannot assert there are no other
-runs. A missing controller file is not proof of no manual session. Report the
+that work. List Duo Sessions (project-filtered, paginated) and Get Duo Session
+provide live read-only evidence for accessible runs. Listing excludes Duo Chat;
+empty results cannot prove no other identities have active work. Missing access or
+a missing controller file is not proof of no manual session. Report the
 observed access limit and exact reconciliation owner/action, not a fabricated status.
 Likewise enabled=true alone does not prove the scheduler is installed or running.
 
@@ -119,9 +121,11 @@ a new run, editing the pinned request or dropping acceptance criteria.
 
 ## Execution connection: explicit current limitation
 
-The candidate uses the existing 19-tool Planning capability set: GitLab reads,
-scoped issues/comments, branches, commits and draft MRs. There is no shell, public
-web tool, live session-list tool, controller-start/resume tool or external MCP server.
+The agent uses 21 tools: the 19-tool Planning capability set (GitLab reads,
+scoped issues/comments, branches, commits and draft MRs), plus read-only List Duo
+Sessions and Get Duo Session. There is no shell, public web tool, flow/session-start,
+session-input, controller-start/resume tool or external MCP server.
+Session-read coverage follows the [GitLab MCP tool contracts](https://docs.gitlab.com/user/model_context_protocol/mcp_server_tools/#list_duo_sessions).
 Path and intent restrictions are prompt rules; GitLab permissions remain essential.
 
 When the [durable controller](durable-execution.md) is actually installed, use one

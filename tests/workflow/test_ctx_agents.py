@@ -41,6 +41,8 @@ class ChatAgentRegistrationTests(unittest.TestCase):
                 tools = record["tools_ui_labels"]
                 self.assertEqual(len(tools), len(set(tools)))
                 expected = shared | publishing | ({"Create Issue"} if name != "ctx-design" else set())
+                if name == "ctx-project":
+                    expected |= {"List Duo Sessions", "Get Duo Session"}
                 self.assertEqual(set(tools), expected)
 
     def test_project_is_an_unpublished_front_door_not_a_specialist_replacement_yet(self):
@@ -90,6 +92,8 @@ class ChatAgentRegistrationTests(unittest.TestCase):
                 ("project_id", 1), ("system_prompt_file", "../ctx-project.md"),
                 ("system_prompt_sha256", "0" * 64),
                 ("tools_ui_labels", record["tools_ui_labels"] + ["Run Command"]),
+                ("tools_ui_labels", record["tools_ui_labels"] + ["Start Duo Session"]),
+                ("tools_ui_labels", record["tools_ui_labels"] + ["Send Duo Session Input"]),
                 ("external_mcp_servers", ["unreviewed-controller"]),
                 ("operations", record["operations"] + ["ctx-release"]),
             ):

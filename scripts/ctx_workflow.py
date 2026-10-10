@@ -409,6 +409,8 @@ def validate_chat_agent(name, record, prompt, catalog):
     require(record.get("system_prompt_sha256") == hashlib.sha256(prompt).hexdigest(), "agent prompt hash mismatch")
     tools = record.get("tools_ui_labels")
     allowed = CHAT_TOOLS | ({"Create Issue"} if name != "ctx-design" else set())
+    if name == "ctx-project":
+        allowed |= {"List Duo Sessions", "Get Duo Session"}
     require(isinstance(tools, list) and all(isinstance(t, str) for t in tools) and
             len(tools) == len(set(tools)) and set(tools) == allowed, "unexpected chat agent tools")
     expected = ([op for operations in CHAT_PROCEDURES.values() for op in operations] if name == "ctx-project"
