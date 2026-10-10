@@ -1,5 +1,11 @@
 # Design owns review, research and repair
 
+The local [durable-execution candidate](durable-execution.md) adds one-delegation
+slices and controller-owned continuation. It supersedes instructions here to finish
+the entire loop in one session. Keep cumulative repair/research reservations and
+Design ownership; checkpoint after a coherent saved unit. It is not yet published
+or activated; publication history below describes the previous live versions.
+
 This contract supersedes the earlier handoff of unfinished design to Development.
 Keep two conversational agents and the existing background flows, not a bot per
 skill. CTX Design owns the interview and saved documents. The existing Development

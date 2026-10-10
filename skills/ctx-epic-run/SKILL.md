@@ -13,7 +13,7 @@ inside this invocation. Confirm actual remote ownership before dispatch. The loc
 wave helper/journal is not a distributed lease; never take over another live run.
 
 Use the bounded supervisor and progress journal described in
-docs/development/single-shot-development.md. Compute all independent ready work,
+docs/development/single-shot-development.md and durable-execution.md. Compute all independent ready work,
 delegate design preflight/tests/implementation/verification/review/integration, then
 reassess until scoped work is complete or a real blocker/budget requires checkpoint.
 The current native runtime uses an explicit serial fallback; do not claim parallel
@@ -23,11 +23,13 @@ from writing shared project state. A failed setup must never fall back to main.
 Publish/read back the claim before dispatch and the receipt after each delegation.
 Only independently verified integration unlocks dependents. A blocked ticket does
 not abort unrelated ready work. After closure, continue to the next ready ticket
-in this session; integrate.more is not an end signal. When all tickets are integrated,
+in the next controller slice; integrate.more is not epic completion. When all tickets are integrated,
 delegate ctx-epic-docs, obtain fresh epic-SHA checks, ctx-epic-review and ctx-epic-close.
 Do not merge to default, dispatch another flow, invent evidence or expand scope.
 
-The journal allows at most 60 actions, below the engine's 64-delegation bound, and
+Each session delegates at most ONE unit and checkpoints. The durable controller
+continues the same authorized epic without a human phase-by-phase restart. The
+journal allows at most 60 cumulative actions across sessions, and
 one reconciled transient/CI-wait retry per target. Never repeat uncertain writes
 or hide a partial result as completion. Preserve dirty/unmerged/foreign resources;
 cleanup only clean, integrated, inactive entries in this run's ownership manifest.

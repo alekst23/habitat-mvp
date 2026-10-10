@@ -241,7 +241,7 @@ def validate_flow(flow, registration):
     if supervisor:
         require(registration.get("mode") == "bounded-supervisor" and set(declared) == {"coordinate"},
                 "unsupported supervisor ownership")
-        require(registration.get("max_delegations") == 64, "supervisor delegation budget required")
+        require(registration.get("max_delegations") == 1, "single-slice delegation budget required")
     helpers = [c for c in components if c["type"] != "AgentComponent"]
     expected_helpers = [c for name, tokens in declared.items()
                         for c in routing_adapter_components(name, tokens, status_routing=supervisor)]
@@ -264,7 +264,7 @@ def validate_flow(flow, registration):
                     all(isinstance(c, dict) and set(c) == {"name"} for c in children) and
                     len(children) == len(managed) and {c["name"] for c in children} == set(managed),
                     "supervisor must own each managed agent exactly once")
-            require(component["max_delegations"] == 64, "unbounded supervisor delegation")
+            require(component["max_delegations"] == 1, "unbounded supervisor delegation")
         require(component["type"] == "AgentComponent", "unsupported component type")
         require(component["prompt_id"] in prompts, "missing prompt reference")
         used_prompts.add(component["prompt_id"])

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "enabled": false,
+  "consumer_id": null,
+  "catalog_version_id": null,
+  "report_author_ids": [],
+  "agent_privileges": [1, 2, 3, 4, 5],
+  "pre_approved_agent_privileges": []
+}

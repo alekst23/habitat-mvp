@@ -1,5 +1,11 @@
 # CTX native GitLab workflow implementation
 
+Local candidate: [durable one-request execution](durable-execution.md) keeps the
+existing Development catalog entry but changes sessions to one delegated work unit.
+The external controller persists state and continues/reconciles runs automatically.
+It is NOT activated: catalog publication, protected controller state/credentials,
+resolved API IDs, a scheduler and a live interruption smoke are still required.
+
 ## Status and boundaries
 
 Design repair (2026-10-08): restored interview/technical-contract/wiring

@@ -39,7 +39,19 @@ ticket processing and the repair loop still need live validation. New runs use t
 version-2 journal: pin the exact AC manifest, repair
 actionable defects up to three times per target, and require fresh application/AC
 verification plus independent review after every fix. Missing infrastructure, intent
-or authority is still a blocker; no automatic flow retriggers or policy weakening.
+or authority is still a blocker; no agent-driven flow retriggers or policy weakening.
+
+The local durable-execution candidate supersedes SAME-session loop instructions:
+read docs/development/durable-execution.md. Each native session delegates at most
+one coherent unit, saves/read-verifies its result, then checkpoints. The separate
+trusted controller automatically schedules subsequent slices of one authorized
+epic, with durable scope/history, bounded recovery and no duplicate uncertain POSTs.
+Workers receive save_by and must save coherent increments promptly, not accumulate
+an epic-sized unsaved batch. Review/fix/test gates are unchanged. Do not bypass the
+one-delegation limit by implementing another phase in the coordinator. The controller
+is disabled pending publication, protected state/credential setup and live smoke;
+manual mentions alone do not provide automatic continuation. Never expose its token
+to agents or let agent identities write ctx/controller-state.
 
 CTX Planning and CTX Design prompts/registration records live in
 `.gitlab/duo/agents/`. The order is Planning -> Design -> Development. Planning

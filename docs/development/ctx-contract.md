@@ -198,8 +198,12 @@ application, and a release plan from a deployment. Collectible failing tests are
 expected during test design; those acceptance tests must pass on the final
 candidate. Missing checks are blockers, not evidence of stage completion.
 
-Read back remote state after uncertain writes before repeating them. No flow
-automatically retriggers itself. The local single-shot supervisor advances ready
+Read back remote state after uncertain writes before repeating them. No agent/flow
+automatically retriggers itself. The local [durable controller](durable-execution.md)
+candidate may start the next bounded native slice of one explicitly authorized epic,
+after protected-state reservation and remote session/checkpoint reconciliation.
+It is disabled pending activation; this is not authority to spawn arbitrary flows.
+The single-shot progress protocol advances ready
 work internally and permits one reconciled transient/CI-wait retry per target,
 within its action bound. Version-2 journals also permit three cumulative scoped
 code/test/AC repair cycles per ticket or assembled epic, with actionable findings,

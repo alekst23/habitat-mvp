@@ -1,5 +1,12 @@
 # GitLab workflows for the HABITAT submission
 
+Execution reliability update (local candidate, not live): the
+[durable controller](development/durable-execution.md) carries one approved epic
+across short native Duo sessions, preserving tests, AC verification, independent
+review and cumulative recovery limits. It retains the same agents/flow entry points
+and stage mapping. Planning/Design stay conversational; the user authorizes execution
+once instead of managing every ticket and restart. Installation/live proof is pending.
+
 This is the concise implementation plan for the [GitLab Transcend hackathon](https://gitlab-transcend.devpost.com/). The goal is to show GitLab agents taking a HABITAT change from intent to a tested, secure, observable release.
 
 The GitLab submission is the agentic delivery workflow; HABITAT, the PayPal submission, is the application it builds and operates. Stage coverage must be demonstrated by actual workflow runs. Planning has already run in Duo via `/flow:ctx-planning`. This document describes the target behavior; the [implementation guide](development/gitlab-workflow.md) distinguishes that milestone from the new local revision and pending application/delivery adapters.
