@@ -1,5 +1,14 @@
 # GitLab workflows for the HABITAT submission
 
+Conversational entry-point update (local candidate, not live):
+[CTX Project](development/project-owner.md) reuses Planning and Design skills in
+one Duo conversation and reconciles project status before work. The standalone
+Planning/Design agents remain available until the replacement is live-tested.
+It is not another background flow or a bot per skill. The lifecycle/stage ownership
+below stays the same; the candidate replaces manual chat navigation, not the gates.
+Controller activation, an authenticated chat bridge and technical design revision
+during execution remain separate unfinished work.
+
 Execution reliability update (local candidate, not live): the
 [durable controller](development/durable-execution.md) carries one approved epic
 across short native Duo sessions, preserving tests, AC verification, independent

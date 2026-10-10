@@ -9,6 +9,13 @@ one authorized execution request owns the remaining epic. The deterministic
 controller runs outside Duo; the existing Development catalog flow supplies native
 subagents in CI. There is no additional bot per operation, ticket, or retry.
 
+The local [CTX Project candidate](project-owner.md) brings the conversational
+Planning/Design procedures and project assessment into one chat. It does not
+change this controller's installation status or add chat dispatch privileges.
+Its read-only assessment can consume these records; only the controller writes
+its protected state or launches the next session. The single-epic/serial limit,
+manual init/resume boundary and missing post-pinned-design revision remain explicit.
+
 The user does not pick the next ticket, collect reviews, or restart ordinary
 technical work. The controller continues after saved progress and reconciles
 interrupted sessions. Product questions, missing access, actual approvals, uncertain

@@ -6,6 +6,12 @@ reads/interviews are live-tested. Approved planning publication and revised
 development/delivery execution need separate validation. See
 [implementation status](gitlab-workflow.md).
 
+The local [CTX Project candidate](project-owner.md) unifies assessment, Planning
+and Design in one conversation by loading the existing procedures. It is not
+published/enabled and does not retire the working specialist agents. When invoked
+through that candidate, stage names below refer to modes and artifact ownership,
+not required chat switches. All scope, interview, evidence and security rules remain.
+
 Preserve the original development process under the `ctx-` prefix and extend it
 with six delivery operations. The nine prize stages are a coverage map over this
 process. There is no one-operation-per-stage requirement.

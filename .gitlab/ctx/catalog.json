@@ -1,6 +1,11 @@
 {
   "version": 2,
   "entrypoints": {
+    "project": {
+      "kind": "agent",
+      "registration": ".gitlab/duo/agents/ctx-project.json",
+      "status": "candidate"
+    },
     "planning": {
       "kind": "agent",
       "registration": ".gitlab/duo/agents/ctx-planning.json"
