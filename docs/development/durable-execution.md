@@ -9,7 +9,7 @@ one authorized execution request owns the remaining epic. The deterministic
 controller runs outside Duo; the existing Development catalog flow supplies native
 subagents in CI. There is no additional bot per operation, ticket, or retry.
 
-The local [CTX Project candidate](project-owner.md) brings the conversational
+The published [CTX Project v1.0.0](project-owner.md) brings the conversational
 Planning/Design procedures and project assessment into one chat. It does not
 change this controller's installation status or add chat dispatch privileges.
 Its read-only assessment can consume these records; only the controller writes

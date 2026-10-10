@@ -17,14 +17,14 @@ and close operations under the `ctx-` prefix. Add the six delivery operations
 listed there. Lifecycle stages classify evidence; they do not define agent or
 operation boundaries.
 
-Planning is conversational. The published entry points remain **CTX Planning**
-and **CTX Design**. A local **CTX Project** candidate unifies their procedures and
-project-status assessment in one chat; read docs/development/project-owner.md.
-It is not registered/enabled or live-tested. When using that candidate, Planning
+Planning is conversational. **CTX Project v1.0.0** is published and enabled with
+catalog readback and chat-picker verification; model behavior is not yet live-tested.
+It unifies Planning/Design procedures and project-status assessment in one chat;
+read docs/development/project-owner.md. When using CTX Project, Planning
 and Design are modes in the same conversation, not instructions to open another
 agent. Status requests are read-only. Shared skills, evidence, scope and security
-boundaries remain; the candidate has no shell, flow-start or controller-write tool.
-Do not retire the specialists before publication/readback and live acceptance.
+boundaries remain; the agent has no shell, flow-start or controller-write tool.
+CTX Planning and CTX Design remain available; do not retire them before live acceptance.
 The two background flow entry points are `ctx-development` and `ctx-delivery` in
 `.gitlab/duo/flows/`. Reusable instructions live in `skills/ctx-*/SKILL.md`;
 `.gitlab/ctx/catalog.json` records the active entry points and operation mappings.

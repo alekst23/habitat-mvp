@@ -4,7 +4,7 @@
     "project": {
       "kind": "agent",
       "registration": ".gitlab/duo/agents/ctx-project.json",
-      "status": "candidate"
+      "status": "published"
     },
     "planning": {
       "kind": "agent",
