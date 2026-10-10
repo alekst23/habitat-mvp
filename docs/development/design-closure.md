@@ -7,8 +7,8 @@ Design ownership; checkpoint after a coherent saved unit. It is not yet publishe
 or activated; publication history below describes the previous live versions.
 
 This contract supersedes the earlier handoff of unfinished design to Development.
-The published setup retains two conversational agents and the existing background
-flows, not a bot per skill. The local [CTX Project candidate](project-owner.md)
+The published setup retains the two specialist agents and existing background
+flows, not a bot per skill. The published [CTX Project v1.0.0](project-owner.md)
 applies Planning/Design as modes in one chat and leaves the specialists available
 until live validation. Design mode owns the interview and saved documents in
 either entry point. The existing Development supervisor supplies independent

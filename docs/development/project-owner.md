@@ -1,6 +1,27 @@
 # CTX Project: the conversational project owner
 
-Status: **local v1.0.0 candidate, not registered or enabled; no live smoke has run**.
+Status: **v1.0.0 published and enabled on 2026-10-10**. Full catalog readback and
+chat-picker availability passed; no live smoke of model behavior has run.
+
+## Open the agent
+
+Open [CTX Project](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016538),
+refresh GitLab, then choose **Add new chat → CTX Project**. No bot mention or slash
+command is required. For the existing work, start read-only:
+
+> Assess E2 using source issue #10 and MR !8. Reconcile the latest saved design,
+> review and execution state. Tell me what is complete, the next agent-owned work,
+> and decisions you need from me. Do not modify files, start execution or merge.
+
+Then continue in that same chat:
+
+> Continue E2 design here. Preserve prior decisions, ask only unresolved product
+> questions, and save and verify feature-level specifications on the existing epic
+> branch when no active writer owns them. Keep !8 open; do not implement.
+
+This is the conversational entry point, not an activated autonomous execution
+loop. The controller is still disabled; technical background dispatch and the
+chat-to-controller bridge need separate setup and live validation.
 The existing CTX Planning and CTX Design registrations remain unchanged and usable.
 This is the unified conversational entry point, not a claim that the controller,
 chat-to-controller bridge or development-to-design revision loop is operational.
@@ -149,12 +170,16 @@ it must not create a new run. Merge, release and provider enablement remain sepa
 
 ## Publication and live acceptance
 
-The candidate prompt and registration are `.gitlab/duo/agents/ctx-project.md` and
-`ctx-project.json`. The catalog marks this entry as candidate; no catalog URL/version
-or enabled state has been invented. Existing specialist prompts/registrations,
-Development YAML and controller configuration are unchanged by this front-door work.
+The prompt and registration are `.gitlab/duo/agents/ctx-project.md` and
+`ctx-project.json`. Source MR !23 merged after pipeline 2934622560 passed at
+033dc8da20002486a6d18269b64e443191eebc20. Agent 1016538 v1.0.0 is private and
+enabled in Showcase. Its complete saved prompt equals that source with the final
+newline trimmed; the record contains both hashes. All 21 tools, no external MCP
+and the refreshed chat picker were verified. No model prompt was submitted.
+Existing specialist registrations and controller enablement remain unchanged.
+The following live behavior checks remain required, not implied by publication:
 
-1. Review/merge the candidate and shared procedures. Check for an existing CTX
+1. For future updates, review/merge the prompt and shared procedures. Check for an existing CTX
    Project catalog entry before creating one; update it if present. Publish the
    exact prompt, private visibility, listed tools and no external MCP servers.
 2. Read back the entire saved prompt/tool set/version/enablement. Record actual

@@ -1,9 +1,9 @@
 # CTX design handoff requirements
 
-In the local [CTX Project candidate](project-owner.md), Planning and Design are
+In the published [CTX Project v1.0.0](project-owner.md), Planning and Design are
 modes in one conversation using these same requirements. Separate specialist-chat
 navigation below describes the still-published entry points, not a required handoff
-for CTX Project. The unified candidate is not yet enabled or live-tested.
+for CTX Project. Catalog readback/enablement are verified; model behavior is not yet live-tested.
 
 Planning saves scope and tickets. Design turns that scope into specifications that
 another developer can implement without inventing product behavior. Development

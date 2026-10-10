@@ -45,17 +45,22 @@ class ChatAgentRegistrationTests(unittest.TestCase):
                     expected |= {"List Duo Sessions", "Get Duo Session"}
                 self.assertEqual(set(tools), expected)
 
-    def test_project_is_an_unpublished_front_door_not_a_specialist_replacement_yet(self):
+    def test_project_publication_record_preserves_specialists_and_pending_live_proof(self):
         catalog = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())
         entry = catalog["entrypoints"]["project"]
         self.assertEqual(entry["kind"], "agent")
-        self.assertEqual(entry["status"], "candidate")
+        self.assertEqual(entry["status"], "published")
         project = json.loads((ROOT / entry["registration"]).read_text())
         self.assertEqual(project["display_name"], "CTX Project")
-        self.assertFalse(project["enabled_in_project"])
-        self.assertIsNone(project["catalog_url"])
-        self.assertIsNone(project["catalog_version"])
-        self.assertEqual(project["candidate_version"], "1.0.0")
+        self.assertTrue(project["enabled_in_project"])
+        self.assertTrue(project["catalog_url"].endswith("/agents/1016538"))
+        self.assertEqual(project["catalog_version"], "1.0.0")
+        prompt = (AGENTS / project["system_prompt_file"]).read_bytes()
+        self.assertEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertTrue(project["verification"]["catalog_readback"].startswith("passed"))
+        self.assertTrue(project["verification"]["chat_picker"].startswith("passed"))
+        self.assertEqual(project["verification"]["chat_interview_save_smoke"], "pending")
+        self.assertEqual(project["verification"]["fresh_chat_status_reconciliation"], "pending")
         for name in ("planning", "design"):
             record = json.loads((ROOT / catalog["entrypoints"][name]["registration"]).read_text())
             self.assertTrue(record["enabled_in_project"], "do not retire a working specialist before live proof")

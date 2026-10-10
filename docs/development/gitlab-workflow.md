@@ -1,9 +1,10 @@
 # CTX native GitLab workflow implementation
 
-Local conversational candidate: [CTX Project](project-owner.md) combines project
+Published conversational entry point: [CTX Project v1.0.0](project-owner.md) combines project
 assessment, the existing Planning procedures and the Design interview in one chat.
-It is not registered, enabled or live-tested. Existing specialist agents remain
-unchanged. The candidate uses the existing GitLab document/issue tool set; direct
+It is registered and enabled; full prompt/tool readback and chat-picker checks passed
+on 2026-10-10. Model behavior is not yet live-tested. Existing specialist agents remain
+unchanged. Project has the document/issue tools plus two read-only session tools; direct
 chat-to-controller dispatch and post-pinned-design revision are still missing.
 Its prompt/registration hashes, tools and procedure coverage are now checked by
 `python scripts/ctx_workflow.py validate` as well as the workflow tests.
@@ -83,8 +84,9 @@ evidence; they do not determine agent boundaries. Read the full contract in
 ## CTX Planning: scope and tickets first
 
 The instructions in this and the following section describe the existing specialist
-entry points. Once CTX Project is separately published and validated, these become
-optional: scope and design remain distinct modes in that one conversation. See
+entry points. CTX Project is now separately published and enabled; use it for scope
+and design as distinct modes in one conversation. Keep specialists available while
+the unified behavior undergoes live validation. See
 [publication and acceptance](project-owner.md#publication-and-live-acceptance).
 
 [CTX Planning](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016257)

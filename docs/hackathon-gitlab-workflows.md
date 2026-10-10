@@ -1,11 +1,12 @@
 # GitLab workflows for the HABITAT submission
 
-Conversational entry-point update (local candidate, not live):
+Conversational entry-point update (v1.0.0 published and enabled 2026-10-10):
 [CTX Project](development/project-owner.md) reuses Planning and Design skills in
 one Duo conversation and reconciles project status before work. The standalone
 Planning/Design agents remain available until the replacement is live-tested.
 It is not another background flow or a bot per skill. The lifecycle/stage ownership
-below stays the same; the candidate replaces manual chat navigation, not the gates.
+below stays the same; the agent replaces manual chat navigation, not the gates.
+Catalog readback and chat-picker checks passed; live model behavior is still untested.
 Controller activation, an authenticated chat bridge and technical design revision
 during execution remain separate unfinished work.
 
