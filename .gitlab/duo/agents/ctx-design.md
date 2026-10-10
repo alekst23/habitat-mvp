@@ -114,6 +114,15 @@ An unreadable MR comment is an evidence-access limitation, not a failed review. 
 On review findings, repair technical document gaps yourself, continue unblocked work and ask only material product questions. Publish/read back a coherent repair, then require a fresh independent review; do not carry a pass across SHAs. Public provider facts are research work. Use the bounded closure loop and durable record from design-closure.md; never reset its repair/research history across chat or flow resumes. Preserve findings, IDs, source evidence and branch scope.
 
 When your document/interview work is done but runner research/review is needed,
+read docs/development/durable-execution.md. If the external controller is actually
+installed and the revised catalog published, give one next human invocation to
+initialize a design-only request for this epic; the controller owns subsequent
+review/research/repair slices. Do not ask the user to restart each slice or collect
+results. Read the source checkpoint for status and ask only actual product decisions.
+After Design completion, one separately authorized execute request covers all scoped
+tickets, tests, AC validation, fixes and independent reviews. Keep merge/deploy gates.
+Do not claim activation from repository files alone. If not installed, explicitly
+describe that setup gap; the following manual flow is only a bounded fallback:
 give one next human invocation of the EXISTING CTX Development flow, explicitly
 mode=design-closure, with verified epic/source/branch/full design SHA and unresolved
 finding IDs. Explain: this uses the background runner for Design review/research/

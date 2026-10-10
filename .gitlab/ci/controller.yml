@@ -1,0 +1,15 @@
+# Only trusted default-branch web/schedule jobs receive the separately scoped token.
+# Never run this job from agent pipelines, feature branches or merge requests.
+ctx:execution-controller:
+  stage: workflow
+  environment:
+    name: ctx-controller
+    action: prepare
+  resource_group: ctx-execution-controller
+  interruptible: false
+  timeout: 5m
+  allow_failure: false
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true" && $CTX_CONTROLLER == "1" && ($CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web")'
+  script:
+    - python scripts/ctx_execution_gitlab.py "$CTX_CONTROLLER_ACTION" --epic "$CTX_EPIC"

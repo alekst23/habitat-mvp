@@ -24,7 +24,7 @@ from ctx_acceptance import selected_criteria, validate_acceptance
 
 TICKET_PHASES = ("design", "tests", "implementation", "browser", "review", "integrate")
 EPIC_PHASES = ("docs", "epic_review", "close")
-MAX_ACTIONS = 60  # Reserve room below the supervisor's hard max_delegations=64.
+MAX_ACTIONS = 60  # Cumulative across native execution slices; never reset on a new session.
 READ_ONLY_PHASES = {"browser", "review", "integrate", "epic_review", "close"}
 V2_TICKET_PHASES = ("design", "tests", "implementation", "verify", "review", "integrate")
 V2_EPIC_PHASES = ("implementation", "docs", "verify", "epic_review", "close")

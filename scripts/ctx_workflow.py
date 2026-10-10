@@ -40,6 +40,18 @@ WRITE_TOOLS = {
     "create_file_with_contents", "edit_file", "run_command", "create_branch",
     "create_commit", "create_merge_request", "create_issue", "update_issue",
 }
+CHAT_TOOLS = {
+    "Get Project", "Get Commit", "Get Repository Files", "List Repository Tree",
+    "Get Issue", "Get Issue Note", "List Issue Notes", "List Issues",
+    "Get Merge Request", "Create Issue Note", "List Branches", "List Merge Requests",
+    "Get Pipeline", "Get Job Logs", "Update Issue", "Create Branch", "Create Commit",
+    "Create Merge Request",
+}
+CHAT_PROCEDURES = {
+    "assessment": ["ctx-project-go", "ctx-project-sleep"],
+    "planning": ["ctx-project-design", "ctx-issue-new", "ctx-issue-triage", "ctx-epic-new", "ctx-ticket-new"],
+    "design": ["ctx-spec-interview", "ctx-epic-design", "ctx-ticket-design"],
+}
 
 
 class Invalid(ValueError):
@@ -241,7 +253,7 @@ def validate_flow(flow, registration):
     if supervisor:
         require(registration.get("mode") == "bounded-supervisor" and set(declared) == {"coordinate"},
                 "unsupported supervisor ownership")
-        require(registration.get("max_delegations") == 64, "supervisor delegation budget required")
+        require(registration.get("max_delegations") == 1, "single-slice delegation budget required")
     helpers = [c for c in components if c["type"] != "AgentComponent"]
     expected_helpers = [c for name, tokens in declared.items()
                         for c in routing_adapter_components(name, tokens, status_routing=supervisor)]
@@ -264,7 +276,7 @@ def validate_flow(flow, registration):
                     all(isinstance(c, dict) and set(c) == {"name"} for c in children) and
                     len(children) == len(managed) and {c["name"] for c in children} == set(managed),
                     "supervisor must own each managed agent exactly once")
-            require(component["max_delegations"] == 64, "unbounded supervisor delegation")
+            require(component["max_delegations"] == 1, "unbounded supervisor delegation")
         require(component["type"] == "AgentComponent", "unsupported component type")
         require(component["prompt_id"] in prompts, "missing prompt reference")
         used_prompts.add(component["prompt_id"])
@@ -384,9 +396,66 @@ def validate_commands(config):
         require(type(timeout) is int and 0 < timeout <= 900, f"invalid timeout: {name}")
 
 
+def validate_chat_agent(name, record, prompt, catalog):
+    """Validate local publication inputs, not live tool authority or agent behavior."""
+    require(name in {"ctx-project", "ctx-planning", "ctx-design"}, "unknown chat agent")
+    require(record.get("format") == "ctx-agent-registration-record-v1", "invalid agent registration format")
+    require(record.get("project_id") == 87329027 and
+            record.get("project_path") == "gitlab-ai-hackathon/transcend-october-2026/43066631/showcase",
+            "agent project identity changed")
+    require(record.get("visibility") == "private" and record.get("external_mcp_servers") == [],
+            "agent access/MCP change requires review")
+    require(record.get("system_prompt_file") == f"{name}.md", "unexpected agent prompt path")
+    require(record.get("system_prompt_sha256") == hashlib.sha256(prompt).hexdigest(), "agent prompt hash mismatch")
+    tools = record.get("tools_ui_labels")
+    allowed = CHAT_TOOLS | ({"Create Issue"} if name != "ctx-design" else set())
+    if name == "ctx-project":
+        allowed |= {"List Duo Sessions", "Get Duo Session"}
+    require(isinstance(tools, list) and all(isinstance(t, str) for t in tools) and
+            len(tools) == len(set(tools)) and set(tools) == allowed, "unexpected chat agent tools")
+    expected = ([op for operations in CHAT_PROCEDURES.values() for op in operations] if name == "ctx-project"
+                else CHAT_PROCEDURES[name.removeprefix("ctx-")])
+    require(record.get("operations") == expected, "chat agent procedure coverage changed")
+    if name == "ctx-project":
+        require(record.get("procedure_modes") == CHAT_PROCEDURES, "project procedure modes changed")
+    text = prompt.decode("utf-8")
+    for operation in expected:
+        path = catalog["skills"].get(operation)
+        require(path is not None and path in text, f"chat agent does not load skill: {operation}")
+    require(type(record.get("enabled_in_project")) is bool, "agent enablement must be explicit")
+    if record["enabled_in_project"]:
+        prefix = f"https://gitlab.com/{record['project_path']}/-/automate/agents/"
+        require(isinstance(record.get("catalog_url"), str) and
+                re.fullmatch(re.escape(prefix) + r"[1-9][0-9]*", record["catalog_url"]), "missing agent catalog identity")
+        require(isinstance(record.get("catalog_version"), str) and
+                re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", record["catalog_version"]), "missing published agent version")
+
+
+def validate_chat_registrations(root, catalog):
+    directory = root / ".gitlab/duo/agents"
+    actual = {str(p.relative_to(root)) for p in directory.glob("*.json")}
+    declared = set()
+    for name, entry in catalog["entrypoints"].items():
+        if entry["kind"] != "agent":
+            require(entry["kind"] == "flow" and entry["definition"] in catalog["flows"], "unknown flow entrypoint")
+            continue
+        require(name in {"project", "planning", "design"}, "unknown chat entrypoint")
+        path = f".gitlab/duo/agents/ctx-{name}.json"
+        require(entry["registration"] == path, "unexpected chat registration path")
+        declared.add(path)
+        record = json.loads((root / path).read_text())
+        prompt = (directory / f"ctx-{name}.md").read_bytes()
+        validate_chat_agent(f"ctx-{name}", record, prompt, catalog)
+        if entry.get("status") == "candidate":
+            require(record["enabled_in_project"] is False and record.get("catalog_url") is None and
+                    record.get("catalog_version") is None, "candidate entrypoint claims activation")
+    require(actual == declared, "chat registrations and catalog differ")
+
+
 def validate_repository(root=ROOT):
     catalog = json.loads((root / ".gitlab/ctx/catalog.json").read_text())
     require(catalog["version"] == 2, "unsupported catalog version")
+    validate_chat_registrations(root, catalog)
     actual = {str(p.relative_to(root)) for p in (root / ".gitlab/duo/flows").glob("*.yml")}
     require(actual == set(catalog["flows"]), "flow catalog and files differ")
     skill_texts = {filename: (root / filename).read_text()
@@ -455,7 +524,9 @@ def validate_repository(root=ROOT):
             set(readiness["needs"]) == {f"ctx:{s}" for s in STEPS} and
             "environment" not in readiness and readiness.get("allow_failure", False) is False,
             "delivery readiness must reconcile all CI evidence without deployment authority")
-    return {"status": "passed", "flows": len(actual), "skills": len(operations),
+    return {"status": "passed", "flows": len(actual),
+            "agents": sum(entry["kind"] == "agent" for entry in catalog["entrypoints"].values()),
+            "skills": len(operations),
             "scope": "local CTX contract validation; GitLab catalog/CI lint still required"}
 
 

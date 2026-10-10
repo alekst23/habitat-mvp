@@ -1,11 +1,15 @@
 ---
 name: ctx-project-go
-description: Advance the explicitly scoped project work through the SDLC in one bounded supervisor session.
+description: Advance explicitly scoped work through a durable run of bounded native supervisor sessions.
 ---
 
 Preserve the original project-owner behavior: assess reality, execute available
 approved work, consolidate and reassess within the same invocation. Read
-docs/development/single-shot-development.md and scripts/ctx_development.py.
+docs/development/single-shot-development.md, docs/development/durable-execution.md
+and scripts/ctx_development.py. Durable-execution supersedes same-session loops:
+one delegate per slice, then a verified checkpoint; the trusted controller owns
+continuation. The user should not select/restart each phase. Preserve settled intent,
+all cumulative budgets and actual approval boundaries across sessions.
 
 Compare docs/plan/project.md with actual issues, branches, MRs, jobs and active
 sessions. Reuse settled decisions, respect in-flight work, and pin explicit epic or
@@ -35,4 +39,6 @@ progress helper for ordering, current-SHA identity and action/retry bounds; veri
 remote evidence independently. Its local lock is not an epic-wide distributed lease.
 Checkpoint if exclusive epic coordination cannot be established. Update project
 state in place on the authorized non-default branch, never directly on main.
-Use ctx-project-sleep for a durable final/partial handoff, not after every ticket.
+Use ctx-project-sleep after every slice; it is a controller checkpoint, not a request
+for the user to say continue. Manual runs without a controller envelope remain bounded
+and must not claim automatic continuation is active.

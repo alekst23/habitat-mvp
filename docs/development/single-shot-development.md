@@ -1,5 +1,12 @@
 # CTX single-shot Development
 
+**Local revision:** [durable execution](durable-execution.md) now supersedes the
+same-session loop and 64-delegation engine descriptions below. The durable run keeps
+the existing journal/repair protocol, but each native session delegates ONE unit;
+the external controller owns continuation and interrupted-session reconciliation.
+This candidate is not yet published/activated. The v1.5.0 history below remains true
+of the live catalog, not the modified local definition.
+
 Status: **CTX Development v1.5.0 published and enabled on 2026-10-09**, retaining
 version-2 repair/verification and adding Design-only closure and token-match routing.
 [MR !20](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/20)

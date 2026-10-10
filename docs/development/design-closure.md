@@ -1,9 +1,18 @@
 # Design owns review, research and repair
 
+The local [durable-execution candidate](durable-execution.md) adds one-delegation
+slices and controller-owned continuation. It supersedes instructions here to finish
+the entire loop in one session. Keep cumulative repair/research reservations and
+Design ownership; checkpoint after a coherent saved unit. It is not yet published
+or activated; publication history below describes the previous live versions.
+
 This contract supersedes the earlier handoff of unfinished design to Development.
-Keep two conversational agents and the existing background flows, not a bot per
-skill. CTX Design owns the interview and saved documents. The existing Development
-supervisor supplies independent review, public-documentation research and bounded
+The published setup retains two conversational agents and the existing background
+flows, not a bot per skill. The local [CTX Project candidate](project-owner.md)
+applies Planning/Design as modes in one chat and leaves the specialists available
+until live validation. Design mode owns the interview and saved documents in
+either entry point. The existing Development supervisor supplies independent
+review, public-documentation research and bounded
 document repair in **mode=design-closure**. The name of the runner is not the stage
 or permission to implement. No application work is authorized in this mode.
 

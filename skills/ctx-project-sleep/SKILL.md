@@ -14,5 +14,9 @@ a durable checkpoint. Read back the saved body/identity/links before returning.
 
 Do not mark pending work complete or lose earlier failure evidence. Give the same
 ctx-development entry point, actual source/epic IIDs, exact refs and saved journal
-needed to resume. This creates no scheduler or automatic flow invocation. Keep
+needed to resume. Follow durable-execution.md for a controller-envelope run: publish
+one final structured checkpoint with continue/complete/needs_decision/needs_access/
+blocked, full closure/journal, source identity, observed HEAD and prior checkpoint hash.
+The external controller, not this skill, starts the next native slice. No routine
+human continue prompts. Without the controller, do not claim auto-resume. Keep
 dirty, unmerged, active and foreign worktrees. No force or glob cleanup.

@@ -1,5 +1,19 @@
 # CTX native GitLab workflow implementation
 
+Local conversational candidate: [CTX Project](project-owner.md) combines project
+assessment, the existing Planning procedures and the Design interview in one chat.
+It is not registered, enabled or live-tested. Existing specialist agents remain
+unchanged. The candidate uses the existing GitLab document/issue tool set; direct
+chat-to-controller dispatch and post-pinned-design revision are still missing.
+Its prompt/registration hashes, tools and procedure coverage are now checked by
+`python scripts/ctx_workflow.py validate` as well as the workflow tests.
+
+Local candidate: [durable one-request execution](durable-execution.md) keeps the
+existing Development catalog entry but changes sessions to one delegated work unit.
+The external controller persists state and continues/reconciles runs automatically.
+It is NOT activated: catalog publication, protected controller state/credentials,
+resolved API IDs, a scheduler and a live interruption smoke are still required.
+
 ## Status and boundaries
 
 Design repair (2026-10-08): restored interview/technical-contract/wiring
@@ -67,6 +81,11 @@ evidence; they do not determine agent boundaries. Read the full contract in
 `ctx-contract.md` and the prize coverage plan in `../hackathon-gitlab-workflows.md`.
 
 ## CTX Planning: scope and tickets first
+
+The instructions in this and the following section describe the existing specialist
+entry points. Once CTX Project is separately published and validated, these become
+optional: scope and design remain distinct modes in that one conversation. See
+[publication and acceptance](project-owner.md#publication-and-live-acceptance).
 
 [CTX Planning](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016257)
 owns scope, epics, tickets, dependencies and planning state. Its five procedures

@@ -17,8 +17,15 @@ and close operations under the `ctx-` prefix. Add the six delivery operations
 listed there. Lifecycle stages classify evidence; they do not define agent or
 operation boundaries.
 
-Planning is conversational: use the **CTX Planning** agent in Duo Chat. The two
-background flow entry points are `ctx-development` and `ctx-delivery` in
+Planning is conversational. The published entry points remain **CTX Planning**
+and **CTX Design**. A local **CTX Project** candidate unifies their procedures and
+project-status assessment in one chat; read docs/development/project-owner.md.
+It is not registered/enabled or live-tested. When using that candidate, Planning
+and Design are modes in the same conversation, not instructions to open another
+agent. Status requests are read-only. Shared skills, evidence, scope and security
+boundaries remain; the candidate has no shell, flow-start or controller-write tool.
+Do not retire the specialists before publication/readback and live acceptance.
+The two background flow entry points are `ctx-development` and `ctx-delivery` in
 `.gitlab/duo/flows/`. Reusable instructions live in `skills/ctx-*/SKILL.md`;
 `.gitlab/ctx/catalog.json` records the active entry points and operation mappings.
 Read the named skills before acting. Do not register a bot/flow for every skill.
@@ -39,7 +46,19 @@ ticket processing and the repair loop still need live validation. New runs use t
 version-2 journal: pin the exact AC manifest, repair
 actionable defects up to three times per target, and require fresh application/AC
 verification plus independent review after every fix. Missing infrastructure, intent
-or authority is still a blocker; no automatic flow retriggers or policy weakening.
+or authority is still a blocker; no agent-driven flow retriggers or policy weakening.
+
+The local durable-execution candidate supersedes SAME-session loop instructions:
+read docs/development/durable-execution.md. Each native session delegates at most
+one coherent unit, saves/read-verifies its result, then checkpoints. The separate
+trusted controller automatically schedules subsequent slices of one authorized
+epic, with durable scope/history, bounded recovery and no duplicate uncertain POSTs.
+Workers receive save_by and must save coherent increments promptly, not accumulate
+an epic-sized unsaved batch. Review/fix/test gates are unchanged. Do not bypass the
+one-delegation limit by implementing another phase in the coordinator. The controller
+is disabled pending publication, protected state/credential setup and live smoke;
+manual mentions alone do not provide automatic continuation. Never expose its token
+to agents or let agent identities write ctx/controller-state.
 
 CTX Planning and CTX Design prompts/registration records live in
 `.gitlab/duo/agents/`. The order is Planning -> Design -> Development. Planning
@@ -61,6 +80,12 @@ Neither chat agent has a shell: helper validation requires actual runner/human
 evidence. Pending checks do not prevent scope/design saves or design conversation,
 but must not be reported as implementation readiness. Only real scope/decomposition
 changes return to Planning; never send users there merely to save Design's work.
+
+The CTX Project candidate follows the same order and artifact ownership as modes
+within one chat. It uses the existing interview/planning/design skills directly,
+not the standalone registrations as subagents. Reads of protected controller state
+are for assessment only; writes stay with the controller. Missing direct chat
+dispatch and post-pinned-design revision remain explicit implementation gaps.
 
 Read docs/development/design-readiness.md for restored interview/contract/wiring
 requirements and docs/development/design-closure.md for Design-owned review,
