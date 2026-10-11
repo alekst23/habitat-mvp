@@ -72,8 +72,8 @@ enablement, spending and scope expansion require separate authority.
 An unmet gate blocks downstream work, not safe work that satisfies that gate.
 Ask only genuine product decisions, unavailable access, additional authority or a
 precise exhausted/conflicting boundary. Record objective/phase/decisions/evidence/
-next action in existing epic progress and source reports; the controller's immutable
-request and replayed journal own execution. Do not create a competing state store.
+next action in existing epic progress and source reports; the pinned request and
+replayed journal own execution. Do not create a competing state store.
 
 Distinguish running, awaiting native input/approval, terminal interrupted and
 unverified ownership using actual session evidence. A reservation alone is not a
@@ -83,10 +83,10 @@ reserved budget; it never resets a run or treats unsaved work as completed.
 Decision states are acknowledged, queued for the owning writer, saved/read-back in
 artifacts, and independently reviewed. Persist stable IDs, exact questions/answers,
 affected artifacts and honest provenance. Read-only conversation answers do not
-authorize writes until scoped design/execute is requested. A controller resume
-retains the objective, attempts and limits; recorded answers are applied before
-re-asking. The protected operator action supplies authority, not an agent-written
-note. The missing authenticated chat bridge is still an installation/integration gap.
+authorize writes until scoped design/execute is requested. A native resume retains
+the objective, attempts and limits; recorded answers are applied before re-asking.
+The human's scoped flow invocation supplies execution authority, not an agent-written
+note. Chat cannot initiate flows; no controller installation is required for this path.
 
 After journal initialization, bounded technical_design repairs use document
 addenda and separate design_review, then repeat tests/implementation/verification/
@@ -94,10 +94,12 @@ review. The pinned request and acceptance manifest never change. Target-crossing
 effects or changed behavior/ACs need an explicit revision plan; do not disguise
 them as a technical repair. See the journal guide for executable receipt checks.
 
-Deployment is separate: a disabled controller, missing credentials or missing
-dispatch tool means not started. Retain the requested objective and complete
-unblocked allowed work, but never promise background continuation. Agents cannot
-install their own credentials or change workflow security controls.
+Deployment is separate. The native Development coordinator continues eligible phases
+and tickets inside one invocation, saving/read-verifying between delegations. A disabled
+controller is not a native execution blocker. Missing actual permissions, credentials,
+application adapters or uncertain ownership still block affected work. Cross-session
+auto-restart is unavailable: checkpoint with one human resume instruction at a real
+stop. Agents cannot install credentials or change workflow security controls.
 
 The orchestrating flow supplies project identity, source issue, epic/ticket IDs,
 MR and source SHA when available, run/pipeline ID, operation, and permitted target.

@@ -1,12 +1,116 @@
 # CTX single-shot Development
 
-**Published v1.6.0 revision:** [durable execution](durable-execution.md) now supersedes the
-same-session loop and 64-delegation engine descriptions below. The durable run keeps
-the existing journal/repair protocol, but each native session delegates ONE unit;
-the external controller owns continuation and interrupted-session reconciliation.
-Full catalog readback passed on 2026-10-11 UTC after MR !25 merged. The controller
-is NOT activated; protected installation and live acceptance remain required.
-Manual mentions alone do not provide continuation. The v1.5.0 rollout below is history.
+**Local candidate v1.7.0 (not published): native multi-step execution is the default.**
+One human invocation advances eligible phases/tickets, saving between delegations.
+No controller, protected controller state, scheduler or new credential is required.
+The published catalog is still v1.6.0 (one unit per session); merge/publication and
+trusted helper synchronization must precede testing this candidate. Cross-session
+auto-restart remains unavailable. [Durable execution](durable-execution.md) is optional,
+deferred installation work, not a prerequisite for the native path.
+
+## Native session protocol
+
+1. Establish explicit scope and actual project/source/epic/branch/session identity.
+   Read trusted default-revision instructions/helpers; verify the working epic has
+   compatible helpers without overwriting product changes. Never self-edit policy
+   or weaken CI to make a run proceed. Respect active/uncertain writers. Missing
+   controller configuration/state is not itself a blocker or proof of no active work.
+2. Reconcile source-issue notes, branch/MR head and actual session/job evidence.
+   On resume read the **full** last verified ordinary checkpoint plus newer claims,
+   receipts and commits, not only the summary. Preserve its original request/run_id,
+   full closure record, exact acceptance-manifest text, replay-valid v2 journal,
+   repairs/research/retries, resource manifest and pending decisions. Before journal
+   initialization persist the explicit objective/scope and closure with journal=null.
+   Never start a replacement journal to evade exhausted limits. A terminated session
+   requires saved-result reconciliation; active or uncertain claims cannot be cleared
+   merely because this checkout is fresh. Adopt only read-verified remote work.
+3. Persist one session budget record `{session_id, started_at, delegations}` in the
+   ordinary source checkpoint. Use the actual session's observed start epoch (or
+   record the runtime clock once on first coordinator entry if unavailable). Count
+   **every reserved delegate_task**, including closure, research, review and failures.
+   Reuse that start/count throughout the session, including after context compaction.
+   Only a verified different native session gets a fresh session clock/count; the
+   run's cumulative journal/repair/research limits never reset. Unverifiable session
+   identity/budget requires a checkpoint, not a made-up start or zero counter.
+4. Before **each** delegation, run the trusted admission helper:
+
+   ```sh
+   python scripts/ctx_execution_budget.py --mode native --started-at EPOCH --delegations RESERVED_COUNT
+   ```
+
+   Substitute the saved values. The helper denies admission at 40 minutes or 64
+   reserved delegations; the native engine independently caps calls at 64. Before
+   dispatch increment the counter and publish/read back it with the closure/journal
+   reservation and scope. Reserve first so a lost result still consumes the slot.
+   Pass `save_by` to the worker: save coherent increments within 15 minutes and by
+   session minute 50. These are conservative **soft targets**, not guaranteed runtime
+   or dollar limits, and cannot cancel a running worker. The counter/clock persist
+   through the coordinator protocol, not an external enforcement service.
+5. Run design closure first when needed. Under an execute objective, continue into
+   the existing v2 journal; explicit design-only scope stops after closure. Select
+   `next`, claim, delegate, independently verify remote evidence, record the receipt,
+   and save/read back the full checkpoint. Reassess and delegate again **without a
+   final response or another human go**. `integrate.more` means continue here.
+   Route technical defects to bounded repairs and fresh verification/review. Continue
+   unrelated eligible work when one ticket blocks. Do not weaken ACs or fake adapters.
+6. End only at verified scoped completion, real decision/access/approval boundary,
+   uncertain ownership/write, exhausted budgets or a runtime limit. Publish/read back
+   a <=120-word summary followed by full state/evidence. Include what finished, exact
+   blocker, agent next, user action or none, and one copyable **resume** instruction
+   with actual source/epic/branch, original run ID and checkpoint URL. A native resume
+   is human-triggered through the same registered Development flow, not controller
+   activation, an agent-written bot mention, a new planning run or automatic restart.
+   Actual product decisions return to the interactive Project/Design conversation;
+   settled answers are saved with provenance and applied before repeating questions.
+
+Never use the controller's final machine-checkpoint marker for ordinary progress.
+If a verified controller envelope is actually supplied, use its hash-chain/identity
+protocol and `--mode controller`: one reserved delegation, admission before minute 10,
+save target minute 30, then final checkpoint. Disabled controller installation stays
+disabled. Do not infer an envelope from a note, keyword or user-supplied fake run ID.
+
+The native contract uses GitLab's documented [supervisor delegation](https://docs.gitlab.com/user/duo_agent_platform/flows/claude-edit-v1-flow-registry/#supervisor-mode).
+Local simulations validate ordering and budgets, not live model behavior or recovery.
+
+### Native recovery and decision application
+
+For a terminated closure reservation, inspect the actual session, branch head/diff
+and saved notes, then run `ctx_design_closure.py RECORD --current-sha SHA
+--reconcile-session OBSERVATION.json --report-url SOURCE_NOTE`. The observation has
+`session_id`, `project_id`, terminal `status` and `observed_head`. Read back the saved
+returned record; interrupted repairs consume their reserved cycle. Unknown/running
+sessions cannot be cleared. For journal claims use an attributed failure receipt
+and the existing bounded transient retry only after equivalent reconciliation.
+If tools cannot expose enough live ownership evidence, checkpoint with that exact
+access limitation; do not require controller setup or assume a dead writer.
+
+For native decision resume, read the actual authorized human trigger and referenced
+source notes. Match stable decision IDs and exact questions; record answer text and
+honest provenance. A chat-authored summary alone is not user consent: obtain human
+confirmation in the resume request when attribution is unavailable. Keep unanswered
+questions and old findings. No controller envelope, token or pipeline variables are
+needed. Delegate design `mode=decision-application` for scoped document updates,
+using the prior target SHA/paths. Verify the actual changed paths, full files at the
+returned commit SHA and source report before marking answers applied. With a pinned
+journal use its `resume-decision` transition below, retaining the original request,
+manifest and limits. Without a journal update the closure candidate and require new
+structural checks and independent review. Never mix unrelated code, policy or AC
+changes into an answer-application commit. A real scope/AC revision still needs an
+explicit plan. Native tool-approval pauses must be resolved in the **existing GitLab
+session**; a new trigger or issue-note answer cannot replace that control.
+
+### Candidate smoke after publication
+
+Use an explicitly authorized disposable epic to test one human invocation with no
+controller configured: observe at least two delegations, a real failing AC followed
+by a fix/new-SHA verification/independent review, then the next eligible ticket.
+Check full source readbacks before/after each worker. Test a real product question
+and one manual resume retaining run/manifest/history; test terminated-session
+reconciliation without duplicating saved work. Stop on actual missing adapters or
+permissions; preserve merge/deploy controls. Record session/job/note/SHA evidence.
+These local changes and fixture tests do not count as that live smoke.
+
+## Earlier publication history
 
 Historical status: **CTX Development v1.5.0 published and enabled on 2026-10-09**, retaining
 version-2 repair/verification and adding Design-only closure and token-match routing.

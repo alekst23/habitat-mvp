@@ -9,15 +9,17 @@ below stays the same; the agent replaces manual chat navigation, not the gates.
 Full v1.1.0 catalog readback passed; the chat picker was checked on v1.0.0. E2
 feedback motivated objective/decision/session corrections and bounded target-local
 technical design revision. Project v1.1.0, Design v1.7.0 and Development v1.6.0
-are published. Live acceptance, controller installation and an authenticated chat
-bridge remain unfinished; publication is not proof of autonomous live execution.
+are published. Live acceptance remains unfinished; publication is not proof of
+autonomous live execution. Controller installation and a chat dispatch bridge are deferred.
 
-Execution reliability update (definition published, controller disabled): the
-[durable controller](development/durable-execution.md) carries one approved epic
-across short native Duo sessions, preserving tests, AC verification, independent
-review and cumulative recovery limits. It retains the same agents/flow entry points
-and stage mapping. Planning/Design stay conversational; the user authorizes execution
-once instead of managing every ticket and restart. Installation/live proof is pending.
+Permissions-constrained execution update (local v1.7.0 candidate, not published):
+use the existing [native supervisor](development/single-shot-development.md) for
+multiple delegated steps/tickets in one human invocation. Planning/Design stay
+interactive; technical repair, tests, AC validation and independent review continue
+internally with bounded retries and read-verified progress saves. At a real decision,
+access or session-budget boundary, resume manually from the checkpoint. No controller,
+new credentials or admin protection settings are prerequisites. Stage mapping and
+merge/deployment controls stay unchanged; restricted delivery stages remain pending.
 
 This is the concise implementation plan for the [GitLab Transcend hackathon](https://gitlab-transcend.devpost.com/). The goal is to show GitLab agents taking a HABITAT change from intent to a tested, secure, observable release.
 

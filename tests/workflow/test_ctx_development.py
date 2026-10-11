@@ -63,7 +63,7 @@ class SupervisorFlowTests(unittest.TestCase):
         flow = ctx.read_yaml(ROOT / ".gitlab/duo/flows/ctx-development.yml")
         owner = next(c for c in flow["components"] if c["name"] == "coordinate")
         self.assertTrue(owner.get("subagents"), "development still stops after one ticket")
-        self.assertEqual(owner.get("max_delegations"), 1)
+        self.assertEqual(owner.get("max_delegations"), 64)
         prompt = next(p for p in flow["prompts"] if p["prompt_id"] == owner["prompt_id"])
         self.assertIn("delegate_task", prompt["prompt_template"]["system"])
         self.assertIn("final_response_tool", prompt["prompt_template"]["system"])

@@ -11,14 +11,23 @@ addenda now have local journal transitions; general cross-target revision does n
 Its prompt/registration hashes, tools and procedure coverage are now checked by
 `python scripts/ctx_workflow.py validate` as well as the workflow tests.
 
-Published definition: [durable one-request execution](durable-execution.md) keeps the
-existing Development catalog entry but changes sessions to one delegated work unit.
-The external controller persists state and continues/reconciles runs automatically.
-The controller is NOT activated: protected state/credentials, resolved API IDs,
-a scheduler, epic helper synchronization and a live interruption smoke are still required.
+Local candidate: [native multi-step execution](single-shot-development.md) restores
+repeated delegation inside the existing Development flow. Controller installation is
+deferred, not a prerequisite. Save/read back between phases, continue within session
+limits, and give one manual resume at a real stop. Publication, trusted helper sync
+and live acceptance are pending; neither this edit nor a push updates the catalog.
 Project v1.1.0, Design v1.7.0 and Development v1.6.0 were published/read back
 after MR !25 passed pipeline 2935078543 and merged into main at d121a1ba.
 All 169 local tests passed. No product MR merge or paid execution was performed.
+
+For this candidate's rollout: independently review/merge the native-loop change,
+synchronize its trusted helpers/guides to the authorized epic branch after ownership
+checks (no product-spec overwrite), then update the EXISTING catalog entries:
+Development **1.7.0**, Project **1.2.0**, Design **1.8.0**. Read back full content,
+hashes, tools and enablement before claiming publication. Keep controller disabled;
+no protection settings, token, schedule or new bot is needed. Start a fresh chat and
+run the explicitly authorized native smoke in single-shot-development.md. Do not
+merge E2's !8 or start paid application execution as part of publication.
 
 ## Status and boundaries
 
@@ -70,7 +79,7 @@ run deterministic workflow checks and, once configured, application adapters.
 |---|---|---|
 | CTX Planning chat agent | Scope interview → epic/tickets, dependencies and plan state | Publish approved scope first; detailed design follows |
 | CTX Design chat agent | Design interview → committed spec, technical/ticket design and acceptance manifest | Owns file persistence/readback; no implementation or flow start |
-| `.gitlab/duo/flows/ctx-development.yml` | Design-only closure or ticket SDLC/repair → checkpoint → next controller session | Published v1.6.0; one delegated unit per session; controller installation and native validation pending |
+| `.gitlab/duo/flows/ctx-development.yml` | Review/repair → ticket SDLC/AC checks → subsequent tickets → epic review/MR | Local v1.7.0 native loop pending publication; live catalog still v1.6.0 one-unit behavior |
 | `.gitlab/duo/flows/ctx-delivery.yml` | Six delivery operations, stage evidence and candidate readiness review | Read/comment only; application adapters and deployment/approval integration are missing |
 
 Each of the 30 procedures is a repo skill at `skills/ctx-*/SKILL.md`, explicitly
@@ -252,9 +261,9 @@ operation reports to the source issue before returning a routing token. A GitLab
 session ending in `abort` can mean a documented missing prerequisite, not a crash.
 Resume with the explicit operation after resolving a genuine blocker. No flow
 automatically retriggers another flow. Historical v1.2.0 lacks the new bounded repair
-loop; v1.6.0 retains that repair protocol across one-unit sessions, with the
-controller owning continuation. The controller is not yet installed; do not
-mistake a manual slice's checkpoint for autonomous completion.
+loop; published v1.6.0 uses one-unit sessions. The local v1.7.0 candidate restores
+same-session continuation without requiring the undeployed controller. Native
+cross-session auto-resume is unavailable; a checkpoint is not completed implementation.
 
 ### Final results are not handoff destinations
 

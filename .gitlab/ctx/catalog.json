@@ -85,10 +85,11 @@
         ]
       },
       "mode": "bounded-supervisor",
-      "max_delegations": 1,
+      "max_delegations": 64,
       "runtime_parallelism": "serial-fallback; native parallel delegation unverified",
-      "publication_status": "v1.6.0 published/enabled on 2026-10-11 UTC: one delegated unit per session, durable objective/decision continuation, terminal-reservation reconciliation and bounded target-local design addenda. Full YAML readback verified; private visibility, service account and active triggers preserved. Controller remains disabled; native continuation/recovery acceptance is pending.",
+      "publication_status": "Local v1.7.0 candidate restores bounded native multi-step execution without controller installation. Review, merge, trusted helper synchronization, catalog publication/readback and live loop acceptance are pending. Published v1.6.0 remains enabled with one-unit behavior; its source/saved hashes and readback evidence are preserved below. Controller stays disabled/deferred.",
       "catalog_version": "1.6.0",
+      "pending_catalog_version": "1.7.0",
       "published_source_commit": "e1788add0101097c797b7516d295e21c5175b2a9",
       "publication_history": [{
         "catalog_version": "1.5.0",
@@ -97,7 +98,7 @@
         "verification": "MR !20 pipeline 2932009307 and MR !21 pipeline 2932047796 passed; full 40788-byte catalog readback and 139 local tests passed. Native closure/repair behavior remained unverified."
       }],
       "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234",
-      "definition_sha256": "a05d7b01b4322bd8fd38814ed460c6e5199c4fc000106731dc5c19165cfcc0cc",
+      "definition_sha256": "2444b4bfc77817004af195a9338c462d49ce480c9c70e6a761afb1176a44b45c",
       "verification": "MR !25 pipeline 2935078543 passed at e1788add and merged into main at d121a1ba. 169 local workflow tests, diff checks and changed-content secret scan passed. v1.6.0 full 40849-byte saved YAML equals committed source with final newline trimmed, including max_delegations=1 and unchanged toolsets. No E2 flow/chat run, product MR merge or controller activation performed. Protected identity/state/credentials, verified consumer/version IDs, scheduler, epic helper synchronization and live recovery/decision smoke remain installation prerequisites; application validation still requires actual adapters/evidence.",
       "managed_terminal_tokens": {
         "design": [

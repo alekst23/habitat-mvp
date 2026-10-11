@@ -23,13 +23,14 @@ from writing shared project state. A failed setup must never fall back to main.
 Publish/read back the claim before dispatch and the receipt after each delegation.
 Only independently verified integration unlocks dependents. A blocked ticket does
 not abort unrelated ready work. After closure, continue to the next ready ticket
-in the next controller slice; integrate.more is not epic completion. When all tickets are integrated,
+in this native session; integrate.more is not epic completion. When all tickets are integrated,
 delegate ctx-epic-docs, obtain fresh epic-SHA checks, ctx-epic-review and ctx-epic-close.
 Do not merge to default, dispatch another flow, invent evidence or expand scope.
 
-Each session delegates at most ONE unit and checkpoints. The durable controller
-continues the same authorized epic without a human phase-by-phase restart. The
-journal allows at most 60 cumulative actions across sessions, and
+Native sessions permit up to 64 delegations, including closure/research/review,
+subject to the session admission clock. A verified controller envelope instead
+selects the optional one-unit protocol. Save/read back between steps without ending
+healthy native execution. The journal allows at most 60 cumulative actions across sessions, and
 one reconciled transient/CI-wait retry per target. Never repeat uncertain writes
 or hide a partial result as completion. Preserve dirty/unmerged/foreign resources;
 cleanup only clean, integrated, inactive entries in this run's ownership manifest.

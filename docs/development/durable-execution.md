@@ -1,11 +1,15 @@
-# One execution request, multiple recoverable Duo sessions
+# Optional controller: multiple recoverable Duo sessions
 
 Status: **Development v1.6.0 published; controller NOT activated** (2026-10-11 UTC).
 Full catalog readback matches source commit e1788add after MR !25 merged.
-The live definition now delegates one unit per session. Controller identity,
+The live v1.6.0 definition delegates one unit per session. Controller identity,
 protected state/credentials, verified IDs, scheduler, epic helper synchronization
 and live acceptance remain prerequisites. Manual mentions do not auto-continue.
-This contract takes precedence over older same-session loop instructions.
+**Deferred, not a prerequisite:** the local v1.7.0 candidate restores the native
+multi-step path in [single-shot-development.md](single-shot-development.md). Use
+that path without controller setup. This document governs only verified controller
+envelopes; it does not override native continuation. Do not attempt inaccessible
+protection/credential/scheduler setup as part of an ordinary Development run.
 
 Planning and Design remain conversations. After their scoped artifacts are saved,
 one authorized execution request owns the remaining epic. The deterministic
@@ -40,8 +44,9 @@ the [GraphQL session query](https://docs.gitlab.com/api/graphql/reference/#query
 to read session status. It does not infer success from a pipeline exit code.
 Neither experimental restart endpoints nor callback webhooks are required.
 
-The native definition has `max_delegations: 1`. That bounds phase count, not elapsed
-time. The coordinator calls `scripts/ctx_execution_budget.py --started-at EPOCH`
+The v1.6.0 native definition has `max_delegations: 1`. The v1.7.0 candidate instead
+has a 64-call engine ceiling; controller mode retains its one-unit admission rule.
+The coordinator calls `scripts/ctx_execution_budget.py --mode controller --started-at EPOCH --delegations RESERVED_COUNT`
 before delegation; admission closes after ten minutes. Workers target saving by
 the envelope's `save_by` (30 minutes after dispatch). This admission check does not
 interrupt a running worker, and GitLab's documented component schema supplies no
@@ -92,9 +97,9 @@ dollar cap; its bounded session/recovery counts supplement GitLab account limits
    All other safe outcomes also return `checkpoint`; persistence/identity failures
    return `blocked`. Detailed reports never belong in the final routing answer.
 
-Without a controller envelope, the flow remains usable for one bounded manual
-slice but does not auto-continue. Say that explicitly; never invent a controller
-run ID. Chat agents cannot start this API themselves with their current tools.
+Without a controller envelope, use the native multi-step protocol. It continues
+inside one session, not across sessions automatically. Never invent a controller
+run ID. Chat agents cannot start flows themselves with their current tools.
 
 ## Final checkpoint note
 

@@ -411,8 +411,8 @@ class ControllerTests(unittest.TestCase):
             execution.validate_checkpoint(invalid, self.store.state, 2, SHA)
 
     def test_admission_and_ci_job_boundaries(self):
-        self.assertTrue(admission(100, 699)["delegate"])
-        self.assertFalse(admission(100, 700)["delegate"])
+        self.assertTrue(admission(100, 699, mode="controller")["delegate"])
+        self.assertFalse(admission(100, 700, mode="controller")["delegate"])
         with self.assertRaises(ValueError):
             admission(100, 99)
         import yaml

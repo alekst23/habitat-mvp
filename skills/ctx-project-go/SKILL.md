@@ -1,20 +1,21 @@
 ---
 name: ctx-project-go
-description: Advance explicitly scoped work through a durable run of bounded native supervisor sessions.
+description: Advance explicitly scoped work through a bounded native supervisor loop with durable checkpoints.
 ---
 
 Preserve the original project-owner behavior: assess reality, execute available
 approved work, consolidate and reassess within the same invocation. Read
 docs/development/single-shot-development.md, docs/development/durable-execution.md
-and scripts/ctx_development.py. Durable-execution supersedes same-session loops:
-one delegate per slice, then a verified checkpoint; the trusted controller owns
-continuation. The user should not select/restart each phase. Preserve settled intent,
+and scripts/ctx_development.py. Native execution is the default: delegate, verify,
+save/read back progress, then reassess and continue in the SAME session. Controller
+installation is optional, not an execution prerequisite. Only a verified controller
+envelope selects its one-unit compatibility protocol. Preserve settled intent,
 all cumulative budgets and actual approval boundaries across sessions.
 
 Retain one approved objective across stage boundaries. An epic execute request
 includes its in-scope design prerequisites; do not ask the user to separately finish
-Design and authorize the same implementation again. Use the controller's derived
-next_action, rechecking remote evidence. A design-only request still stops at closure.
+Design and authorize the same implementation again. Derive the next action from the
+closure/journal and remote evidence. A design-only request still stops at closure.
 Distinguish acknowledged answers from saved/reviewed artifacts. Apply persisted
 answers, then obtain fresh independent review; do not re-ask settled questions.
 Terminal failed workers require reconciled recovery, not indefinite active-owner
@@ -50,6 +51,7 @@ progress helper for ordering, current-SHA identity and action/retry bounds; veri
 remote evidence independently. Its local lock is not an epic-wide distributed lease.
 Checkpoint if exclusive epic coordination cannot be established. Update project
 state in place on the authorized non-default branch, never directly on main.
-Use ctx-project-sleep after every slice; it is a controller checkpoint, not a request
-for the user to say continue. Manual runs without a controller envelope remain bounded
-and must not claim automatic continuation is active.
+Use ctx-project-sleep to save/read back progress after each delegation; saving alone
+does not stop a native run. Stop only for scoped completion, actual blockers, approval,
+uncertain ownership or exhausted limits. Native cross-session auto-resume is unavailable;
+give one exact manual resume at that boundary, never ask the user to dispatch each phase.
