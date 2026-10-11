@@ -5,6 +5,10 @@ readback passed. The v1.0.0 chat picker was verified on 2026-10-10; subsequent E
 feedback motivated persistent objectives, saved decisions and stale-worker recovery.
 The revised agent's behavioral acceptance remains pending.
 
+Local candidate **v1.2.0**, not published: native Development handoff replaces the
+controller prerequisite. The live v1.1.0 prompt still describes controller setup.
+Review/merge and publish/read back this prompt with Development v1.7.0 before use.
+
 ## Open the agent
 
 Open [CTX Project](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016538),
@@ -21,12 +25,11 @@ Then continue in that same chat:
 > questions, and save and verify feature-level specifications on the existing epic
 > branch when no active writer owns them. Keep !8 open; do not implement.
 
-This is the conversational entry point, not an activated autonomous execution
-loop. The controller is still disabled; technical background dispatch and the
-chat-to-controller bridge need separate setup and live validation.
-The existing CTX Planning and CTX Design registrations remain unchanged and usable.
-This is the unified conversational entry point, not a claim that the controller,
-chat-to-controller bridge or development-to-design revision loop is operational.
+This is the conversational entry point, not a flow-start tool. After scoped intent
+is settled, the user invokes the existing native Development flow once; it advances
+technical phases/tickets internally. The controller stays disabled and is optional.
+Standalone Planning/Design registrations remain available. Live loop acceptance is
+pending; neither a saved chat note nor this documentation starts execution.
 
 ## Preserve the original project-go behavior
 
@@ -44,9 +47,9 @@ The prompt explicitly loads the existing skills by mode; it does not copy their
 full interview/contract bodies or create a new set of stage-named skills.
 
 The native flow supplies actual design, test, implementation, verification and
-review workers. The external controller persists attempts and launches bounded
-sessions. The conversational agent owns intent and explanation, not the execution
-journal, machine checkpoints or protected controller state.
+review workers. Its supervisor persists progress and repeats delegation within the
+session's limits. Cross-session auto-restart is deferred. The conversational agent
+owns intent and explanation, not execution journals or protected controller state.
 
 ## One conversation, distinct authority boundaries
 
@@ -58,8 +61,8 @@ journal, machine checkpoints or protected controller state.
 - **Design:** keep the ordered interactive interview and ordinary draft saves.
   Ask only what the user must decide; complete technical document work yourself
   when ownership permits. Save feature-local specs/contracts and stable AC mappings.
-- **Execution handoff:** record the requested scope and use the existing controller
-  installation protocol. Design approval alone is not execution authorization.
+- **Execution handoff:** record requested scope and give one native Development
+  invocation. Design approval alone is not execution authorization.
 - **Decision/resume:** read the actual question, capture its answer and affected
   scope, persist it with honest provenance, and retain the run's history/budgets.
 
@@ -82,9 +85,10 @@ Use the existing records, not a new competing project database:
 3. GitLab issues, commits, MRs, jobs and source-issue reports establish observed
    state. Paginate relevant results; read full linked reports. A green pipeline
    without application checks is not verified application acceptance.
-4. `.ctx-controller/E<epic-IID>.json` on protected `ctx/controller-state` records
-   controller ownership and progress. Chat may read it, never write it. Source
-   checkpoint notes are read back with run/attempt/source/epic identity and SHA.
+4. Full source checkpoints preserve request/run identity, closure/journal, claims,
+   receipts, resources and limits. If an optional controller record exists on
+   `ctx/controller-state`, reconcile it too; chat never writes it. Missing controller
+   state is not a prerequisite or proof that no native session is active.
 
 Each status claim names an exact SHA and evidence link where relevant. Keep
 observed facts, unverified reports, proposed next work and authorization distinct.
@@ -137,7 +141,7 @@ The local revision preserves one authorized objective across prerequisite design
 execution and repair. “Fully implement E2” is an execution objective, not a choice
 between design and execution. Closed design remains a gate before code work;
 finishing it does not require another “go.” Explicit design-only requests still
-stop at design. Controller installation remains a separate operational boundary.
+stop at design. Controller installation is optional deferred work, not an execution gate.
 
 The journal now supports bounded target-local `technical_design` repair and
 `resume-decision`, invalidating affected evidence and requiring independent design
@@ -160,23 +164,34 @@ session-input, controller-start/resume tool or external MCP server.
 Session-read coverage follows the [GitLab MCP tool contracts](https://docs.gitlab.com/user/model_context_protocol/mcp_server_tools/#list_duo_sessions).
 Path and intent restrictions are prompt rules; GitLab permissions remain essential.
 
-When the [durable controller](durable-execution.md) is actually installed, use one
-explicit default-branch pipeline action to initialize the scoped design-closure
-or execute request. For a paused run, record the answer safely and use one explicit
-resume action. Show verified identities/current SHA and preserve the existing run,
-reservations and consumed limits. No automatic continuation is claimed until the
-installation and live run prove it. If it is not installed, give that operator
-setup action once, not a sequence of manual worker invocations.
+Use one explicit **human native-flow invocation** on the source issue. Verify the
+published multi-step definition and trusted helper versions first. Resolve the
+actual enabled trigger handle, epic/source IDs, branch/current SHA and authorized
+objective. On resume add original run ID/full checkpoint URL, preserving reservations
+and consumed limits. Do not send the user to controller setup or ask them to choose
+technical operations. Project must not post the trigger itself.
+
+After publication and ownership/version checks, the E2 execute request is:
+
+```text
+@ai-ctx-development-gitlab-ai-hackathon Fully implement E2 using source issue #10 and branch ctx/epic-i2. Reconcile the latest saved checkpoint and MR !8 first; preserve the existing run, decisions, scope, ACs and budgets. Close in-scope technical design, then advance eligible tickets through tests, implementation, AC verification, bounded fixes, independent review and epic MR preparation. Continue inside this native session after each saved result. Stop for genuine decisions/access/approval needs, uncertain ownership or execution limits. Keep !8 open. No merge, deployment, live spend or policy changes.
+```
+
+This is a human-posted example, not a dispatched request. Recheck the registered
+handle before use. For a particular paused run, include its actual checkpoint URL
+and run ID rather than relying on this generic example. For design-only work use
+`mode=design-closure` and explicitly prohibit implementation. A runtime checkpoint
+does not mean design must be restarted or every technical phase needs a human go.
 
 The future chat-to-controller bridge is **not yet implemented**. It must authenticate
 the requesting user, enforce project/scope/version/allowed-action checks, reject
 duplicate/uncertain dispatch and leave controller credentials outside chat/agent CI.
 An issue note or prompt cannot grant this authority. Do not expose an arbitrary HTTP
-or shell tool as a shortcut. The current init/resume fallback remains explicit;
-merely answering in chat does not wake the controller.
+or shell tool as a shortcut. Native human invocation/resume remains explicit;
+merely answering in chat does not wake a stopped flow.
 
-Worker continuation is the controller's job. Chat cannot remain alive unattended
-or promise proactive push updates. Returning to CTX Project for status is read-only;
+Within-session worker continuation is the native supervisor's job. Chat cannot
+remain alive unattended or promise proactive push updates. Project status is read-only;
 it must not create a new run. Merge, release and provider enablement remain separate.
 
 ## Publication and live acceptance
@@ -213,8 +228,8 @@ The following live behavior checks remain required, not implied by publication:
 4. Verify a read-only restart reconstructs decisions, artifacts and blockers. Test
    stale review at a newer SHA, an active/uncertain writer, missing session access,
    and an unavailable controller. None may cause a duplicate run or false completion.
-5. With controller setup separately verified, test one init, automatic technical
-   continuation, a genuine product question and one resume without resetting
+5. Without controller setup, test one native invocation, repeated technical
+   delegation, a genuine product question and one manual resume without resetting
    history. Include target-local technical design repair and decision application,
    stale failed-session recovery and continuation after design closes under an
    execute objective. Retain job/session/note/SHA evidence. This does not validate

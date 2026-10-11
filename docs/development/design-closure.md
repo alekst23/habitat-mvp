@@ -1,10 +1,10 @@
 # Design owns review, research and repair
 
-The local [durable-execution candidate](durable-execution.md) adds one-delegation
-slices and controller-owned continuation. It supersedes instructions here to finish
-the entire loop in one session. Keep cumulative repair/research reservations and
-Design ownership; checkpoint after a coherent saved unit. It is not yet published
-or activated; publication history below describes the previous live versions.
+The local [native execution candidate](single-shot-development.md) restores bounded
+same-session review/research/repair. Save/read back each coherent unit and continue
+while admitted; a save alone does not end the session. Preserve cumulative budgets
+and Design ownership. Only verified optional controller envelopes use one-unit
+slices. The candidate is not published; publication history below is historical.
 
 This contract supersedes the earlier handoff of unfinished design to Development.
 The published setup retains the two specialist agents and existing background

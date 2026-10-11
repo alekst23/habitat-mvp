@@ -56,9 +56,11 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertTrue(project["catalog_url"].endswith("/agents/1016538"))
         self.assertEqual(project["catalog_version"], "1.1.0")
         prompt = (AGENTS / project["system_prompt_file"]).read_bytes()
-        self.assertNotIn("pending_catalog_version", project)
+        self.assertEqual(project["pending_catalog_version"], "1.2.0")
         self.assertEqual(project["published_source_commit"], "e1788add0101097c797b7516d295e21c5175b2a9")
-        self.assertEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertEqual(project["published_system_prompt_sha256"], "197e9f37dcc9483a7310d599290e0c1730cb2be2d6a790e4b773e2a6978ef8ff")
+        self.assertNotEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertEqual(project["next_entrypoint"], "development-human-native-invocation-or-resume")
         previous = project["publication_history"][0]
         self.assertEqual(previous["catalog_version"], "1.0.0")
         self.assertEqual(previous["published_source_commit"], "033dc8da20002486a6d18269b64e443191eebc20")

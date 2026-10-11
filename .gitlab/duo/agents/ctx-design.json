@@ -7,9 +7,10 @@
   "project_id": 87329027,
   "project_path": "gitlab-ai-hackathon/transcend-october-2026/43066631/showcase",
   "system_prompt_file": "ctx-design.md",
-  "system_prompt_sha256": "a24209eb81ef30fe486aa8f146c33297c09dbe5e36f864871125f9f807c57126",
+  "system_prompt_sha256": "29b34d2790da8a78467564d270ebb2568ae93dd522e9ed3818634e8e0791a09a",
   "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016255",
   "catalog_version": "1.7.0",
+  "pending_catalog_version": "1.8.0",
   "enabled_in_project": true,
   "operations": [
     "ctx-spec-interview",
@@ -54,7 +55,7 @@
   ],
   "external_mcp_servers": [],
   "trigger": "Duo Chat agent picker; no mention/assignment/flow trigger",
-  "publication_status": "v1.7.0 published/enabled on 2026-10-11 UTC: one-request durable-controller handoff; full saved prompt matches source with final newline trimmed. Same 18 tools, private visibility and no external MCP. Controller remains disabled; native handoff/interview acceptance is pending.",
+  "publication_status": "Local v1.8.0 native design-closure handoff candidate pending review/merge/publication and live acceptance; no controller setup prerequisite. Published v1.7.0 remains enabled with its controller-oriented handoff; source/saved hashes and readback evidence are preserved. Same 18 tools, private visibility and no external MCP. Controller stays disabled/deferred.",
   "published_source_commit": "e1788add0101097c797b7516d295e21c5175b2a9",
   "verification": {
     "chat_interview_smoke": "passed 2026-10-07; source issue 10; project, issue, repository-file and issue-note reads observed; normal prose plus one design question with options; no write or flow-start call",

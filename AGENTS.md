@@ -42,25 +42,25 @@ serial fallback (native parallel execution is unverified). Its progress journal
 does not grant authority or attest evidence; remote review/CI/ancestry must still
 be checked. Preserve ticket-only scope, respect active runs, and keep durable
 checkpoints. Development v1.6.0 is published and enabled; full catalog YAML readback
-passed after MR !25 merged. Epic helper synchronization and controller installation
-are still required before using its continuation path. The historical v1.2.0 run stopped at preflight; delegated
+passed after MR !25 merged. The local v1.7.0 native-loop candidate requires review,
+publication and trusted helper synchronization, NOT controller installation. The historical v1.2.0 run stopped at preflight; delegated
 ticket processing and the repair loop still need live validation. New runs use the
 version-2 journal: pin the exact AC manifest, repair
 actionable defects up to three times per target, and require fresh application/AC
 verification plus independent review after every fix. Missing infrastructure, intent
 or authority is still a blocker; no agent-driven flow retriggers or policy weakening.
 
-The published durable-execution definition supersedes SAME-session loop instructions:
-read docs/development/durable-execution.md. Each native session delegates at most
-one coherent unit, saves/read-verifies its result, then checkpoints. The separate
-trusted controller automatically schedules subsequent slices of one authorized
-epic, with durable scope/history, bounded recovery and no duplicate uncertain POSTs.
-Workers receive save_by and must save coherent increments promptly, not accumulate
-an epic-sized unsaved batch. Review/fix/test gates are unchanged. Do not bypass the
-one-delegation limit by implementing another phase in the coordinator. The controller
-is disabled pending verified IDs, protected state/credential setup, scheduler and live smoke;
-manual mentions alone do not provide automatic continuation. Never expose its token
-to agents or let agent identities write ctx/controller-state.
+Native execution is the default for this revision: repeated delegated phases/tickets
+within one human-triggered session, up to 64 delegations and the admission clock in
+single-shot-development.md. Save/read back every result, then reassess and continue;
+an intermediate checkpoint is not a final response. Preserve cumulative run budgets
+and explicit scope. Workers save coherent increments by their save_by soft target.
+Do not implement in the coordinator or assume native cross-session auto-restart.
+At a real blocker/runtime stop, provide one precise human resume with saved state.
+The optional controller remains disabled/deferred; only a verified controller
+envelope uses durable-execution.md's one-unit compatibility protocol. Do not demand
+admin protection/credential/scheduler setup for ordinary native execution. Never
+expose controller tokens to agents or let them write ctx/controller-state.
 
 CTX Planning and CTX Design prompts/registration records live in
 `.gitlab/duo/agents/`. The order is Planning -> Design -> Development. Planning

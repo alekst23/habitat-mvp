@@ -10,7 +10,8 @@ the project/epic state and source issue. Commit state on the authorized epic bra
 Persist the pinned request, full progress journal (including active/uncertain claims),
 receipts and owned-resource manifest in verified source-issue notes or committed run
 documents on the authorized branch. The runner's .ctx directory is ephemeral, not
-a durable checkpoint. Read back the saved body/identity/links before returning.
+a durable checkpoint. Read back the saved body/identity/links. In a healthy native
+session this is an intermediate save, NOT a final response: reassess and continue.
 
 Do not mark pending work complete or lose earlier failure evidence. Give the same
 ctx-development entry point, actual source/epic IIDs, exact refs and saved journal
@@ -18,7 +19,9 @@ needed to resume. Follow durable-execution.md for a controller-envelope run: pub
 one final structured checkpoint with continue/complete/needs_decision/needs_access/
 blocked, full closure/journal, source identity, observed HEAD and prior checkpoint hash.
 The external controller, not this skill, starts the next native slice. No routine
-human continue prompts. Without the controller, do not claim auto-resume. Keep
+human phase prompts. Native runs follow single-shot-development.md: preserve full
+closure/journal and session budget receipts, continue within this session, and give
+one human resume action only at a real stop. Do not claim cross-session auto-resume. Keep
 dirty, unmerged, active and foreign worktrees. No force or glob cleanup.
 
 Keep the approved objective through every stage boundary; a checkpoint is progress,
