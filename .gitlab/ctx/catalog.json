@@ -87,6 +87,7 @@
       "mode": "bounded-supervisor",
       "max_delegations": 64,
       "runtime_parallelism": "serial-fallback; native parallel delegation unverified",
+      "candidate_status": "Resumable-owner revision implemented locally; publication and live two-run acceptance pending. Published v1.7.0 evidence below is preserved unchanged.",
       "publication_status": "Published and enabled v1.7.0 on 2026-10-11 UTC. Full saved YAML readback matches the reviewed source after final-newline normalization; existing private visibility, service account and triggers are preserved. Native multi-step execution needs no controller installation. Trusted E2 helpers synchronized by MR !29; live loop acceptance remains pending. Controller stays disabled/deferred.",
       "catalog_version": "1.7.0",
       "published_source_commit": "c1a472acaf05d483ea24ed9bac65c9cc46e7f819",
@@ -103,7 +104,7 @@
         "verification": "MR !25 pipeline 2935078543 passed at e1788add; merged main d121a1ba. 169 local tests passed. Full 40849-byte saved YAML matched after final-newline trimming, max_delegations=1. No E2 execution or controller activation. Controller installation and live behavior remained unverified."
       }],
       "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234",
-      "definition_sha256": "2444b4bfc77817004af195a9338c462d49ce480c9c70e6a761afb1176a44b45c",
+      "definition_sha256": "d596106c64a8b730370adc8e61609f91a6b7217d78da7ec1d3a912f948203dd9",
       "verification": "MR !28 pipeline 2936042723 passed at c1a472a; Duo review note 3993463855 had no findings; merged main 64738d8. Full saved v1.7.0 YAML (40838 bytes) exactly equals committed source with final newline trimmed, including max_delegations=64 and unchanged toolsets. MR !29 pipeline 2936095389 passed at e86612d; independent follow-up review note 3993535891 confirmed the stale-decision fix; E2 merge d2ebf02 preserves docs/design and docs/plan byte-for-byte. 174 source tests passed. Source/helper secret and diff checks passed. No E2 application run, product MR !8 merge or controller activation. Native repeated delegation, repair and decision-resume behavior still needs live acceptance; application adapters/evidence remain separate prerequisites.",
       "managed_terminal_tokens": {
         "design": [

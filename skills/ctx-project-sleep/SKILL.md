@@ -13,6 +13,14 @@ documents on the authorized branch. The runner's .ctx directory is ephemeral, no
 a durable checkpoint. Read back the saved body/identity/links. In a healthy native
 session this is an intermediate save, NOT a final response: reassess and continue.
 
+For a single-epic native run use ctx_owner.py render/parse and the
+ctx-owner-handoff:v1 contract in single-shot-development.md. It wraps the full
+existing closure/journal, objective/authorization, session counter, answers and
+resource/receipt history; never substitute a prose summary. Read back and compare
+the complete parsed payload. The next run discovers this on the source issue from
+"Continue E2". Keep machine references in the handoff, not a long user command.
+Legacy checkpoints require reconciliation and lossless migration, never reset.
+
 Do not mark pending work complete or lose earlier failure evidence. Give the same
 ctx-development entry point, actual source/epic IIDs, exact refs and saved journal
 needed to resume. Follow durable-execution.md for a controller-envelope run: publish

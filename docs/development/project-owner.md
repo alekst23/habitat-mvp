@@ -9,6 +9,12 @@ Published **v1.2.0** replaces the controller prerequisite with native Developmen
 handoff. Development v1.7.0 and Design v1.8.0 were published/read back together;
 MR !29 synchronized trusted E2 helpers. No application execution was started.
 
+Local candidate (not published): [resumable owner handoffs](single-shot-development.md#resumable-owner-handoff)
+make a short "Continue E2" resolve the original objective and technical next action
+from source notes. The runner owns recovery; chat owns the interactive interview.
+The existing registration still has no worker-dispatch tool. This is not a general
+claim about all GitLab agents: the native flow already has managed subagents.
+
 ## Open the agent
 
 Open [CTX Project](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016538),
@@ -167,9 +173,10 @@ Path and intent restrictions are prompt rules; GitLab permissions remain essenti
 Use one explicit **human native-flow invocation** on the source issue. Verify the
 published multi-step definition and trusted helper versions first. Resolve the
 actual enabled trigger handle, epic/source IDs, branch/current SHA and authorized
-objective. On resume add original run ID/full checkpoint URL, preserving reservations
-and consumed limits. Do not send the user to controller setup or ask them to choose
-technical operations. Project must not post the trigger itself.
+objective. On resume discover original run ID/full checkpoint from source notes,
+preserving reservations and consumed limits. Put those details in the saved handoff;
+the user need not copy them into the next prompt. Do not send the user to controller
+setup or ask them to choose technical operations. Project must not post the trigger itself.
 
 After publication and ownership/version checks, the E2 execute request is:
 
@@ -178,8 +185,9 @@ After publication and ownership/version checks, the E2 execute request is:
 ```
 
 This is a human-posted example, not a dispatched request. Recheck the registered
-handle before use. For a particular paused run, include its actual checkpoint URL
-and run ID rather than relying on this generic example. For design-only work use
+handle before use. With the candidate published and the objective/handoff verified,
+the resume is simply `@ai-ctx-development-gitlab-ai-hackathon Continue E2` on the
+source issue. The runner recovers machine references itself. For design-only work use
 `mode=design-closure` and explicitly prohibit implementation. A runtime checkpoint
 does not mean design must be restarted or every technical phase needs a human go.
 
@@ -189,6 +197,13 @@ duplicate/uncertain dispatch and leave controller credentials outside chat/agent
 An issue note or prompt cannot grant this authority. Do not expose an arbitrary HTTP
 or shell tool as a shortcut. Native human invocation/resume remains explicit;
 merely answering in chat does not wake a stopped flow.
+
+Before a handoff, Project checks unresolved product questions against saved answers
+and asks the remaining ones here, with recommendations. Technical findings never
+become user instructions to select components or diagnose sessions. An interrupted
+run is reconciled from notes/commits and actual session status; a stale reservation
+alone is not a running writer. A fresh "continue" preserves the approved mode:
+design-only cannot become implementation merely because a worker is called Development.
 
 Within-session worker continuation is the native supervisor's job. Chat cannot
 remain alive unattended or promise proactive push updates. Project status is read-only;

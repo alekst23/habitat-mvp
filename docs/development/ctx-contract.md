@@ -58,6 +58,14 @@ invariants, not conflicting numbering formulas or unsafe cleanup commands.
 
 ## Execution context and supervision
 
+Local candidate, pending publication: the [resumable owner protocol](single-shot-development.md#resumable-owner-handoff)
+keeps technical recovery and next-action selection agent-owned across native runs.
+The user supplies a bounded objective or a short continue request; the supervisor
+discovers complete state from source notes, preserves scope/history/budgets, and
+delegates until completion or a real boundary. The handoff is for the next agent,
+not a technical checklist for the user. Product interviews remain interactive.
+This adds no dispatch permissions, controller installation or automatic restart.
+
 ### Persistent objective (published; native behavioral acceptance pending)
 
 The approved objective is the unit of work. "Fully implement E2" retains one

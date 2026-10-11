@@ -8,6 +8,114 @@ trusted E2 helpers. Native runtime behavior still needs live acceptance. Cross-s
 auto-restart remains unavailable. [Durable execution](durable-execution.md) is optional,
 deferred installation work, not a prerequisite for the native path.
 
+Local resumable-owner candidate: the protocol below adds automatic handoff discovery
+and derived owner actions. It is not yet catalog-published or live-tested. Published
+Development v1.7.0 and Project v1.2.0 remain the recorded live versions.
+
+## Resumable owner handoff
+
+The user owns product intent; the supervisor owns technical diagnosis, dispatch,
+recovery and verification. A run may end without ending ownership of the objective.
+For an already approved objective, a human mention such as `Continue E2` is enough:
+derive source identity from the trigger, epic/mappings from the plan, and scope,
+mode, branch, original run ID and exclusions from verified saved records. Do not
+ask for internal IDs, logs, worker names or a recovery recipe. Never infer execution
+authority from an agent-authored note: verify the original human request and newer
+pause/cancel/scope instructions. A first request still needs a bounded objective.
+
+This codec covers one explicitly scoped epic (including ticket-only focus). Existing
+multi-epic journals and optional controller envelopes retain their own protocols;
+never split, upgrade or reset one to fit this schema. Project chat reads the same
+handoff but does not run shell helpers or claim it has dispatched the flow.
+
+### Reconstruct, act, verify, save, continue
+
+1. Read all relevant source notes with pagination, verified authors and server IDs,
+   linked reviews, original authorization, actual branch/MR heads and session status.
+   Serialize the retrieved source notes as `[{id, url, body}]`. Run:
+
+   ```sh
+   python scripts/ctx_owner.py resume NOTES.json --source-issue 10 --epic E2
+   ```
+
+   Substitute actual identities. The helper selects the newest full compatible
+   `ctx-owner-handoff:v1` block, rejects ambiguous/malformed state and history loss,
+   and replays the embedded journal. It cannot authenticate the fetched data.
+   Older prose/closure checkpoints return `reconcile_legacy`: reconstruct their full
+   records and original authority yourself, preserving attempts, active reservations,
+   settled answers and evidence. Missing JSON is not permission for a new run or a
+   request for the user to paste logs. Conflicting records need agent investigation;
+   ask only a genuinely ambiguous objective/access question after that investigation.
+2. Inspect changes since the saved record before using its proposed next action.
+   A saved `next` sentence is advisory; derive work from closure/journal instead.
+   A failed session is terminal, not an active writer. Reconcile its notes, commits,
+   diff and reservation. Use `ctx_owner.py recover-closure HANDOFF.json --observation
+   OBSERVATION.json --report-url SOURCE_NOTE` for an interrupted closure claim;
+   observation is the existing terminal-session shape below. Consume reserved repair
+   budget. For execution claims, adopt a verified result or publish an attributed
+   failure receipt and use the existing journal transition. Never clear unknown or
+   running work, duplicate a saved write, or restart closure after journal pinning.
+3. Use `ctx_owner.py next HANDOFF.json` and the journal's derived `owner_action`.
+   Repair actionable defects before requesting another plan; continue ready work
+   even if another target needs a decision. `reconcile_retry` means inspect fresh
+   evidence before spending the permitted retry. `reconcile_blocker` means inspect
+   and resolve evidence/dependency/technical gaps within authority, not ask the user
+   which phase to run. If no safe transition exists, save the attempted remedy and
+   precise access/approval/scope boundary; do not repeatedly inspect unchanged state.
+   `reconcile_answers` verifies exact questions, provenance, targets and saved files
+   before applying queued answers. Never reapply an old answer to a different question.
+4. Delegate, verify actual reports/CI/ACs and independent review, record the result,
+   then save/read back the full handoff and derive the next action again. Keep the
+   native admission clock, delegation reservations and cumulative repair/action caps.
+   Routine saves, a worker's final response or a repair finding do not end the run.
+5. Stop only at completion, a material product question, genuine access/approval or
+   ownership uncertainty, or an execution limit. Finish other eligible work first.
+   Ask product questions in plain language with options/recommendations, checking
+   prior answers first. Keep the interview in Project; source-note questions provide
+   durable context. At a limit, the user only needs the verified trigger handle plus
+   `Continue E2` on the source issue. The next agent run, not the user, reads the
+   technical handoff. A native tool-approval pause must use the existing session UI.
+
+### Native payload (not a controller checkpoint)
+
+`ctx_owner.py render HANDOFF.json` validates and formats one JSON block between
+`<!-- ctx-owner-handoff:v1 -->` and `<!-- /ctx-owner-handoff -->`. Publish it below
+the <=120-word status/result/agent-next/user-action summary. Read the note back,
+`ctx_owner.py parse NOTE.md`, and compare the entire payload to the intended value.
+Do this before dispatch and after each result, including final run boundaries.
+Do not truncate the journal or keep durable state solely in `.ctx`.
+
+The payload has:
+
+- `version: 1` and `objective`: original `run_id`, project ID/path, source IID, epic,
+  branch, `mode: execute|design-closure`, `goal`, actual human `authorization_url`,
+  `ticket_ids` (null for whole epic) and scope `exclusions`.
+- `closure`: the full existing design-closure record and histories, retained as the
+  baseline after execution starts; `journal`: the full replay-valid progress journal
+  or null before execution preflight. No second set of ticket statuses.
+- `closure_returns`: append-only `{reservation, result_sha, report_url}` receipts
+  for read-verified worker returns, including research/review before subsequent
+  checks. Copy the exact reserved identity. Interrupted claims instead use the
+  closure's existing reconciliation history. Repair cycles remain consumed there.
+- `session`: actual `session_id`, `started_at` epoch and all reserved `delegations`.
+  A new verified session gets a new session clock, not fresh cumulative budgets.
+- `resources`: the complete append-only ownership manifest; append release events,
+  don't erase provenance or delete foreign/dirty resources.
+- `decisions`: stable `id`, exact `question`, `answer`, source-note `source_url`,
+  `targets`, and `state: acknowledged|queued|saved|reviewed`. Saved/reviewed entries
+  also have `saved_sha`. Preserve answers and honest provenance; states do not
+  authenticate consent or replace real artifact/readback/review checks.
+
+The objective is immutable for a simple resume. A genuinely revised scope/objective
+needs an explicit human-authorized reconciliation with retained history; never pick
+the newest of competing objectives or reset a journal to obtain fresh limits.
+
+Acceptance for this candidate: two runs using the same source issue; the second
+receives only a short continue request, recovers a terminal reservation or restores
+a failing-test journal, repairs and re-verifies, advances the next ticket, and asks
+only a genuinely unanswered product question. Preserve original scope, every AC,
+prior answers, evidence and budgets. Local codec/journal tests are not this live test.
+
 ## Native session protocol
 
 1. Establish explicit scope and actual project/source/epic/branch/session identity.
@@ -56,8 +164,8 @@ deferred installation work, not a prerequisite for the native path.
 6. End only at verified scoped completion, real decision/access/approval boundary,
    uncertain ownership/write, exhausted budgets or a runtime limit. Publish/read back
    a <=120-word summary followed by full state/evidence. Include what finished, exact
-   blocker, agent next, user action or none, and one copyable **resume** instruction
-   with actual source/epic/branch, original run ID and checkpoint URL. A native resume
+   blocker, agent next, user action or none, and one short **resume** instruction.
+   Put source/epic/branch, original run ID and evidence in the durable handoff. A native resume
    is human-triggered through the same registered Development flow, not controller
    activation, an agent-written bot mention, a new planning run or automatic restart.
    Actual product decisions return to the interactive Project/Design conversation;
