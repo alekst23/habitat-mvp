@@ -1,8 +1,8 @@
 # CTX native GitLab workflow implementation
 
-Published conversational entry point: [CTX Project v1.1.0](project-owner.md) combines project
+Published conversational entry point: [CTX Project v1.2.0](project-owner.md) combines project
 assessment, the existing Planning procedures and the Design interview in one chat.
-It is registered and enabled; full v1.1.0 prompt/tool readback passed on 2026-10-11 UTC.
+It is registered and enabled; full v1.2.0 prompt/tool readback passed on 2026-10-11 UTC.
 The chat picker was checked on v1.0.0. The user's E2 feedback motivated persistent
 objectives, saved decisions and terminal-session reconciliation; live behavioral
 acceptance is pending. Existing specialists remain enabled. Project retains its document/issue tools plus two session-read tools;
@@ -11,20 +11,21 @@ addenda now have local journal transitions; general cross-target revision does n
 Its prompt/registration hashes, tools and procedure coverage are now checked by
 `python scripts/ctx_workflow.py validate` as well as the workflow tests.
 
-Local candidate: [native multi-step execution](single-shot-development.md) restores
+Published: [native multi-step execution](single-shot-development.md) restores
 repeated delegation inside the existing Development flow. Controller installation is
 deferred, not a prerequisite. Save/read back between phases, continue within session
-limits, and give one manual resume at a real stop. Publication, trusted helper sync
-and live acceptance are pending; neither this edit nor a push updates the catalog.
-Project v1.1.0, Design v1.7.0 and Development v1.6.0 were published/read back
-after MR !25 passed pipeline 2935078543 and merged into main at d121a1ba.
-All 169 local tests passed. No product MR merge or paid execution was performed.
+limits, and give one manual resume at a real stop. Project v1.2.0, Design v1.8.0
+and Development v1.7.0 were published/read back after MR !28 passed pipeline
+2936042723 and independent Duo review, merging into main at 64738d8. The full saved
+content matches c1a472a after final-newline normalization. MR !29 passed pipeline
+2936095389 and follow-up review at e86612d, then merged E2 helpers at d2ebf02.
+Its journal correction prevents answered questions resurfacing as current blockers
+while preserving replay. All 174 source tests passed; E2 product docs/plan remain
+unchanged, including open Q6. No product MR merge, application run or controller
+activation was performed. Live native behavior remains unverified.
 
-For this candidate's rollout: independently review/merge the native-loop change,
-synchronize its trusted helpers/guides to the authorized epic branch after ownership
-checks (no product-spec overwrite), then update the EXISTING catalog entries:
-Development **1.7.0**, Project **1.2.0**, Design **1.8.0**. Read back full content,
-hashes, tools and enablement before claiming publication. Keep controller disabled;
+Rollout verification preserved the EXISTING catalog entries, complete prompt/YAML,
+tools, private visibility, enablement, service account and triggers. Keep controller disabled;
 no protection settings, token, schedule or new bot is needed. Start a fresh chat and
 run the explicitly authorized native smoke in single-shot-development.md. Do not
 merge E2's !8 or start paid application execution as part of publication.
@@ -79,7 +80,7 @@ run deterministic workflow checks and, once configured, application adapters.
 |---|---|---|
 | CTX Planning chat agent | Scope interview → epic/tickets, dependencies and plan state | Publish approved scope first; detailed design follows |
 | CTX Design chat agent | Design interview → committed spec, technical/ticket design and acceptance manifest | Owns file persistence/readback; no implementation or flow start |
-| `.gitlab/duo/flows/ctx-development.yml` | Review/repair → ticket SDLC/AC checks → subsequent tickets → epic review/MR | Local v1.7.0 native loop pending publication; live catalog still v1.6.0 one-unit behavior |
+| `.gitlab/duo/flows/ctx-development.yml` | Review/repair → ticket SDLC/AC checks → subsequent tickets → epic review/MR | v1.7.0 published/read back; native loop live acceptance pending |
 | `.gitlab/duo/flows/ctx-delivery.yml` | Six delivery operations, stage evidence and candidate readiness review | Read/comment only; application adapters and deployment/approval integration are missing |
 
 Each of the 30 procedures is a repo skill at `skills/ctx-*/SKILL.md`, explicitly
@@ -261,7 +262,7 @@ operation reports to the source issue before returning a routing token. A GitLab
 session ending in `abort` can mean a documented missing prerequisite, not a crash.
 Resume with the explicit operation after resolving a genuine blocker. No flow
 automatically retriggers another flow. Historical v1.2.0 lacks the new bounded repair
-loop; published v1.6.0 uses one-unit sessions. The local v1.7.0 candidate restores
+loop; historical v1.6.0 used one-unit sessions. Published v1.7.0 restores
 same-session continuation without requiring the undeployed controller. Native
 cross-session auto-resume is unavailable; a checkpoint is not completed implementation.
 
@@ -291,7 +292,7 @@ The standalone/legacy graphs use three fixed `DeterministicStepComponent` steps:
    emits only the `routing_token` field, without a newline. The native router
    reads `context:<agent>_routing_token.tool_responses`, never the raw answer.
 
-Published Development v1.6.0 uses prepare/capture followed by fixed
+Published Development v1.7.0 uses prepare/capture followed by fixed
 complete/checkpoint match probes. All gates read execution_result, never formatted
 tool output. A successful match consumes the source file and ends; an unsuccessful
 complete probe tries checkpoint; unknown/conflicting/blocked results and tool errors
@@ -332,7 +333,7 @@ python scripts/ctx_workflow.py validate
 python -m unittest discover -s tests/workflow -v
 ```
 
-Normalization and token-match probes are included in published Development v1.6.0,
+Normalization and token-match probes are included in published Development v1.7.0,
 but have not been live-executor-validated there. Delivery publication remains separate.
 The local graph tests execute the literal commands from the YAML, including the
 hash check, and simulate the file-tool acknowledgment from GitLab's Go executor.
@@ -545,7 +546,7 @@ catalog publication does not merge those files into the checkout used by agents.
    browser CI job has its own Playwright image; see the browser guide for the distinction.
 4. Use CTX Planning/Design chat agents and update their existing registrations
    rather than creating duplicates. Keep the old planning flow disabled.
-   Development v1.6.0 is published/read back as recorded above. Check for a delivery
+   Development v1.7.0 is published/read back as recorded above. Check for a delivery
    registration before creating/enabling it, then verify the enabled versions.
    Do not register legacy YAML or individual skills.
 5. Review service-account permissions and begin with human-invoked flows on issues

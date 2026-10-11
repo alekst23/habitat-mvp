@@ -95,7 +95,7 @@ class NativeAdmissionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             dev.claim(capped, "E2-1")
 
-    def test_native_contract_and_unpublished_metadata_do_not_require_controller_setup(self):
+    def test_native_contract_and_publication_metadata_do_not_require_controller_setup(self):
         flow_path = ROOT / ".gitlab/duo/flows/ctx-development.yml"
         flow = workflow.read_yaml(flow_path)
         prompt = flow["prompts"][0]["prompt_template"]["system"]
@@ -112,9 +112,10 @@ class NativeAdmissionTests(unittest.TestCase):
             self.assertIn("human", prompt)
         catalog = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())["flows"][
             ".gitlab/duo/flows/ctx-development.yml"]
-        self.assertEqual(catalog["pending_catalog_version"], "1.7.0")
-        self.assertEqual(catalog["catalog_version"], "1.6.0")
-        self.assertNotEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
+        self.assertNotIn("pending_catalog_version", catalog)
+        self.assertEqual(catalog["catalog_version"], "1.7.0")
+        self.assertEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
+        self.assertEqual(catalog["publication_history"][-1]["catalog_version"], "1.6.0")
         controller = json.loads((ROOT / ".gitlab/ctx/controller.json").read_text())
         self.assertFalse(controller["enabled"])
 

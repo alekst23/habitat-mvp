@@ -1,13 +1,13 @@
 # CTX Project: the conversational project owner
 
-Status: **v1.1.0 published and enabled on 2026-10-11 UTC**. Full prompt/tool/version
+Status: **v1.2.0 published and enabled on 2026-10-11 UTC**. Full prompt/tool/version
 readback passed. The v1.0.0 chat picker was verified on 2026-10-10; subsequent E2
 feedback motivated persistent objectives, saved decisions and stale-worker recovery.
 The revised agent's behavioral acceptance remains pending.
 
-Local candidate **v1.2.0**, not published: native Development handoff replaces the
-controller prerequisite. The live v1.1.0 prompt still describes controller setup.
-Review/merge and publish/read back this prompt with Development v1.7.0 before use.
+Published **v1.2.0** replaces the controller prerequisite with native Development
+handoff. Development v1.7.0 and Design v1.8.0 were published/read back together;
+MR !29 synchronized trusted E2 helpers. No application execution was started.
 
 ## Open the agent
 
@@ -214,6 +214,16 @@ Private visibility, the same 21 tools and no external MCP were verified. Design
 v1.7.0 and Development v1.6.0 were also published/read back. The 169 workflow
 tests passed; no agent conversation or E2 execution was started. Specialists stay
 enabled, controller stays disabled, and the chat dispatch bridge is not implemented.
+The native rollout followed source MR !28 (c1a472a, pipeline 2936042723, independent
+review note 3993463855) and helper-sync MR !29 (e86612d, pipeline 2936095389,
+follow-up review note 3993535891, E2 merge d2ebf02). Project v1.2.0's complete
+18178-byte saved prompt matches the source after final-newline normalization,
+SHA-256 0e88dfa75a7f47f97f121c182bfc2f5a6a333eaadca5e740e892e90287631bcd.
+Private visibility, enablement, 21 tools and no external MCP remain unchanged.
+E2 product files remain unchanged; Q6 is still open. The journal correction derives
+pending questions from the current blocker without rewriting historical snapshots.
+No application execution or controller activation was performed.
+
 The following live behavior checks remain required, not implied by publication:
 
 1. For future updates, review/merge the prompt and shared procedures. Check for an existing CTX

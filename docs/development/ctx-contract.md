@@ -6,7 +6,7 @@ reads/interviews are live-tested. Approved planning publication and revised
 development/delivery execution need separate validation. See
 [implementation status](gitlab-workflow.md).
 
-The published [CTX Project v1.1.0](project-owner.md) unifies assessment, Planning
+The published [CTX Project v1.2.0](project-owner.md) unifies assessment, Planning
 and Design in one conversation by loading the existing procedures. Catalog readback
 and enablement are verified; live model behavior is not. It does not retire the
 working specialist agents. Through CTX Project, stage names refer to modes and artifact ownership,
@@ -58,7 +58,7 @@ invariants, not conflicting numbering formulas or unsafe cleanup commands.
 
 ## Execution context and supervision
 
-### Persistent objective (local revision; publication/activation pending)
+### Persistent objective (published; native behavioral acceptance pending)
 
 The approved objective is the unit of work. "Fully implement E2" retains one
 epic-scoped execute objective through prerequisite design repair/research,
@@ -261,7 +261,7 @@ See [the receipt and repair protocol](single-shot-development.md#version-2-verif
 Decision, missing evidence/infrastructure, permission and conflict blockers still
 require reconciliation; no policy change or uncertain write becomes a code fix.
 Limits never reset per commit. New commits invalidate candidate evidence; rerun
-applicable checks and rebuild/rescan artifacts. Development v1.6.0 is published with
+applicable checks and rebuild/rescan artifacts. Development v1.7.0 is published with
 full YAML readback, but the repair loop is not yet live-validated; existing version-1
 journals retain their historical rules.
 

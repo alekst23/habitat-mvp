@@ -1,10 +1,10 @@
 # CTX single-shot Development
 
-**Local candidate v1.7.0 (not published): native multi-step execution is the default.**
+**Published v1.7.0: native multi-step execution is the default.**
 One human invocation advances eligible phases/tickets, saving between delegations.
 No controller, protected controller state, scheduler or new credential is required.
-The published catalog is still v1.6.0 (one unit per session); merge/publication and
-trusted helper synchronization must precede testing this candidate. Cross-session
+Full catalog readback passed on 2026-10-11 UTC after MR !28; MR !29 synchronized
+trusted E2 helpers. Native runtime behavior still needs live acceptance. Cross-session
 auto-restart remains unavailable. [Durable execution](durable-execution.md) is optional,
 deferred installation work, not a prerequisite for the native path.
 
@@ -99,7 +99,7 @@ changes into an answer-application commit. A real scope/AC revision still needs 
 explicit plan. Native tool-approval pauses must be resolved in the **existing GitLab
 session**; a new trigger or issue-note answer cannot replace that control.
 
-### Candidate smoke after publication
+### Required live smoke after publication
 
 Use an explicitly authorized disposable epic to test one human invocation with no
 controller configured: observe at least two delegations, a real failing AC followed
@@ -108,7 +108,15 @@ Check full source readbacks before/after each worker. Test a real product questi
 and one manual resume retaining run/manifest/history; test terminated-session
 reconciliation without duplicating saved work. Stop on actual missing adapters or
 permissions; preserve merge/deploy controls. Record session/job/note/SHA evidence.
-These local changes and fixture tests do not count as that live smoke.
+Publication and fixture tests do not count as that live smoke.
+
+Publication evidence: source MR !28 at c1a472a passed pipeline 2936042723 and Duo
+review note 3993463855, then merged at 64738d8. Full saved YAML (40838 bytes) matched
+that source after final-newline normalization. Helper-sync MR !29 passed pipeline
+2936095389 at e86612d and merged at d2ebf02; its independent follow-up review
+note 3993535891 confirmed the stale-question correction. E2 docs/design and
+docs/plan remain byte-for-byte unchanged, including the existing Q6 decision.
+No application execution, product MR !8 merge or controller activation occurred.
 
 ## Earlier publication history
 
@@ -467,6 +475,11 @@ All of that target's questions must be answered. The transition schedules
 independent design review, not implementation or completion, and is replayed from
 the append-only journal. In controller mode the checkpoint also supplies the
 decision-application receipts described in [durable execution](durable-execution.md).
+
+Use `ctx_development.pending_decisions` to read pending questions from the current
+blocker receipt. Legacy node caches can retain answered questions for replay
+compatibility; they are not the pending-question source. A new prose-only blocker
+requires explicit question reconciliation, never reapplication of an old answer.
 
 Technical addenda and decision application share the existing three-repair-cycle
 limit per target and global action budget. They cannot reset retries, narrow

@@ -1,11 +1,12 @@
 # Optional controller: multiple recoverable Duo sessions
 
-Status: **Development v1.6.0 published; controller NOT activated** (2026-10-11 UTC).
-Full catalog readback matches source commit e1788add after MR !25 merged.
-The live v1.6.0 definition delegates one unit per session. Controller identity,
-protected state/credentials, verified IDs, scheduler, epic helper synchronization
-and live acceptance remain prerequisites. Manual mentions do not auto-continue.
-**Deferred, not a prerequisite:** the local v1.7.0 candidate restores the native
+Status: **Development v1.7.0 published; controller NOT activated** (2026-10-11 UTC).
+Full catalog readback matches source commit c1a472a after MR !28 merged; MR !29
+synchronized E2 helpers. The native path repeats delegation within one session.
+Only optional controller mode retains one-unit slices. Controller identity,
+protected state/credentials, verified IDs, scheduler and live acceptance remain
+prerequisites for that deferred mode, not for native execution.
+**Deferred, not a prerequisite:** published v1.7.0 restores the native
 multi-step path in [single-shot-development.md](single-shot-development.md). Use
 that path without controller setup. This document governs only verified controller
 envelopes; it does not override native continuation. Do not attempt inaccessible
@@ -16,7 +17,7 @@ one authorized execution request owns the remaining epic. The deterministic
 controller runs outside Duo; the existing Development catalog flow supplies native
 subagents in CI. There is no additional bot per operation, ticket, or retry.
 
-The published [CTX Project v1.1.0](project-owner.md) brings the conversational
+The published [CTX Project v1.2.0](project-owner.md) brings the conversational
 Planning/Design procedures and project assessment into one chat. It does not
 change this controller's installation status or add chat dispatch privileges.
 Its read-only assessment can consume these records; only the controller writes
