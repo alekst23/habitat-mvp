@@ -123,12 +123,12 @@ def decision_questions(checkpoint):
     for finding in review.get("findings", []):
         if finding["kind"] == "decision":
             questions[finding["id"]] = finding["summary"]
-    for node in (checkpoint.get("journal") or {}).get("nodes", {}).values():
-        if node.get("blocker_kind") == "decision":
-            for decision in node.get("decisions", []):
-                require(decision["id"] not in questions or questions[decision["id"]] == decision["question"],
-                        "ambiguous decision identity")
-                questions[decision["id"]] = decision["question"]
+    journal = checkpoint.get("journal")
+    for target in (journal or {}).get("nodes", {}):
+        for decision in development.pending_decisions(journal, target):
+            require(decision["id"] not in questions or questions[decision["id"]] == decision["question"],
+                    "ambiguous decision identity")
+            questions[decision["id"]] = decision["question"]
     return [{"id": key, "question": question} for key, question in sorted(questions.items())]
 
 

@@ -396,6 +396,21 @@ def repair(run, target):
     return result
 
 
+def pending_decisions(run, target):
+    """Read the current blocker, not legacy cached questions from earlier attempts.
+
+    Keep serialized nodes/events unchanged so existing v2 journals still replay.
+    A prose-only blocker needs explicit question reconciliation, never old answers.
+    """
+    node = run["nodes"][target]
+    if node["status"] != "blocked" or node.get("blocker_kind") != "decision":
+        return []
+    for event in reversed(run["events"]):
+        if event.get("target") == target:
+            return deepcopy(event.get("decisions", [])) if event.get("blocker_kind") == "decision" else []
+    return []
+
+
 def resume_decision(run, target, receipt):
     """Resume only after answers were saved in scope; independent design review comes next.
 
@@ -406,14 +421,14 @@ def resume_decision(run, target, receipt):
     require(run["version"] == 2 and run["active"] is None and run["actions"] < MAX_ACTIONS,
             "decision resume needs an idle version-2 journal with remaining actions")
     node = run["nodes"][target]
-    require(node["status"] == "blocked" and node.get("blocker_kind") == "decision" and node.get("decisions"),
-            "resume requires a recorded decision blocker")
+    decisions = pending_decisions(run, target)
+    require(decisions, "resume requires a recorded decision blocker")
     require(node["repairs"] < MAX_REPAIRS, "repair budget exhausted")
     answers = receipt.get("answers")
-    require(isinstance(answers, list) and len(answers) == len(node["decisions"]), "all recorded answers required")
+    require(isinstance(answers, list) and len(answers) == len(decisions), "all recorded answers required")
     require(all(isinstance(a, dict) and set(a) == {"id", "question", "answer", "source_url"} and
                 all(isinstance(v, str) and v.strip() for v in a.values()) for a in answers), "invalid answer")
-    expected = {d["id"]: d["question"] for d in node["decisions"]}
+    expected = {d["id"]: d["question"] for d in decisions}
     require(len({a.get("id") for a in answers}) == len(answers) and {a.get("id") for a in answers} == set(expected),
             "answer IDs do not match the recorded questions")
     for answer in answers:
