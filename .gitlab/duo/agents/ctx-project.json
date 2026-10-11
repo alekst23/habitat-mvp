@@ -9,12 +9,17 @@
   "system_prompt_file": "ctx-project.md",
   "system_prompt_sha256": "fb23137b0cac3c8abe1e977539fa9309f1938d9f1126d31b60c403d2477c67c2",
   "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016538",
-  "catalog_version": "1.0.0",
-  "pending_catalog_version": "1.1.0",
+  "catalog_version": "1.1.0",
   "enabled_in_project": true,
-  "published_system_prompt_sha256": "bc94f5d6ef907121a1fd57b3581fd215b8aba98eb0bc24f749523924baf73ab9",
-  "published_source_commit": "033dc8da20002486a6d18269b64e443191eebc20",
-  "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/23",
+  "published_system_prompt_sha256": "197e9f37dcc9483a7310d599290e0c1730cb2be2d6a790e4b773e2a6978ef8ff",
+  "published_source_commit": "e1788add0101097c797b7516d295e21c5175b2a9",
+  "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/25",
+  "publication_history": [{
+    "catalog_version": "1.0.0",
+    "published_system_prompt_sha256": "bc94f5d6ef907121a1fd57b3581fd215b8aba98eb0bc24f749523924baf73ab9",
+    "published_source_commit": "033dc8da20002486a6d18269b64e443191eebc20",
+    "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/23"
+  }],
   "trigger": "Duo Chat Add new chat > CTX Project; refresh after enablement; no mention/assignment/flow trigger",
   "operations": [
     "ctx-project-go",
@@ -71,14 +76,14 @@
     "Create Merge Request"
   ],
   "external_mcp_servers": [],
-  "publication_status": "Live v1.0.0 remains published/enabled; historical source and readback hashes retained. Local v1.1.0 candidate adds persistent objectives, verified decision progression and terminal-session reconciliation after the user's E2 feedback. NOT published or live-validated. Same 21 tools, private visibility and no external MCP. Specialists remain enabled; controller remains disabled and chat dispatch is not implemented.",
+  "publication_status": "v1.1.0 published/enabled on 2026-10-11 UTC after MR !25 merged. Full saved prompt matches the committed source with its final newline trimmed. Same 21 tools, private visibility and no external MCP. Persistent objectives, verified decision progression and terminal-session reconciliation require live behavioral acceptance. Specialists remain enabled; controller remains disabled and chat dispatch is not implemented.",
   "verification": {
-    "catalog_readback": "passed 2026-10-10: full saved prompt, private visibility, exact 21-tool set, no MCP, v1.0.0 and project enablement read back through UI",
+    "catalog_readback": "passed 2026-10-11 UTC: full 17866-byte saved prompt, private visibility, exact 21-tool set, no MCP, v1.1.0 and project enablement read back through UI",
     "chat_picker": "passed 2026-10-10 after page refresh; CTX Project appears alongside Planning and Design; no prompt submitted",
     "chat_interview_save_smoke": "pending",
     "fresh_chat_status_reconciliation": "pending",
     "controller_handoff": "pending; controller is disabled and no chat-to-controller bridge is installed",
-    "technical_design_revision_during_execution": "local bounded target-local addendum and decision-resume transitions; publication and live verification pending; cross-target/scope/AC changes still need a revision plan",
+    "technical_design_revision_during_execution": "bounded target-local addendum and decision-resume transitions published with Development v1.6.0; controller installation and live verification pending; cross-target/scope/AC changes still need a revision plan",
     "user_e2_feedback": "v1.0.0 conversation exposed unsaved decisions, ambiguous execution handoff and stale failed-worker ownership; corrected candidate requires live acceptance"
   }
 }

@@ -1,15 +1,18 @@
 # One execution request, multiple recoverable Duo sessions
 
-Status: **local candidate, not published or activated**. Live Development v1.5.0
-still uses the old long-session supervisor. This contract takes precedence over
-older instructions to continue every phase in the same session.
+Status: **Development v1.6.0 published; controller NOT activated** (2026-10-11 UTC).
+Full catalog readback matches source commit e1788add after MR !25 merged.
+The live definition now delegates one unit per session. Controller identity,
+protected state/credentials, verified IDs, scheduler, epic helper synchronization
+and live acceptance remain prerequisites. Manual mentions do not auto-continue.
+This contract takes precedence over older same-session loop instructions.
 
 Planning and Design remain conversations. After their scoped artifacts are saved,
 one authorized execution request owns the remaining epic. The deterministic
 controller runs outside Duo; the existing Development catalog flow supplies native
 subagents in CI. There is no additional bot per operation, ticket, or retry.
 
-The published [CTX Project v1.0.0](project-owner.md) brings the conversational
+The published [CTX Project v1.1.0](project-owner.md) brings the conversational
 Planning/Design procedures and project assessment into one chat. It does not
 change this controller's installation status or add chat dispatch privileges.
 Its read-only assessment can consume these records; only the controller writes
@@ -224,10 +227,10 @@ spend. Unchanged running-session polls do not create empty state commits.
 
 ## Installation (one-time, requires operator authority)
 
-1. Review/merge these helpers and publish the candidate Development v1.6.0 into
-   the EXISTING catalog item. Verify full saved YAML, max_delegations=1 and tools;
-   publish/read back Design v1.7.0's revised handoff in its existing agent entry;
-   synchronize trusted helpers/guides to the epic. Do not start a paid run yet.
+1. Source MR !25 is merged; Development v1.6.0 and Design v1.7.0 are published
+   in their EXISTING entries. Full prompt/YAML readback, max_delegations=1 and
+   existing tools were verified. Synchronize trusted helpers/guides to the epic
+   after resolving write ownership. Do not start a paid run yet.
 2. Resolve the enabled **consumer ID**, exact **catalog version ID** and reporting
    service-account numeric user ID from GitLab. They are not the catalog item ID
    1016234. Fill `.gitlab/ctx/controller.json`, review it, set enabled=true and merge.

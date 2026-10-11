@@ -17,9 +17,9 @@ and close operations under the `ctx-` prefix. Add the six delivery operations
 listed there. Lifecycle stages classify evidence; they do not define agent or
 operation boundaries.
 
-Planning is conversational. **CTX Project v1.0.0** is published and enabled with
-catalog readback and chat-picker verification. The user's E2 conversation exposed
-progression defects; Project v1.1.0 is a local correction pending publication/live proof.
+Planning is conversational. **CTX Project v1.1.0** is published and enabled with
+full catalog readback (2026-10-11 UTC); the chat picker was verified on v1.0.0.
+The user's E2 progression defects motivated this revision; live behavioral proof remains pending.
 It unifies Planning/Design procedures and project-status assessment in one chat;
 read docs/development/project-owner.md. When using CTX Project, Planning
 and Design are modes in the same conversation, not instructions to open another
@@ -41,15 +41,16 @@ advances all explicitly scoped work through delegated SDLC phases, with an expli
 serial fallback (native parallel execution is unverified). Its progress journal
 does not grant authority or attest evidence; remote review/CI/ancestry must still
 be checked. Preserve ticket-only scope, respect active runs, and keep durable
-checkpoints. Development v1.5.0 is published and enabled; full catalog YAML readback
-passed after MR !20 merged and !21 synchronized E2. The historical v1.2.0 run stopped at preflight; delegated
+checkpoints. Development v1.6.0 is published and enabled; full catalog YAML readback
+passed after MR !25 merged. Epic helper synchronization and controller installation
+are still required before using its continuation path. The historical v1.2.0 run stopped at preflight; delegated
 ticket processing and the repair loop still need live validation. New runs use the
 version-2 journal: pin the exact AC manifest, repair
 actionable defects up to three times per target, and require fresh application/AC
 verification plus independent review after every fix. Missing infrastructure, intent
 or authority is still a blocker; no agent-driven flow retriggers or policy weakening.
 
-The local durable-execution candidate supersedes SAME-session loop instructions:
+The published durable-execution definition supersedes SAME-session loop instructions:
 read docs/development/durable-execution.md. Each native session delegates at most
 one coherent unit, saves/read-verifies its result, then checkpoints. The separate
 trusted controller automatically schedules subsequent slices of one authorized
@@ -57,7 +58,7 @@ epic, with durable scope/history, bounded recovery and no duplicate uncertain PO
 Workers receive save_by and must save coherent increments promptly, not accumulate
 an epic-sized unsaved batch. Review/fix/test gates are unchanged. Do not bypass the
 one-delegation limit by implementing another phase in the coordinator. The controller
-is disabled pending publication, protected state/credential setup and live smoke;
+is disabled pending verified IDs, protected state/credential setup, scheduler and live smoke;
 manual mentions alone do not provide automatic continuation. Never expose its token
 to agents or let agent identities write ctx/controller-state.
 
@@ -82,11 +83,11 @@ evidence. Pending checks do not prevent scope/design saves or design conversatio
 but must not be reported as implementation readiness. Only real scope/decomposition
 changes return to Planning; never send users there merely to save Design's work.
 
-The CTX Project candidate follows the same order and artifact ownership as modes
+The CTX Project agent follows the same order and artifact ownership as modes
 within one chat. It uses the existing interview/planning/design skills directly,
 not the standalone registrations as subagents. Reads of protected controller state
 are for assessment only; writes stay with the controller. Missing direct chat
-dispatch remains an explicit implementation gap. The local revision keeps one
+dispatch remains an explicit implementation gap. The published revision keeps one
 approved objective across design/execution, verifies answer application, reconciles
 terminal reservations and supports bounded target-local technical design addenda
 through independent re-review. Pinned ACs/history/budgets stay intact; cross-target
@@ -98,7 +99,7 @@ public-documentation research and bounded document repair. Specified means a
 review candidate, not Design complete. The existing supervisor's explicit
 mode=design-closure cannot claim tickets or implement the app; it ends with a
 verified checkpoint after closure or a precise decision/access blocker. The new
-Design v1.6.0/Development v1.5.0 are published/enabled with full readback; native
+Design v1.7.0/Development v1.6.0 are published/enabled with full readback; native
 design-closure behavior still needs the live test in that guide.
 Generated E-numbered plans and design handoffs are checked by
 scripts/ctx_design.py in CI. Structural checks do not replace independent semantic
@@ -109,7 +110,7 @@ gates; --ready remains all-clear and conservative. The runner obtains independen
 design review/repair under Design ownership, then historical execution reviews
 before ticket claims, publishing source-issue receipts.
 Missing execution/enablement evidence alone does not keep complete design in draft.
-CTX Design v1.6.0 and Development v1.5.0 were read back on 2026-10-09 UTC; native
+Historical rollout: CTX Design v1.6.0 and Development v1.5.0 were read back on 2026-10-09 UTC; native
 behavior validation remains pending. Workflow MR !20 merged into main at 2ffcb740;
 helper-sync MR !21 merged into ctx/epic-i2 at 849c3450. Both pipelines passed, as
 did 139 local workflow tests. This synchronization did not change E2 product docs.

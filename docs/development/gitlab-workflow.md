@@ -1,22 +1,24 @@
 # CTX native GitLab workflow implementation
 
-Published conversational entry point: [CTX Project v1.0.0](project-owner.md) combines project
+Published conversational entry point: [CTX Project v1.1.0](project-owner.md) combines project
 assessment, the existing Planning procedures and the Design interview in one chat.
-It is registered and enabled; full prompt/tool readback and chat-picker checks passed
-on 2026-10-10. The user's subsequent E2 conversation exposed progression defects.
-Project v1.1.0 is a local candidate for persistent objectives, saved decisions and
-terminal-session reconciliation; live acceptance is pending. Existing specialists
-are unchanged. Project retains its document/issue tools plus two session-read tools;
+It is registered and enabled; full v1.1.0 prompt/tool readback passed on 2026-10-11 UTC.
+The chat picker was checked on v1.0.0. The user's E2 feedback motivated persistent
+objectives, saved decisions and terminal-session reconciliation; live behavioral
+acceptance is pending. Existing specialists remain enabled. Project retains its document/issue tools plus two session-read tools;
 direct chat-to-controller dispatch is still missing. Bounded target-local design
 addenda now have local journal transitions; general cross-target revision does not.
 Its prompt/registration hashes, tools and procedure coverage are now checked by
 `python scripts/ctx_workflow.py validate` as well as the workflow tests.
 
-Local candidate: [durable one-request execution](durable-execution.md) keeps the
+Published definition: [durable one-request execution](durable-execution.md) keeps the
 existing Development catalog entry but changes sessions to one delegated work unit.
 The external controller persists state and continues/reconciles runs automatically.
-It is NOT activated: catalog publication, protected controller state/credentials,
-resolved API IDs, a scheduler and a live interruption smoke are still required.
+The controller is NOT activated: protected state/credentials, resolved API IDs,
+a scheduler, epic helper synchronization and a live interruption smoke are still required.
+Project v1.1.0, Design v1.7.0 and Development v1.6.0 were published/read back
+after MR !25 passed pipeline 2935078543 and merged into main at d121a1ba.
+All 169 local tests passed. No product MR merge or paid execution was performed.
 
 ## Status and boundaries
 
@@ -24,7 +26,7 @@ Design repair (2026-10-08): restored interview/technical-contract/wiring
 procedures, generated-artifact CI checks and explicit Development contract-stub
 preparation. Read [design handoff requirements](design-readiness.md). Planning
 v1.1.0 remains published, with its repair candidate pending catalog publication.
-**CTX Design v1.6.0 and Development v1.5.0 are published and enabled**
+Historical rollout: **CTX Design v1.6.0 and Development v1.5.0 were published and enabled**
 (2026-10-09 UTC). Full prompt/YAML readback matches the tested source except the
 final newline. Design owns review, official-source research and bounded document
 repair through explicit design-only mode in the existing supervisor. Current-SHA
@@ -68,7 +70,7 @@ run deterministic workflow checks and, once configured, application adapters.
 |---|---|---|
 | CTX Planning chat agent | Scope interview → epic/tickets, dependencies and plan state | Publish approved scope first; detailed design follows |
 | CTX Design chat agent | Design interview → committed spec, technical/ticket design and acceptance manifest | Owns file persistence/readback; no implementation or flow start |
-| `.gitlab/duo/flows/ctx-development.yml` | Design-only closure or single-shot ticket SDLC/repair → reassess → epic validation/repair/MR | Published v1.5.0; serial fallback; closure/checkpoint and delegated repair execution need native validation |
+| `.gitlab/duo/flows/ctx-development.yml` | Design-only closure or ticket SDLC/repair → checkpoint → next controller session | Published v1.6.0; one delegated unit per session; controller installation and native validation pending |
 | `.gitlab/duo/flows/ctx-delivery.yml` | Six delivery operations, stage evidence and candidate readiness review | Read/comment only; application adapters and deployment/approval integration are missing |
 
 Each of the 30 procedures is a repo skill at `skills/ctx-*/SKILL.md`, explicitly
@@ -250,8 +252,9 @@ operation reports to the source issue before returning a routing token. A GitLab
 session ending in `abort` can mean a documented missing prerequisite, not a crash.
 Resume with the explicit operation after resolving a genuine blocker. No flow
 automatically retriggers another flow. Historical v1.2.0 lacks the new bounded repair
-loop; published v1.5.0 is configured to repair evidenced scoped defects internally
-in the same supervisor session, then re-verifies and obtains independent review.
+loop; v1.6.0 retains that repair protocol across one-unit sessions, with the
+controller owning continuation. The controller is not yet installed; do not
+mistake a manual slice's checkpoint for autonomous completion.
 
 ### Final results are not handoff destinations
 
@@ -279,7 +282,7 @@ The standalone/legacy graphs use three fixed `DeterministicStepComponent` steps:
    emits only the `routing_token` field, without a newline. The native router
    reads `context:<agent>_routing_token.tool_responses`, never the raw answer.
 
-Published Development v1.5.0 instead uses prepare/capture followed by fixed
+Published Development v1.6.0 uses prepare/capture followed by fixed
 complete/checkpoint match probes. All gates read execution_result, never formatted
 tool output. A successful match consumes the source file and ends; an unsuccessful
 complete probe tries checkpoint; unknown/conflicting/blocked results and tool errors
@@ -320,7 +323,7 @@ python scripts/ctx_workflow.py validate
 python -m unittest discover -s tests/workflow -v
 ```
 
-Normalization and token-match probes are included in published Development v1.5.0,
+Normalization and token-match probes are included in published Development v1.6.0,
 but have not been live-executor-validated there. Delivery publication remains separate.
 The local graph tests execute the literal commands from the YAML, including the
 hash check, and simulate the file-tool acknowledgment from GitLab's Go executor.
@@ -533,7 +536,7 @@ catalog publication does not merge those files into the checkout used by agents.
    browser CI job has its own Playwright image; see the browser guide for the distinction.
 4. Use CTX Planning/Design chat agents and update their existing registrations
    rather than creating duplicates. Keep the old planning flow disabled.
-   Development v1.5.0 is published/read back as recorded above. Check for a delivery
+   Development v1.6.0 is published/read back as recorded above. Check for a delivery
    registration before creating/enabling it, then verify the enabled versions.
    Do not register legacy YAML or individual skills.
 5. Review service-account permissions and begin with human-invoked flows on issues

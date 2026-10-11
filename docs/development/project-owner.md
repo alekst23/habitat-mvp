@@ -1,9 +1,9 @@
 # CTX Project: the conversational project owner
 
-Status: **v1.0.0 published and enabled on 2026-10-10**. Full catalog readback and
-chat-picker availability passed. The user's live E2 conversation exposed lost
-objective/decision progression and stale-worker handling. **v1.1.0 is a local
-candidate, not published**; its behavioral acceptance remains pending.
+Status: **v1.1.0 published and enabled on 2026-10-11 UTC**. Full prompt/tool/version
+readback passed. The v1.0.0 chat picker was verified on 2026-10-10; subsequent E2
+feedback motivated persistent objectives, saved decisions and stale-worker recovery.
+The revised agent's behavioral acceptance remains pending.
 
 ## Open the agent
 
@@ -183,13 +183,22 @@ it must not create a new run. Merge, release and provider enablement remain sepa
 
 The prompt and registration are `.gitlab/duo/agents/ctx-project.md` and
 `ctx-project.json`. Source MR !23 merged after pipeline 2934622560 passed at
-033dc8da20002486a6d18269b64e443191eebc20. Agent 1016538 v1.0.0 is private and
-enabled in Showcase. Its complete saved prompt equals that source with the final
+033dc8da20002486a6d18269b64e443191eebc20. Agent 1016538 v1.0.0 was private and
+enabled in Showcase. Its complete saved prompt equaled that source with the final
 newline trimmed; the record contains both hashes. All 21 tools, no external MCP
 and the refreshed chat picker were verified. No model prompt was submitted during
 that publication check; the subsequent user-supplied E2 transcript is behavioral
-feedback, not a passed acceptance test for the local revision.
-Existing specialist registrations and controller enablement remain unchanged.
+feedback, not a passed acceptance test for the revision.
+
+MR !25 passed pipeline 2935078543 at e1788add0101097c797b7516d295e21c5175b2a9
+and merged at d121a1ba5f4025b322bb2fb3fcdea2094c3b0538. On 2026-10-11 UTC,
+Project v1.1.0 was published/enabled in the same entry. The full 17866-byte saved
+prompt matches that source after final-newline normalization, with SHA-256
+197e9f37dcc9483a7310d599290e0c1730cb2be2d6a790e4b773e2a6978ef8ff.
+Private visibility, the same 21 tools and no external MCP were verified. Design
+v1.7.0 and Development v1.6.0 were also published/read back. The 169 workflow
+tests passed; no agent conversation or E2 execution was started. Specialists stay
+enabled, controller stays disabled, and the chat dispatch bridge is not implemented.
 The following live behavior checks remain required, not implied by publication:
 
 1. For future updates, review/merge the prompt and shared procedures. Check for an existing CTX
