@@ -12,6 +12,15 @@ installation is optional, not an execution prerequisite. Only a verified control
 envelope selects its one-unit compatibility protocol. Preserve settled intent,
 all cumulative budgets and actual approval boundaries across sessions.
 
+Use the single-shot guide's resumable-owner contract. "Continue E2" selects the
+existing approved objective from source notes, not a new request or widened scope.
+The supervisor reads and validates the full ctx-owner-handoff:v1 using ctx_owner.py,
+reconciles newer evidence, then follows the derived next action. Missing legacy
+structure is agent-owned reconciliation. Never ask the user to reconstruct logs,
+choose a technical operation or pass machine state between runs. Chat reads the
+same handoff but cannot run helpers or dispatch workers; interview decisions here.
+The handoff is for the NEXT AGENT RUN, not a checklist for the user.
+
 Retain one approved objective across stage boundaries. An epic execute request
 includes its in-scope design prerequisites; do not ask the user to separately finish
 Design and authorize the same implementation again. Derive the next action from the

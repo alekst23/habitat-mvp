@@ -58,7 +58,10 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         prompt = (AGENTS / project["system_prompt_file"]).read_bytes()
         self.assertNotIn("pending_catalog_version", project)
         self.assertEqual(project["published_source_commit"], "c1a472acaf05d483ea24ed9bac65c9cc46e7f819")
-        self.assertEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertEqual(project["published_system_prompt_sha256"],
+                         "0e88dfa75a7f47f97f121c182bfc2f5a6a333eaadca5e740e892e90287631bcd")
+        self.assertIn("publication and live two-run acceptance pending", project["candidate_status"])
+        self.assertNotEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
         self.assertEqual(project["next_entrypoint"], "development-human-native-invocation-or-resume")
         previous = project["publication_history"][0]
         self.assertEqual(previous["catalog_version"], "1.0.0")
@@ -90,7 +93,8 @@ class ChatAgentRegistrationTests(unittest.TestCase):
                             "docs/development/project-owner.md", "current-SHA",
                             "Do not ask the user to copy review text", "in the same response",
                             "after an execution journal is pinned", "Fully implement E2", "persistent objective",
-                            "failed session is not a running worker", "Do not say saved when only acknowledged"):
+                            "failed session is not a running worker", "Do not say saved when only acknowledged",
+                            "Continue E2", "ctx-owner-handoff:v1", "Before offering a background handoff"):
             self.assertIn(requirement.casefold(), prompt.casefold())
         guide = (ROOT / "docs/development/project-owner.md").read_text()
         for requirement in ("read-only restart", "product decision", "technical defect",

@@ -245,7 +245,48 @@ def next_actions(run):
         result["repairable"] = repairable if permitted else []
         for item in result["ready"]:
             item["component"] = component(item["phase"])
+    result["owner_action"] = owner_action(run, result)
     return result
+
+
+def owner_action(run, frontier):
+    """Derived dispatch advice, never authorization or proof of remote evidence.
+
+    Prioritize recovery and bounded repairs; only ask questions when no ready work
+    remains. Do not change serialized nodes/events: old journals must still replay.
+    """
+    if frontier["active"]:
+        return {"action": "reconcile_active", "claim": deepcopy(frontier["active"])}
+    if frontier["complete"]:
+        return {"action": "complete"}
+    if frontier["actions_remaining"] <= 0:
+        return {"action": "checkpoint", "reason": "cumulative action budget exhausted"}
+    if frontier.get("repairable"):
+        return {"action": "repair", "target": frontier["repairable"][0]}
+    if frontier["ready"]:
+        item = frontier["ready"][0]
+        return {"action": "delegate", **item, "component": component(item["phase"])}
+    blocked = [(key, run["nodes"][key]) for key in run["required_targets"]
+               if run["nodes"][key]["status"] == "blocked"]
+    for target, node in blocked:
+        if node.get("blocker_kind") in {"transient", "ci_pending"} and node["retries"] < 1:
+            return {"action": "reconcile_retry", "target": target,
+                    "reason": node["reason"]}
+    questions = []
+    for target, node in blocked:
+        if node.get("blocker_kind") == "decision":
+            pending = pending_decisions(run, target)
+            if not pending:
+                return {"action": "reconcile_blocker", "target": target,
+                        "reason": "recover exact current question and prior answers from source evidence"}
+            questions.extend({"target": target, **d} for d in pending)
+    if questions:
+        return {"action": "resolve_decisions", "questions": questions}
+    if blocked and all(n.get("blocker_kind") in {"defect", "technical_design", "transient", "ci_pending"}
+                       for _, n in blocked):
+        return {"action": "checkpoint", "reason": "repair/retry budget exhausted; retain findings and attempts"}
+    return {"action": "reconcile_blocker", "targets": [t for t, _ in blocked],
+            "reason": "inspect missing evidence, dependencies or access; do not ask the user to diagnose"}
 
 
 def claim(run, target):

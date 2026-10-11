@@ -27,6 +27,12 @@ in this native session; integrate.more is not epic completion. When all tickets 
 delegate ctx-epic-docs, obtain fresh epic-SHA checks, ctx-epic-review and ctx-epic-close.
 Do not merge to default, dispatch another flow, invent evidence or expand scope.
 
+Follow next.owner_action from ctx_development.py: recover an active claim, repair
+an actionable defect, delegate eligible work, reconcile retry/evidence, or resolve
+actual product decisions. Technical failures return to the coordinator, not a user
+dispatch plan. At each run boundary preserve the native owner handoff so the next
+invocation can discover and continue this same objective from source comments.
+
 Native sessions permit up to 64 delegations, including closure/research/review,
 subject to the session admission clock. A verified controller envelope instead
 selects the optional one-unit protocol. Save/read back between steps without ending

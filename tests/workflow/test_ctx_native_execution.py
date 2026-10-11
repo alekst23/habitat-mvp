@@ -9,9 +9,39 @@ from ctx_execution_budget import admission
 import ctx_development as dev
 import ctx_workflow as workflow
 from test_ctx_development_repairs import repair_request, success, defect
+from test_ctx_development import receipt
 
 
 class NativeAdmissionTests(unittest.TestCase):
+    def test_owner_continues_unrelated_work_before_questions_and_reconciles_retry(self):
+        run = dev.claim(dev.new_run(repair_request()), "E2-1")
+        run = dev.record(run, receipt(run, response="blocked", blocker_kind="decision",
+            reason="Signup eligibility", decisions=[{"id": "Q6", "question": "Who may sign up?"}]))
+        self.assertEqual(dev.next_actions(run)["owner_action"]["target"], "E2-2")
+        run = dev.claim(run, "E2-2")
+        run = dev.record(run, receipt(run, response="blocked", blocker_kind="transient", reason="Runner interrupted"))
+        self.assertEqual(dev.next_actions(run)["owner_action"]["action"], "reconcile_retry")
+        run = dev.retry(run, "E2-2", "https://gitlab.com/group/showcase/-/issues/10#note_200")
+        run = dev.claim(run, "E2-2")
+        run = dev.record(run, receipt(run, response="blocked", blocker_kind="transient", reason="Still unavailable"))
+        self.assertEqual(dev.next_actions(run)["owner_action"]["questions"],
+                         [{"target": "E2-1", "id": "Q6", "question": "Who may sign up?"}])
+        dev.verify_journal(run)
+
+    def test_owner_selects_recovery_and_repairs_without_a_human_dispatch_plan(self):
+        run = dev.new_run(repair_request())
+        self.assertEqual(dev.next_actions(run).get("owner_action"),
+                         {"action": "delegate", "target": "E2-1", "phase": "design", "component": "design"})
+        run = dev.claim(run, "E2-1")
+        self.assertEqual(dev.next_actions(run)["owner_action"]["action"], "reconcile_active")
+        for _ in range(3):
+            run = dev.record(run, success(run))
+            run = dev.claim(run, "E2-1")
+        run = dev.record(run, defect(run))
+        self.assertEqual(dev.next_actions(run)["owner_action"], {"action": "repair", "target": "E2-1"})
+        run = dev.repair(run, "E2-1")
+        self.assertEqual(dev.next_actions(run)["owner_action"]["phase"], "implementation")
+
     def test_native_run_can_continue_past_the_old_one_slice_window(self):
         self.assertTrue(admission(100, 100 + 601)["delegate"])
 
@@ -101,7 +131,8 @@ class NativeAdmissionTests(unittest.TestCase):
         prompt = flow["prompts"][0]["prompt_template"]["system"]
         for term in ("No controller installation is required", "Before EVERY",
                      "--delegations RESERVED_COUNT", "integrate.more means continue here",
-                     "Native sessions do not auto-restart"):
+                     "Native sessions do not auto-restart", "scripts/ctx_owner.py resume/next",
+                     "ctx-owner-handoff:v1", "next.owner_action", "NEXT AGENT RUN"):
             self.assertIn(term, prompt)
         worker = next(p for p in flow["prompts"] if p["prompt_id"] == "design_prompt")["prompt_template"]["system"]
         self.assertIn("For mode=technical-addendum or mode=decision-application", worker)
@@ -114,7 +145,8 @@ class NativeAdmissionTests(unittest.TestCase):
             ".gitlab/duo/flows/ctx-development.yml"]
         self.assertNotIn("pending_catalog_version", catalog)
         self.assertEqual(catalog["catalog_version"], "1.7.0")
-        self.assertEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
+        self.assertIn("publication and live two-run acceptance pending", catalog["candidate_status"])
+        self.assertNotEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
         self.assertEqual(catalog["publication_history"][-1]["catalog_version"], "1.6.0")
         controller = json.loads((ROOT / ".gitlab/ctx/controller.json").read_text())
         self.assertFalse(controller["enabled"])

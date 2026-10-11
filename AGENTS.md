@@ -10,6 +10,13 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Local resumable-owner candidate (not catalog-published): follow the handoff section
+in docs/development/single-shot-development.md. A short continue request restores
+the approved objective from source notes; scripts/ctx_owner.py validates the full
+native handoff and scripts/ctx_development.py derives owner_action. Technical
+recovery belongs to the supervisor, not the user. Preserve scope/history/answers/
+budgets and current permission/merge gates. Live two-run acceptance remains pending.
+
 Read `docs/development/ctx-contract.md` for the agreed workflow and
 `docs/hackathon-gitlab-workflows.md` for the operation catalog and stage coverage.
 Preserve the original issue, specification, epic, ticket, design, test, review,
