@@ -87,25 +87,34 @@
       "mode": "bounded-supervisor",
       "max_delegations": 64,
       "runtime_parallelism": "serial-fallback; native parallel delegation unverified",
-      "candidate_status": "Resumable-owner revision implemented locally; publication and live two-run acceptance pending. Published v1.7.0 evidence below is preserved unchanged.",
-      "publication_status": "Published and enabled v1.7.0 on 2026-10-11 UTC. Full saved YAML readback matches the reviewed source after final-newline normalization; existing private visibility, service account and triggers are preserved. Native multi-step execution needs no controller installation. Trusted E2 helpers synchronized by MR !29; live loop acceptance remains pending. Controller stays disabled/deferred.",
-      "catalog_version": "1.7.0",
-      "published_source_commit": "c1a472acaf05d483ea24ed9bac65c9cc46e7f819",
-      "publication_history": [{
-        "catalog_version": "1.5.0",
-        "published_definition_sha256": "8304cfd2cd36e024fd65e56f1ded8ccc9b6f07718fbd2a362041eeefabe932f3",
-        "catalog_saved_definition_sha256": "79e65559092b13ac4ae2a5eb986eb9dfbc1d1846bd9d8e47f3cf3c49cd1a46c0",
-        "verification": "MR !20 pipeline 2932009307 and MR !21 pipeline 2932047796 passed; full 40788-byte catalog readback and 139 local tests passed. Native closure/repair behavior remained unverified."
-      }, {
-        "catalog_version": "1.6.0",
-        "published_source_commit": "e1788add0101097c797b7516d295e21c5175b2a9",
-        "published_definition_sha256": "a05d7b01b4322bd8fd38814ed460c6e5199c4fc000106731dc5c19165cfcc0cc",
-        "catalog_saved_definition_sha256": "a92a597db01d964761140822dcf78bb6f8b70eb13f76ec6b2452dc21b68b6803",
-        "verification": "MR !25 pipeline 2935078543 passed at e1788add; merged main d121a1ba. 169 local tests passed. Full 40849-byte saved YAML matched after final-newline trimming, max_delegations=1. No E2 execution or controller activation. Controller installation and live behavior remained unverified."
-      }],
+      "publication_status": "Published and enabled v1.8.0 on 2026-10-11 UTC. Full saved 40873-byte YAML equals reviewed source after final-newline normalization. Resumable owner discovers durable state, derives next work and retains technical recovery; same 64-delegation ceiling, component tools, private visibility, service account and active Mention/Assign/Assign reviewer triggers. Controller remains disabled; live two-run acceptance pending.",
+      "catalog_version": "1.8.0",
+      "published_source_commit": "462fd9f1dd85aae939f5f481e7e8b59fc60fa7f3",
+      "publication_history": [
+        {
+          "catalog_version": "1.5.0",
+          "published_definition_sha256": "8304cfd2cd36e024fd65e56f1ded8ccc9b6f07718fbd2a362041eeefabe932f3",
+          "catalog_saved_definition_sha256": "79e65559092b13ac4ae2a5eb986eb9dfbc1d1846bd9d8e47f3cf3c49cd1a46c0",
+          "verification": "MR !20 pipeline 2932009307 and MR !21 pipeline 2932047796 passed; full 40788-byte catalog readback and 139 local tests passed. Native closure/repair behavior remained unverified."
+        },
+        {
+          "catalog_version": "1.6.0",
+          "published_source_commit": "e1788add0101097c797b7516d295e21c5175b2a9",
+          "published_definition_sha256": "a05d7b01b4322bd8fd38814ed460c6e5199c4fc000106731dc5c19165cfcc0cc",
+          "catalog_saved_definition_sha256": "a92a597db01d964761140822dcf78bb6f8b70eb13f76ec6b2452dc21b68b6803",
+          "verification": "MR !25 pipeline 2935078543 passed at e1788add; merged main d121a1ba. 169 local tests passed. Full 40849-byte saved YAML matched after final-newline trimming, max_delegations=1. No E2 execution or controller activation. Controller installation and live behavior remained unverified."
+        },
+        {
+          "catalog_version": "1.7.0",
+          "published_source_commit": "c1a472acaf05d483ea24ed9bac65c9cc46e7f819",
+          "published_definition_sha256": "2444b4bfc77817004af195a9338c462d49ce480c9c70e6a761afb1176a44b45c",
+          "catalog_saved_definition_sha256": "295840077d96585cff12da9cc72a2fcf716456e77488405da63eb623be967560",
+          "verification": "MR !28 pipeline 2936042723 passed at c1a472a; Duo review note 3993463855 had no findings; merged main 64738d8. Full saved v1.7.0 YAML (40838 bytes) exactly equals committed source with final newline trimmed, including max_delegations=64 and unchanged toolsets. MR !29 pipeline 2936095389 passed at e86612d; independent follow-up review note 3993535891 confirmed the stale-decision fix; E2 merge d2ebf02 preserves docs/design and docs/plan byte-for-byte. 174 source tests passed. Source/helper secret and diff checks passed. No E2 application run, product MR !8 merge or controller activation. Native repeated delegation, repair and decision-resume behavior still needs live acceptance; application adapters/evidence remain separate prerequisites."
+        }
+      ],
       "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234",
       "definition_sha256": "d596106c64a8b730370adc8e61609f91a6b7217d78da7ec1d3a912f948203dd9",
-      "verification": "MR !28 pipeline 2936042723 passed at c1a472a; Duo review note 3993463855 had no findings; merged main 64738d8. Full saved v1.7.0 YAML (40838 bytes) exactly equals committed source with final newline trimmed, including max_delegations=64 and unchanged toolsets. MR !29 pipeline 2936095389 passed at e86612d; independent follow-up review note 3993535891 confirmed the stale-decision fix; E2 merge d2ebf02 preserves docs/design and docs/plan byte-for-byte. 174 source tests passed. Source/helper secret and diff checks passed. No E2 application run, product MR !8 merge or controller activation. Native repeated delegation, repair and decision-resume behavior still needs live acceptance; application adapters/evidence remain separate prerequisites.",
+      "verification": "Source MR !31 passed pipeline 2936414071 at 462fd9f1dd85aae939f5f481e7e8b59fc60fa7f3; Duo follow-up review note 3994185023 confirmed both fixes and no new findings; merged main 56d930d5. Helper-sync MR !32 passed pipeline 2936414062 at 039ccb54 and independent follow-up review note 3994187239; merged E2 cbd92690. Product docs/design and docs/plan remain byte-for-byte unchanged from d2ebf02. 184 local workflow tests, validator, diff and secret scans passed. No E2 application run, MR !8 merge, permissions change or controller activation. Live two-run acceptance remains pending. Full saved YAML SHA-256 f474cc9682e0a5e8d16becb696ba448b79a025630bc9e72683d175a209bfb660 read back from catalog v1.8.0.",
       "managed_terminal_tokens": {
         "design": [
           "ready",
@@ -145,8 +154,8 @@
           "blocked"
         ]
       },
-      "published_definition_sha256": "2444b4bfc77817004af195a9338c462d49ce480c9c70e6a761afb1176a44b45c",
-      "catalog_saved_definition_sha256": "295840077d96585cff12da9cc72a2fcf716456e77488405da63eb623be967560"
+      "published_definition_sha256": "d596106c64a8b730370adc8e61609f91a6b7217d78da7ec1d3a912f948203dd9",
+      "catalog_saved_definition_sha256": "f474cc9682e0a5e8d16becb696ba448b79a025630bc9e72683d175a209bfb660"
     },
     ".gitlab/duo/flows/ctx-delivery.yml": {
       "operations": [

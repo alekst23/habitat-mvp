@@ -1,5 +1,12 @@
 # GitLab workflows for the HABITAT submission
 
+Current catalog release: **CTX Project v1.3.0 / Development v1.8.0** is published
+and enabled with full content/tool readback (2026-10-11 UTC). The [resumable owner](development/single-shot-development.md#resumable-owner-handoff)
+adds short continuation requests, durable native handoffs and agent-owned technical
+recovery. Source !31 and helper-sync !32 passed CI/independent review and merged;
+E2 product artifacts are unchanged. Live two-run acceptance remains pending.
+Earlier version references below record prior rollout history.
+
 Conversational entry-point update (v1.2.0 published and enabled 2026-10-11 UTC):
 [CTX Project](development/project-owner.md) reuses Planning and Design skills in
 one Duo conversation and reconciles project status before work. The standalone

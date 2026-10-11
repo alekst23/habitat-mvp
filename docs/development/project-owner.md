@@ -1,19 +1,22 @@
 # CTX Project: the conversational project owner
 
-Status: **v1.2.0 published and enabled on 2026-10-11 UTC**. Full prompt/tool/version
+Status: **v1.3.0 published and enabled on 2026-10-11 UTC**. Full prompt/tool/version
 readback passed. The v1.0.0 chat picker was verified on 2026-10-10; subsequent E2
 feedback motivated persistent objectives, saved decisions and stale-worker recovery.
 The revised agent's behavioral acceptance remains pending.
 
-Published **v1.2.0** replaces the controller prerequisite with native Development
+Earlier **v1.2.0** replaced the controller prerequisite with native Development
 handoff. Development v1.7.0 and Design v1.8.0 were published/read back together;
 MR !29 synchronized trusted E2 helpers. No application execution was started.
 
-Local candidate (not published): [resumable owner handoffs](single-shot-development.md#resumable-owner-handoff)
+Published in **v1.3.0**: [resumable owner handoffs](single-shot-development.md#resumable-owner-handoff)
 make a short "Continue E2" resolve the original objective and technical next action
 from source notes. The runner owns recovery; chat owns the interactive interview.
 The existing registration still has no worker-dispatch tool. This is not a general
 claim about all GitLab agents: the native flow already has managed subagents.
+Development v1.8.0 was published/read back with this agent. Source !31 and E2
+helper-sync !32 are merged after CI and independent review; live two-run acceptance
+is still pending. Publication did not start E2 or merge product MR !8.
 
 ## Open the agent
 
@@ -185,7 +188,7 @@ After publication and ownership/version checks, the E2 execute request is:
 ```
 
 This is a human-posted example, not a dispatched request. Recheck the registered
-handle before use. With the candidate published and the objective/handoff verified,
+handle before use. With the published version and the objective/handoff verified,
 the resume is simply `@ai-ctx-development-gitlab-ai-hackathon Continue E2` on the
 source issue. The runner recovers machine references itself. For design-only work use
 `mode=design-closure` and explicitly prohibit implementation. A runtime checkpoint
@@ -238,6 +241,14 @@ Private visibility, enablement, 21 tools and no external MCP remain unchanged.
 E2 product files remain unchanged; Q6 is still open. The journal correction derives
 pending questions from the current blocker without rewriting historical snapshots.
 No application execution or controller activation was performed.
+
+On 2026-10-11 UTC Project v1.3.0 was published from reviewed source 462fd9f1
+(MR !31, pipeline 2936414071, independent follow-up review 3994185023). Full saved
+19790-byte prompt SHA-256 2f6a8e9ff834cdb90dcecafbd87ae889f9182d02a5fa3e74c9c639cf912349f3
+exactly matches the source with its final newline trimmed. Private visibility,
+enablement, all 21 tools and no MCP were read back. Development v1.8.0 was also
+verified. Helper-sync !32 passed pipeline 2936414062 and review 3994187239, then
+merged E2 at cbd92690 without product-document changes. No E2 run was started.
 
 The following live behavior checks remain required, not implied by publication:
 

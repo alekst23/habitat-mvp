@@ -10,12 +10,15 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
-Local resumable-owner candidate (not catalog-published): follow the handoff section
+Published resumable owner (Project v1.3.0 / Development v1.8.0): follow the handoff section
 in docs/development/single-shot-development.md. A short continue request restores
 the approved objective from source notes; scripts/ctx_owner.py validates the full
 native handoff and scripts/ctx_development.py derives owner_action. Technical
 recovery belongs to the supervisor, not the user. Preserve scope/history/answers/
-budgets and current permission/merge gates. Live two-run acceptance remains pending.
+budgets and current permission/merge gates. MR !31 merged main at 56d930d5; helper
+sync !32 merged E2 at cbd92690. Both CI and independent follow-up reviews passed;
+full catalog content/tools/enablement readback passed on 2026-10-11 UTC. Prior
+version references below are historical. Live two-run acceptance remains pending.
 
 Read `docs/development/ctx-contract.md` for the agreed workflow and
 `docs/hackathon-gitlab-workflows.md` for the operation catalog and stage coverage.
@@ -24,7 +27,7 @@ and close operations under the `ctx-` prefix. Add the six delivery operations
 listed there. Lifecycle stages classify evidence; they do not define agent or
 operation boundaries.
 
-Planning is conversational. **CTX Project v1.2.0** is published and enabled with
+Planning is conversational. **CTX Project v1.3.0** is published and enabled with
 full catalog readback (2026-10-11 UTC); the chat picker was verified on v1.0.0.
 The user's E2 progression defects motivated this revision; live behavioral proof remains pending.
 It unifies Planning/Design procedures and project-status assessment in one chat;
@@ -48,9 +51,9 @@ advances all explicitly scoped work through delegated SDLC phases, with an expli
 serial fallback (native parallel execution is unverified). Its progress journal
 does not grant authority or attest evidence; remote review/CI/ancestry must still
 be checked. Preserve ticket-only scope, respect active runs, and keep durable
-checkpoints. Development v1.7.0 is published and enabled; full catalog YAML readback
-passed after MR !28 merged. MR !29 synchronized E2 helpers without changing product
-specs/plan; its review also caught and verified a stale-decision journal correction.
+checkpoints. Development v1.8.0 is published and enabled; full catalog YAML readback
+passed after MR !31 merged. MR !32 synchronized E2 helpers without changing product
+specs/plan; independent review confirmed marker escaping and trusted note authors.
 Controller installation is NOT required. The historical v1.2.0 run stopped at preflight; delegated
 ticket processing and the repair loop still need live validation. New runs use the
 version-2 journal: pin the exact AC manifest, repair

@@ -1,8 +1,16 @@
 # CTX native GitLab workflow implementation
 
-Published conversational entry point: [CTX Project v1.2.0](project-owner.md) combines project
+Current release: **Project v1.3.0 and Development v1.8.0**, published/enabled and
+fully read back on 2026-10-11 UTC. The [resumable owner protocol](single-shot-development.md#resumable-owner-handoff)
+lets the runner recover an approved objective from source notes and own technical
+continuation. MR !31 merged source after CI/review; !32 synchronized E2 helpers,
+preserving every product design/plan file. 184 local tests passed. Live two-run
+acceptance remains pending; no application run or product MR !8 merge occurred.
+Earlier rollout versions below are historical, not additional publication blockers.
+
+Published conversational entry point: [CTX Project v1.3.0](project-owner.md) combines project
 assessment, the existing Planning procedures and the Design interview in one chat.
-It is registered and enabled; full v1.2.0 prompt/tool readback passed on 2026-10-11 UTC.
+It is registered and enabled; full v1.3.0 prompt/tool readback passed on 2026-10-11 UTC.
 The chat picker was checked on v1.0.0. The user's E2 feedback motivated persistent
 objectives, saved decisions and terminal-session reconciliation; live behavioral
 acceptance is pending. Existing specialists remain enabled. Project retains its document/issue tools plus two session-read tools;
