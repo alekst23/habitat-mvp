@@ -85,7 +85,7 @@ run deterministic workflow checks and, once configured, application adapters.
 
 Each of the 30 procedures is a repo skill at `skills/ctx-*/SKILL.md`, explicitly
 referenced by its agent/flow prompt. Skills supply instructions; agent registrations
-and flow components supply tool permissions. Active entry points are two chat
+and flow components supply tool permissions. Active entry points are three chat
 agents and two background flows, not one registration per procedure. The retired
 planning YAML and its catalog operation mapping remain for regression tests and
 rollback; do not republish or invoke it. The validator's count of three YAML flow

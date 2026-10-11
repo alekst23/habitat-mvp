@@ -338,15 +338,17 @@ approval. Recovery follows the documented deployment and migration procedure.
 
 ## Implementation boundary
 
-Two chat agents cover planning and interactive design; two background flows cover
+CTX Project and the two specialist chat agents cover planning and interactive design;
+two background flows cover
 development and delivery. Their 30 reusable skills preserve the finer-grained
 operations. The retired planning YAML remains regression-tested. The published Development
-revision is a bounded supervisor that delegates one coherent unit per session.
-The separate controller owns continuation of explicitly scoped tickets/epics;
-its installation remains disabled. The cumulative 60-action progress journal preserves
+revision is a bounded supervisor that repeatedly delegates eligible phases and
+tickets within one human-triggered session. Native cross-session resume is manual;
+the optional controller remains disabled and only its verified mode uses one-unit
+slices. The cumulative 60-action progress journal preserves
 ordering, report identity and candidate-SHA checks. It does not certify external
 evidence or implement a distributed lease. Native parallel delegation is unverified;
-this revision explicitly uses a serial fallback. Development v1.6.0 is published
+this revision explicitly uses a serial fallback. Development v1.7.0 is published
 with full catalog readback; actual native execution remains unverified. See
 [single-shot Development](single-shot-development.md). No recursive flow starts occur.
 Ticket review and whole-epic review are separate
