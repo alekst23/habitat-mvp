@@ -1,13 +1,14 @@
 # CTX single-shot Development
 
-**Local revision:** [durable execution](durable-execution.md) now supersedes the
+**Published v1.6.0 revision:** [durable execution](durable-execution.md) now supersedes the
 same-session loop and 64-delegation engine descriptions below. The durable run keeps
 the existing journal/repair protocol, but each native session delegates ONE unit;
 the external controller owns continuation and interrupted-session reconciliation.
-This candidate is not yet published/activated. The v1.5.0 history below remains true
-of the live catalog, not the modified local definition.
+Full catalog readback passed on 2026-10-11 UTC after MR !25 merged. The controller
+is NOT activated; protected installation and live acceptance remain required.
+Manual mentions alone do not provide continuation. The v1.5.0 rollout below is history.
 
-Status: **CTX Development v1.5.0 published and enabled on 2026-10-09**, retaining
+Historical status: **CTX Development v1.5.0 published and enabled on 2026-10-09**, retaining
 version-2 repair/verification and adding Design-only closure and token-match routing.
 [MR !20](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/20)
 merged at `2ffcb740`; [pipeline 2932009307](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2932009307)
