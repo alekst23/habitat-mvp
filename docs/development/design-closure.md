@@ -1,14 +1,15 @@
 # Design owns review, research and repair
 
-The local [native execution candidate](single-shot-development.md) restores bounded
+The published [native execution revision](single-shot-development.md) restores bounded
 same-session review/research/repair. Save/read back each coherent unit and continue
 while admitted; a save alone does not end the session. Preserve cumulative budgets
 and Design ownership. Only verified optional controller envelopes use one-unit
-slices. The candidate is not published; publication history below is historical.
+slices. Design v1.8.0 and Development v1.7.0 are published/read back; live behavior
+remains unverified. Earlier publication evidence below is historical.
 
 This contract supersedes the earlier handoff of unfinished design to Development.
 The published setup retains the two specialist agents and existing background
-flows, not a bot per skill. The published [CTX Project v1.0.0](project-owner.md)
+flows, not a bot per skill. The published [CTX Project v1.2.0](project-owner.md)
 applies Planning/Design as modes in one chat and leaves the specialists available
 until live validation. Design mode owns the interview and saved documents in
 either entry point. The existing Development supervisor supplies independent
@@ -159,18 +160,20 @@ ONLY its routing token. Publish/read back details before returning checkpoint.
 
 ## Activation and E2 test
 
-Publication verified 2026-10-09 UTC: workflow !20 merged at 2ffcb740; helper-sync
+Historical publication verified 2026-10-09 UTC: workflow !20 merged at 2ffcb740; helper-sync
 !21 merged onto E2 at 849c3450. Both pipelines and 139 local tests passed. Existing
-Design v1.6.0 and Development v1.5.0 are enabled/private; complete saved prompt/YAML
-match source except the final newline. Tools, MCP settings, bot and triggers are
+Design v1.6.0 and Development v1.5.0 were enabled/private; complete saved prompt/YAML
+matched source except the final newline. Tools, MCP settings, bot and triggers were
 unchanged. E2 product documents are untouched and !8 remains open. No chat or flow
-was started. **Step 1 is complete for these versions; start the live test at step 2.**
+was started. Current Design v1.8.0 and Development v1.7.0 publication/readback and
+E2 helper synchronization are recorded in gitlab-workflow.md. **Step 1 is complete
+for the current versions; start the live test at step 2 using current evidence.**
 
 1. Merge the reviewed workflow change, synchronize the same trusted helpers/guides
    into ctx/epic-i2 without changing product requirements, and run CI. Publish/read
-   back Design v1.6.0 and Development v1.5.0 in the existing catalog entries. Preserve
+   back Design v1.8.0 and Development v1.7.0 in the existing catalog entries. Preserve
    tools, visibility, service account and triggers. A push alone changes neither
-   live catalog item; never claim these candidate versions are already published.
+   live catalog item; future changes require a fresh complete readback.
 2. Open a NEW CTX Design chat: “Resume E2 from source issue #10 and MR !8. Read the
    design review note 3986618583 and historical research findings 3986648196 on #10.
    Repair the in-scope design; distinguish technical work, research and decisions.

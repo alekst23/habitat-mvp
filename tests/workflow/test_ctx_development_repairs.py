@@ -11,6 +11,7 @@ import unittest
 
 from test_ctx_development import PROJECT, SHA, request, receipt
 import ctx_development as dev
+import ctx_execution as execution
 import ctx_workflow as ctx
 
 
@@ -145,6 +146,19 @@ class RepairLoopTests(unittest.TestCase):
         self.assertEqual(run["request"], original)
         self.assertEqual(run["events"][:-1], history)
         dev.verify_journal(run)
+        self.assertEqual(execution.decision_questions({"journal": run}), [])
+        run = dev.claim(run, "E2-1")
+        blocked = receipt(run, response="blocked", blocker_kind="decision", reason="A different product choice")
+        legacy = dev.record(run, blocked)
+        # Historical node fields must not turn a new prose-only blocker into Q6.
+        dev.verify_journal(legacy)
+        self.assertEqual(execution.decision_questions({"journal": legacy}), [])
+        with self.assertRaisesRegex(ValueError, "recorded decision blocker"):
+            dev.resume_decision(legacy, "E2-1", answers | {"candidate_sha": "e" * 40})
+        questions = [{"id": "Q7", "question": "Which sign-in provider?"}]
+        current = dev.record(run, blocked | {"decisions": questions})
+        self.assertEqual(execution.decision_questions({"journal": current}), questions)
+        dev.verify_journal(current)
 
     def test_manifest_is_pinned_and_covers_exact_planned_tickets(self):
         value = repair_request()

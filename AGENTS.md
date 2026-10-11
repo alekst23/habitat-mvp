@@ -17,7 +17,7 @@ and close operations under the `ctx-` prefix. Add the six delivery operations
 listed there. Lifecycle stages classify evidence; they do not define agent or
 operation boundaries.
 
-Planning is conversational. **CTX Project v1.1.0** is published and enabled with
+Planning is conversational. **CTX Project v1.2.0** is published and enabled with
 full catalog readback (2026-10-11 UTC); the chat picker was verified on v1.0.0.
 The user's E2 progression defects motivated this revision; live behavioral proof remains pending.
 It unifies Planning/Design procedures and project-status assessment in one chat;
@@ -35,15 +35,16 @@ not publication or normal use. Its successful earlier runs remain valid history.
 Superseded ticket/epic/project definitions are retained in `.gitlab/duo/legacy/`.
 Read `docs/development/gitlab-workflow.md` for activation and implementation limits.
 
-The local Development revision is a bounded single-shot Duo supervisor; read
+The published Development revision is a bounded single-shot Duo supervisor; read
 `docs/development/single-shot-development.md` before changing or running it. It
 advances all explicitly scoped work through delegated SDLC phases, with an explicit
 serial fallback (native parallel execution is unverified). Its progress journal
 does not grant authority or attest evidence; remote review/CI/ancestry must still
 be checked. Preserve ticket-only scope, respect active runs, and keep durable
-checkpoints. Development v1.6.0 is published and enabled; full catalog YAML readback
-passed after MR !25 merged. The local v1.7.0 native-loop candidate requires review,
-publication and trusted helper synchronization, NOT controller installation. The historical v1.2.0 run stopped at preflight; delegated
+checkpoints. Development v1.7.0 is published and enabled; full catalog YAML readback
+passed after MR !28 merged. MR !29 synchronized E2 helpers without changing product
+specs/plan; its review also caught and verified a stale-decision journal correction.
+Controller installation is NOT required. The historical v1.2.0 run stopped at preflight; delegated
 ticket processing and the repair loop still need live validation. New runs use the
 version-2 journal: pin the exact AC manifest, repair
 actionable defects up to three times per target, and require fresh application/AC
@@ -99,7 +100,7 @@ public-documentation research and bounded document repair. Specified means a
 review candidate, not Design complete. The existing supervisor's explicit
 mode=design-closure cannot claim tickets or implement the app; it ends with a
 verified checkpoint after closure or a precise decision/access blocker. The new
-Design v1.7.0/Development v1.6.0 are published/enabled with full readback; native
+Design v1.8.0/Development v1.7.0 are published/enabled with full readback; native
 design-closure behavior still needs the live test in that guide.
 Generated E-numbered plans and design handoffs are checked by
 scripts/ctx_design.py in CI. Structural checks do not replace independent semantic

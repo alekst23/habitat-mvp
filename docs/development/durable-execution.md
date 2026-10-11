@@ -1,11 +1,12 @@
 # Optional controller: multiple recoverable Duo sessions
 
-Status: **Development v1.6.0 published; controller NOT activated** (2026-10-11 UTC).
-Full catalog readback matches source commit e1788add after MR !25 merged.
-The live v1.6.0 definition delegates one unit per session. Controller identity,
-protected state/credentials, verified IDs, scheduler, epic helper synchronization
-and live acceptance remain prerequisites. Manual mentions do not auto-continue.
-**Deferred, not a prerequisite:** the local v1.7.0 candidate restores the native
+Status: **Development v1.7.0 published; controller NOT activated** (2026-10-11 UTC).
+Full catalog readback matches source commit c1a472a after MR !28 merged; MR !29
+synchronized E2 helpers. The native path repeats delegation within one session.
+Only optional controller mode retains one-unit slices. Controller identity,
+protected state/credentials, verified IDs, scheduler and live acceptance remain
+prerequisites for that deferred mode, not for native execution.
+**Deferred, not a prerequisite:** published v1.7.0 restores the native
 multi-step path in [single-shot-development.md](single-shot-development.md). Use
 that path without controller setup. This document governs only verified controller
 envelopes; it does not override native continuation. Do not attempt inaccessible
@@ -16,7 +17,7 @@ one authorized execution request owns the remaining epic. The deterministic
 controller runs outside Duo; the existing Development catalog flow supplies native
 subagents in CI. There is no additional bot per operation, ticket, or retry.
 
-The published [CTX Project v1.1.0](project-owner.md) brings the conversational
+The published [CTX Project v1.2.0](project-owner.md) brings the conversational
 Planning/Design procedures and project assessment into one chat. It does not
 change this controller's installation status or add chat dispatch privileges.
 Its read-only assessment can consume these records; only the controller writes
@@ -44,8 +45,8 @@ the [GraphQL session query](https://docs.gitlab.com/api/graphql/reference/#query
 to read session status. It does not infer success from a pipeline exit code.
 Neither experimental restart endpoints nor callback webhooks are required.
 
-The v1.6.0 native definition has `max_delegations: 1`. The v1.7.0 candidate instead
-has a 64-call engine ceiling; controller mode retains its one-unit admission rule.
+Historical v1.6.0 had `max_delegations: 1`. Published v1.7.0 instead has a 64-call
+engine ceiling; optional controller mode retains its one-unit admission rule.
 The coordinator calls `scripts/ctx_execution_budget.py --mode controller --started-at EPOCH --delegations RESERVED_COUNT`
 before delegation; admission closes after ten minutes. Workers target saving by
 the envelope's `save_by` (30 minutes after dispatch). This admission check does not
@@ -232,10 +233,12 @@ spend. Unchanged running-session polls do not create empty state commits.
 
 ## Installation (one-time, requires operator authority)
 
-1. Source MR !25 is merged; Development v1.6.0 and Design v1.7.0 are published
-   in their EXISTING entries. Full prompt/YAML readback, max_delegations=1 and
-   existing tools were verified. Synchronize trusted helpers/guides to the epic
-   after resolving write ownership. Do not start a paid run yet.
+1. Source MR !28 is merged; Development v1.7.0 and Design v1.8.0 are published
+   in their EXISTING entries. Full prompt/YAML readback, max_delegations=64 and
+   existing tools were verified. MR !29 synchronized trusted E2 helpers after
+   ownership checks. Controller-mode admission still limits a verified envelope
+   to one unit; native execution does not require this installation. Do not start
+   a paid run as part of installation verification.
 2. Resolve the enabled **consumer ID**, exact **catalog version ID** and reporting
    service-account numeric user ID from GitLab. They are not the catalog item ID
    1016234. Fill `.gitlab/ctx/controller.json`, review it, set enabled=true and merge.

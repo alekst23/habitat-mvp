@@ -9,8 +9,7 @@
   "system_prompt_file": "ctx-design.md",
   "system_prompt_sha256": "29b34d2790da8a78467564d270ebb2568ae93dd522e9ed3818634e8e0791a09a",
   "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016255",
-  "catalog_version": "1.7.0",
-  "pending_catalog_version": "1.8.0",
+  "catalog_version": "1.8.0",
   "enabled_in_project": true,
   "operations": [
     "ctx-spec-interview",
@@ -55,8 +54,14 @@
   ],
   "external_mcp_servers": [],
   "trigger": "Duo Chat agent picker; no mention/assignment/flow trigger",
-  "publication_status": "Local v1.8.0 native design-closure handoff candidate pending review/merge/publication and live acceptance; no controller setup prerequisite. Published v1.7.0 remains enabled with its controller-oriented handoff; source/saved hashes and readback evidence are preserved. Same 18 tools, private visibility and no external MCP. Controller stays disabled/deferred.",
-  "published_source_commit": "e1788add0101097c797b7516d295e21c5175b2a9",
+  "publication_status": "Published and enabled v1.8.0 on 2026-10-11 UTC with full saved prompt readback. Native design-closure handoff has no controller setup prerequisite. Same 18 tools, private visibility and no external MCP. Controller stays disabled/deferred. Live acceptance remains pending; source/readback history is preserved.",
+  "published_source_commit": "c1a472acaf05d483ea24ed9bac65c9cc46e7f819",
+  "publication_history": [{
+    "catalog_version": "1.7.0",
+    "published_source_commit": "e1788add0101097c797b7516d295e21c5175b2a9",
+    "published_system_prompt_sha256": "a24209eb81ef30fe486aa8f146c33297c09dbe5e36f864871125f9f807c57126",
+    "catalog_saved_system_prompt_sha256": "97bd0e37eb75ad49df8273735e6f929138f8e63a27440379647dd738febd61b3"
+  }],
   "verification": {
     "chat_interview_smoke": "passed 2026-10-07; source issue 10; project, issue, repository-file and issue-note reads observed; normal prose plus one design question with options; no write or flow-start call",
     "issue_note_save_readback": "user reports an earlier note on epic 2; revised commit-and-readback path not yet exercised",
@@ -70,8 +75,9 @@
     "v1_5_native_handoff": "Fresh-chat completion and Development-owned review behavior still require live validation. No Design chat or Development flow was launched during publication; catalog acceptance and structural checks are not semantic review or implementation approval.",
     "v1_6_configuration_readback": "2026-10-09 20:27 UTC: UI shows enabled/private v1.6.0, the same 18 tools and no external MCP servers. Full 20454-byte saved prompt SHA-256 is 9eb09cf6c5ea59070a8d112fa54555d0c90a615cca7206c7ae4aaaae5f9fa548; appending the repository final newline exactly matches system_prompt_sha256. MR !20 pipeline 2932009307 and MR !21 pipeline 2932047796 passed; 139 local workflow tests and outgoing secret scans passed. E2 product design/plan/research files are unchanged from 5b526720; six features, 48 scenarios, 14 criteria, Q2 enablement and E2-1 blocked state remain intact.",
     "v1_6_native_closure": "Not run during publication. Fresh-chat continuation, research/review/document repair and deterministic checkpoint routing still require the live E2 test in docs/development/design-closure.md. No implementation or Design-complete claim follows from configuration readback.",
-    "v1_7_configuration_readback": "2026-10-11 UTC: enabled/private v1.7.0, same 18 tools, no external MCP; full 21198-byte saved prompt SHA-256 97bd0e37eb75ad49df8273735e6f929138f8e63a27440379647dd738febd61b3 matches committed source after final-newline normalization. Source available at MR !25 commit e1788add. 169 local workflow tests passed. No chat/flow execution or controller activation performed."
+    "v1_7_configuration_readback": "2026-10-11 UTC: enabled/private v1.7.0, same 18 tools, no external MCP; full 21198-byte saved prompt SHA-256 97bd0e37eb75ad49df8273735e6f929138f8e63a27440379647dd738febd61b3 matches committed source after final-newline normalization. Source available at MR !25 commit e1788add. 169 local workflow tests passed. No chat/flow execution or controller activation performed.",
+    "v1_8_configuration_readback": "2026-10-11 UTC: enabled/private v1.8.0, same 18 tools, no external MCP; full 21270-byte saved prompt exactly matches c1a472a after final-newline normalization, SHA-256 81ae3ec89a580b96f508d717bacf3f7afb1934586c0474ddf83b4c0c426fb12c. Source MR !28 pipeline 2936042723 and helper-sync MR !29 pipeline 2936095389 passed; independent review confirmed the journal correction. Product specs/plan unchanged. No application run or controller activation; native live behavior remains pending."
   },
-  "published_system_prompt_sha256": "a24209eb81ef30fe486aa8f146c33297c09dbe5e36f864871125f9f807c57126",
-  "catalog_saved_system_prompt_sha256": "97bd0e37eb75ad49df8273735e6f929138f8e63a27440379647dd738febd61b3"
+  "published_system_prompt_sha256": "29b34d2790da8a78467564d270ebb2568ae93dd522e9ed3818634e8e0791a09a",
+  "catalog_saved_system_prompt_sha256": "81ae3ec89a580b96f508d717bacf3f7afb1934586c0474ddf83b4c0c426fb12c"
 }

@@ -1,18 +1,18 @@
 # GitLab workflows for the HABITAT submission
 
-Conversational entry-point update (v1.1.0 published and enabled 2026-10-11 UTC):
+Conversational entry-point update (v1.2.0 published and enabled 2026-10-11 UTC):
 [CTX Project](development/project-owner.md) reuses Planning and Design skills in
 one Duo conversation and reconciles project status before work. The standalone
 Planning/Design agents remain available until the replacement is live-tested.
 It is not another background flow or a bot per skill. The lifecycle/stage ownership
 below stays the same; the agent replaces manual chat navigation, not the gates.
-Full v1.1.0 catalog readback passed; the chat picker was checked on v1.0.0. E2
+Full v1.2.0 catalog readback passed; the chat picker was checked on v1.0.0. E2
 feedback motivated objective/decision/session corrections and bounded target-local
-technical design revision. Project v1.1.0, Design v1.7.0 and Development v1.6.0
+technical design revision. Project v1.2.0, Design v1.8.0 and Development v1.7.0
 are published. Live acceptance remains unfinished; publication is not proof of
 autonomous live execution. Controller installation and a chat dispatch bridge are deferred.
 
-Permissions-constrained execution update (local v1.7.0 candidate, not published):
+Permissions-constrained execution update (v1.7.0 published/read back):
 use the existing [native supervisor](development/single-shot-development.md) for
 multiple delegated steps/tickets in one human invocation. Planning/Design stay
 interactive; technical repair, tests, AC validation and independent review continue

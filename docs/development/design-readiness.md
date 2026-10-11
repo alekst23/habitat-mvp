@@ -244,7 +244,7 @@ startup path and observable evidence, not just a demonstration checklist.
 
 ## Publication
 
-Current publication (2026-10-09 UTC): Design v1.6.0 and Development v1.5.0 are
+Historical publication (2026-10-09 UTC): Design v1.6.0 and Development v1.5.0 were
 enabled/private and their full prompt/YAML match merged source, apart from the
 trimmed final newline. Workflow !20 merged at 2ffcb740; helper-sync !21 merged onto
 E2 at 849c3450, without product-document or execution-state changes. Both pipelines
