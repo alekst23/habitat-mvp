@@ -87,12 +87,12 @@
       "mode": "bounded-supervisor",
       "max_delegations": 1,
       "runtime_parallelism": "serial-fallback; native parallel delegation unverified",
-      "publication_status": "Local v1.6.0 candidate: one delegated work unit per native session, durable external controller. NOT published or activated. Live catalog remains v1.5.0; its saved hashes below are historical publication evidence.",
+      "publication_status": "Local v1.6.0 candidate: one delegated unit per session, durable objective/decision continuation, terminal-reservation reconciliation and bounded target-local design addenda. NOT published or activated. Live catalog remains v1.5.0; saved publication hashes below are historical evidence.",
       "candidate_version": "1.6.0",
-      "candidate_verification": "2026-10-10: 155 local workflow tests and contract validation pass; changed tracked content and script secret scans pass. Controller remains disabled. Native API execution, CI lint, catalog publication/readback, protected credential/state setup and interruption smoke are not yet verified for this candidate.",
+      "candidate_verification": "Local regression tests cover retained execute objectives, answer readback/application, target-local design re-review and interrupted reservations. Controller remains disabled. Native API execution, CI lint, catalog publication/readback, protected credential/state setup and live recovery/decision smoke remain pending; local tests are not live evidence.",
       "catalog_version": "1.5.0",
       "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234",
-      "definition_sha256": "acf217bc9e141a5e3f82479ebe63027d3d9be3ceb25545fabc9eb29df2951e3d",
+      "definition_sha256": "a05d7b01b4322bd8fd38814ed460c6e5199c4fc000106731dc5c19165cfcc0cc",
       "verification": "MR !20 pipeline 2932009307 and MR !21 pipeline 2932047796 passed; 139 local workflow tests and outgoing secret scans passed. v1.5.0 catalog readback verified the full 40788-byte saved YAML and enabled state. E2 product documents and execution state are unchanged. Historical session 9270082 produced review findings but failed at routing; it is not a successful smoke of this revision. No new flow run was launched. Design-only closure, checkpoint routing and the application repair loop still require native validation with real evidence; application execution also requires its adapters.",
       "managed_terminal_tokens": {
         "design": [

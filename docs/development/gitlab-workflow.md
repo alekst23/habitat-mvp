@@ -3,9 +3,12 @@
 Published conversational entry point: [CTX Project v1.0.0](project-owner.md) combines project
 assessment, the existing Planning procedures and the Design interview in one chat.
 It is registered and enabled; full prompt/tool readback and chat-picker checks passed
-on 2026-10-10. Model behavior is not yet live-tested. Existing specialist agents remain
-unchanged. Project has the document/issue tools plus two read-only session tools; direct
-chat-to-controller dispatch and post-pinned-design revision are still missing.
+on 2026-10-10. The user's subsequent E2 conversation exposed progression defects.
+Project v1.1.0 is a local candidate for persistent objectives, saved decisions and
+terminal-session reconciliation; live acceptance is pending. Existing specialists
+are unchanged. Project retains its document/issue tools plus two session-read tools;
+direct chat-to-controller dispatch is still missing. Bounded target-local design
+addenda now have local journal transitions; general cross-target revision does not.
 Its prompt/registration hashes, tools and procedure coverage are now checked by
 `python scripts/ctx_workflow.py validate` as well as the workflow tests.
 

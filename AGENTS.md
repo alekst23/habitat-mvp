@@ -18,7 +18,8 @@ listed there. Lifecycle stages classify evidence; they do not define agent or
 operation boundaries.
 
 Planning is conversational. **CTX Project v1.0.0** is published and enabled with
-catalog readback and chat-picker verification; model behavior is not yet live-tested.
+catalog readback and chat-picker verification. The user's E2 conversation exposed
+progression defects; Project v1.1.0 is a local correction pending publication/live proof.
 It unifies Planning/Design procedures and project-status assessment in one chat;
 read docs/development/project-owner.md. When using CTX Project, Planning
 and Design are modes in the same conversation, not instructions to open another
@@ -85,7 +86,11 @@ The CTX Project candidate follows the same order and artifact ownership as modes
 within one chat. It uses the existing interview/planning/design skills directly,
 not the standalone registrations as subagents. Reads of protected controller state
 are for assessment only; writes stay with the controller. Missing direct chat
-dispatch and post-pinned-design revision remain explicit implementation gaps.
+dispatch remains an explicit implementation gap. The local revision keeps one
+approved objective across design/execution, verifies answer application, reconciles
+terminal reservations and supports bounded target-local technical design addenda
+through independent re-review. Pinned ACs/history/budgets stay intact; cross-target
+or scope-changing revisions need a separate plan. None of this activates the controller.
 
 Read docs/development/design-readiness.md for restored interview/contract/wiring
 requirements and docs/development/design-closure.md for Design-owned review,

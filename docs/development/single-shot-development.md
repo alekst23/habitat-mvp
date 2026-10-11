@@ -329,6 +329,45 @@ preflight counts against the engine's 64. A no-op fix cannot advance. Exhaustion
 checkpoints with remaining findings, attempted SHAs, receipts and precise next
 action; it never reports completion. Keep processing unrelated ready targets.
 
+## Persistent-objective addenda and decision application (local revision)
+
+The request and acceptance manifest remain pinned. For a target-local technical
+specification defect, return `blocked`, `blocker_kind=technical_design` and the
+existing evidenced `findings`. `repair` schedules `design_revision` (design
+worker), then `design_review` (separate epic-review worker), then fresh tests and
+implementation for a ticket, or implementation for assembled-epic repair. It
+invalidates old verification/review/integration receipts without deleting history.
+
+The design receipt must contain a new `candidate_sha`, `resolved_findings`,
+`affected_targets: [TARGET]`, exact `changed_paths`, and the unchanged
+`acceptance_manifest_sha256`. Allowed paths are feature-local `spec.md`,
+`technical.md`, `research.md` and that target's existing ticket document. The
+review receipt binds `design_report_url` to the saved addendum report, the exact
+candidate SHA, affected target and manifest hash. Read actual files/diffs and
+check every contract consumer; a helper validating JSON does not establish
+semantic correctness or independent review. Cross-target changes or changes to
+approved intent/ACs require an explicit revision plan.
+
+A genuine product blocker records `decisions: [{"id": "Q6", "question": "..."}]`.
+Once authorized answers have been saved into scoped documents and read back:
+
+```sh
+python scripts/ctx_development.py resume-decision .ctx/development/RUN.json TARGET --receipt ANSWER_RECEIPT.json
+```
+
+The receipt contains `answers` (each with `id`, exact `question`, `answer`,
+`source_url`), new `candidate_sha`, source `report_url`, `report_readback: true`,
+`affected_targets`, `changed_paths` and unchanged `acceptance_manifest_sha256`.
+All of that target's questions must be answered. The transition schedules
+independent design review, not implementation or completion, and is replayed from
+the append-only journal. In controller mode the checkpoint also supplies the
+decision-application receipts described in [durable execution](durable-execution.md).
+
+Technical addenda and decision application share the existing three-repair-cycle
+limit per target and global action budget. They cannot reset retries, narrow
+scope, weaken criteria or reuse old passing evidence. Legacy prose-only questions
+must first be reconciled into explicit decision identities; do not guess answers.
+
 ## Activation and verification
 
 1. Review and publish the repository helper, updated skills and flow definition.
