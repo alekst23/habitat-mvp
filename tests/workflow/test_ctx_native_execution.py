@@ -144,10 +144,11 @@ class NativeAdmissionTests(unittest.TestCase):
         catalog = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())["flows"][
             ".gitlab/duo/flows/ctx-development.yml"]
         self.assertNotIn("pending_catalog_version", catalog)
-        self.assertEqual(catalog["catalog_version"], "1.7.0")
-        self.assertIn("publication and live two-run acceptance pending", catalog["candidate_status"])
-        self.assertNotEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
-        self.assertEqual(catalog["publication_history"][-1]["catalog_version"], "1.6.0")
+        self.assertEqual(catalog["catalog_version"], "1.8.0")
+        self.assertNotIn("candidate_status", catalog)
+        self.assertIn("live two-run acceptance pending", catalog["publication_status"])
+        self.assertEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
+        self.assertEqual(catalog["publication_history"][-1]["catalog_version"], "1.7.0")
         controller = json.loads((ROOT / ".gitlab/ctx/controller.json").read_text())
         self.assertFalse(controller["enabled"])
 

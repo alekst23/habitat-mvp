@@ -1,16 +1,18 @@
 # CTX single-shot Development
 
-**Published v1.7.0: native multi-step execution is the default.**
+**Published v1.8.0: resumable native multi-step execution is the default.**
 One human invocation advances eligible phases/tickets, saving between delegations.
 No controller, protected controller state, scheduler or new credential is required.
-Full catalog readback passed on 2026-10-11 UTC after MR !28; MR !29 synchronized
+Full catalog readback passed on 2026-10-11 UTC after MR !31; MR !32 synchronized
 trusted E2 helpers. Native runtime behavior still needs live acceptance. Cross-session
 auto-restart remains unavailable. [Durable execution](durable-execution.md) is optional,
 deferred installation work, not a prerequisite for the native path.
 
-Local resumable-owner candidate: the protocol below adds automatic handoff discovery
-and derived owner actions. It is not yet catalog-published or live-tested. Published
-Development v1.7.0 and Project v1.2.0 remain the recorded live versions.
+Published resumable-owner protocol: automatic handoff discovery and derived owner
+actions are live in Development v1.8.0 and Project v1.3.0. Full saved definitions
+match source 462fd9f1 after final-newline normalization. Source !31 and helper-sync
+!32 passed current-SHA CI and independent follow-up review; 184 local tests passed.
+Catalog acceptance is not runtime acceptance: the live two-run test remains pending.
 
 ## Resumable owner handoff
 
@@ -116,7 +118,7 @@ The objective is immutable for a simple resume. A genuinely revised scope/object
 needs an explicit human-authorized reconciliation with retained history; never pick
 the newest of competing objectives or reset a journal to obtain fresh limits.
 
-Acceptance for this candidate: two runs using the same source issue; the second
+Required live acceptance: two runs using the same source issue; the second
 receives only a short continue request, recovers a terminal reservation or restores
 a failing-test journal, repairs and re-verifies, advances the next ticket, and asks
 only a genuinely unanswered product question. Preserve original scope, every AC,
@@ -224,7 +226,16 @@ reconciliation without duplicating saved work. Stop on actual missing adapters o
 permissions; preserve merge/deploy controls. Record session/job/note/SHA evidence.
 Publication and fixture tests do not count as that live smoke.
 
-Publication evidence: source MR !28 at c1a472a passed pipeline 2936042723 and Duo
+Current publication: !31 pipeline 2936414071 passed at 462fd9f1; independent Duo
+review 3994185023 confirmed the delimiter/provenance fixes, then main merged at
+56d930d5. Helper-sync !32 pipeline 2936414062 and review 3994187239 passed at
+039ccb54; E2 merged at cbd92690. Product specs/plan are byte-for-byte unchanged.
+Full 40873-byte saved Development v1.8.0 YAML matched the source with its final
+newline trimmed. Same private visibility, tools, 64-delegation ceiling, service
+account and active Mention/Assign/Assign reviewer triggers. No application run,
+product MR !8 merge or controller activation. Live two-run acceptance is pending.
+
+Historical publication: source MR !28 at c1a472a passed pipeline 2936042723 and Duo
 review note 3993463855, then merged at 64738d8. Full saved YAML (40838 bytes) matched
 that source after final-newline normalization. Helper-sync MR !29 passed pipeline
 2936095389 at e86612d and merged at d2ebf02; its independent follow-up review

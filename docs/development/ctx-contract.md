@@ -6,7 +6,7 @@ reads/interviews are live-tested. Approved planning publication and revised
 development/delivery execution need separate validation. See
 [implementation status](gitlab-workflow.md).
 
-The published [CTX Project v1.2.0](project-owner.md) unifies assessment, Planning
+The published [CTX Project v1.3.0](project-owner.md) unifies assessment, Planning
 and Design in one conversation by loading the existing procedures. Catalog readback
 and enablement are verified; live model behavior is not. It does not retire the
 working specialist agents. Through CTX Project, stage names refer to modes and artifact ownership,
@@ -58,7 +58,7 @@ invariants, not conflicting numbering formulas or unsafe cleanup commands.
 
 ## Execution context and supervision
 
-Local candidate, pending publication: the [resumable owner protocol](single-shot-development.md#resumable-owner-handoff)
+Published in Project v1.3.0 / Development v1.8.0: the [resumable owner protocol](single-shot-development.md#resumable-owner-handoff)
 keeps technical recovery and next-action selection agent-owned across native runs.
 The user supplies a bounded objective or a short continue request; the supervisor
 discovers complete state from source notes, preserves scope/history/budgets, and
