@@ -40,3 +40,9 @@ After a repair, require new-SHA checks and independent review. Once assembled, t
 epic gets docs, full-epic verification and review; scoped integration defects return
 to the builder on the owned epic branch and through those gates again. Never reopen
 completed ticket history, widen scope or reset limits. See the single-shot protocol.
+
+technical_design findings route through a bounded document addendum and an independent
+design_review before tests/implementation and fresh verification. Answered decision
+blockers use resume-decision only after scoped artifact save/readback; the request
+and manifest stay pinned. Both transitions share the existing repair/action budgets.
+Cross-target contract effects or changed ACs require an explicit revision plan.

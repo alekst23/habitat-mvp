@@ -56,7 +56,10 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertTrue(project["catalog_url"].endswith("/agents/1016538"))
         self.assertEqual(project["catalog_version"], "1.0.0")
         prompt = (AGENTS / project["system_prompt_file"]).read_bytes()
-        self.assertEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertEqual(project["pending_catalog_version"], "1.1.0")
+        self.assertEqual(project["published_source_commit"], "033dc8da20002486a6d18269b64e443191eebc20")
+        self.assertEqual(project["published_system_prompt_sha256"], "bc94f5d6ef907121a1fd57b3581fd215b8aba98eb0bc24f749523924baf73ab9")
+        self.assertNotEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
         self.assertTrue(project["verification"]["catalog_readback"].startswith("passed"))
         self.assertTrue(project["verification"]["chat_picker"].startswith("passed"))
         self.assertEqual(project["verification"]["chat_interview_save_smoke"], "pending")
@@ -79,12 +82,13 @@ class ChatAgentRegistrationTests(unittest.TestCase):
                             "Never write ctx/controller-state", "do not reset",
                             "docs/development/project-owner.md", "current-SHA",
                             "Do not ask the user to copy review text", "in the same response",
-                            "after an execution journal is pinned"):
+                            "after an execution journal is pinned", "Fully implement E2", "persistent objective",
+                            "failed session is not a running worker", "Do not say saved when only acknowledged"):
             self.assertIn(requirement.casefold(), prompt.casefold())
         guide = (ROOT / "docs/development/project-owner.md").read_text()
         for requirement in ("read-only restart", "product decision", "technical defect",
                             "one explicit", "not yet implemented", "single-epic",
-                            "active writer", "exact SHA", "no live smoke"):
+                            "active writer", "exact SHA", "behavioral acceptance remains pending"):
             self.assertIn(requirement.casefold(), guide.casefold())
 
     def test_agent_validation_rejects_changed_identity_capabilities_and_unloaded_procedures(self):

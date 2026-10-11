@@ -25,7 +25,7 @@ from ctx_acceptance import selected_criteria, validate_acceptance
 TICKET_PHASES = ("design", "tests", "implementation", "browser", "review", "integrate")
 EPIC_PHASES = ("docs", "epic_review", "close")
 MAX_ACTIONS = 60  # Cumulative across native execution slices; never reset on a new session.
-READ_ONLY_PHASES = {"browser", "review", "integrate", "epic_review", "close"}
+READ_ONLY_PHASES = {"browser", "review", "integrate", "epic_review", "close", "design_review"}
 V2_TICKET_PHASES = ("design", "tests", "implementation", "verify", "review", "integrate")
 V2_EPIC_PHASES = ("implementation", "docs", "verify", "epic_review", "close")
 MAX_REPAIRS = 3
@@ -111,7 +111,39 @@ def phases(node):
 
 
 def phase(node):
+    if node.get("design_revision"):
+        return node["design_revision"]["phase"]
     return phases(node)[node["phase_index"]]
+
+
+def component(operation):
+    return {"verify": "browser", "design_revision": "design", "design_review": "epic_review"}.get(operation, operation)
+
+
+def source_report(run, url):
+    prefix = re.escape(f"https://gitlab.com/{run['request']['project_path']}/-/")
+    source = run["request"]["source_issue_iid"]
+    require(isinstance(url, str) and re.fullmatch(prefix + rf"(?:issues|work_items)/{source}#note_[1-9][0-9]*", url),
+            "decision/report must be on the verified source issue")
+
+
+def validate_design_addendum(run, target, value, changed=True):
+    """Protocol checks only; the coordinator must verify remote diff, scope and readback."""
+    require(value.get("affected_targets") == [target], "cross-target design impact requires an explicit revision plan")
+    require(value.get("acceptance_manifest_sha256") == scoped_manifest(run, target)[1],
+            "design revision cannot change the pinned acceptance manifest")
+    if changed:
+        paths = value.get("changed_paths")
+        eid = run["nodes"][target]["epic"]
+        require(isinstance(paths, list) and paths and len(paths) == len(set(paths)), "changed design paths required")
+        for path in paths:
+            require(isinstance(path, str) and (re.fullmatch(r"docs/design/[a-z0-9]+(?:-[a-z0-9]+)*/(?:spec|technical|research)\.md", path)
+                    or path == f"docs/plan/{eid}/{target}.md"), "design revision is limited to scoped document paths")
+
+
+def invalidate_evidence(node):
+    for key in ("verification", "verification_url", "review_url", "integration", "blocker_kind"):
+        node.pop(key, None)
 
 
 def acceptance_manifest(epic):
@@ -201,7 +233,7 @@ def next_actions(run):
     complete = all(nodes[key]["status"] == "done" for key in run["required_targets"])
     permitted = not run["active"] and run["actions"] < MAX_ACTIONS
     repairable = [key for key, node in nodes.items() if node["status"] == "blocked" and
-                  node.get("blocker_kind") == "defect" and node.get("repairs", MAX_REPAIRS) < MAX_REPAIRS]
+                  node.get("blocker_kind") in {"defect", "technical_design"} and node.get("repairs", MAX_REPAIRS) < MAX_REPAIRS]
     result = {"complete": complete, "mode": "serial-native-supervisor",
             "ready": [{"target": key, "phase": phase(nodes[key])} for key in frontier] if permitted else [],
             "active": run["active"], "actions_remaining": MAX_ACTIONS - run["actions"],
@@ -212,7 +244,7 @@ def next_actions(run):
     if run["version"] == 2:
         result["repairable"] = repairable if permitted else []
         for item in result["ready"]:
-            item["component"] = "browser" if item["phase"] == "verify" else item["phase"]
+            item["component"] = component(item["phase"])
     return result
 
 
@@ -258,12 +290,21 @@ def record(run, receipt):
     if token == "blocked":
         require(receipt.get("reason") and isinstance(receipt["reason"], str), "blocked reason required")
         require(receipt.get("blocker_kind") in ({"decision", "evidence", "ci_pending", "transient", "conflict"} |
-                                               ({"defect"} if v2 else set())),
+                                               ({"defect", "technical_design"} if v2 else set())),
                 "classify blocker before continuing other work")
-        if v2 and receipt["blocker_kind"] == "defect":
-            require(operation in REPAIR_PHASES, "this phase cannot authorize code repair")
+        if v2 and receipt["blocker_kind"] in {"defect", "technical_design"}:
+            allowed_phases = REPAIR_PHASES | ({"design", "tests", "design_revision", "design_review"}
+                                            if receipt["blocker_kind"] == "technical_design" else set())
+            require(operation in allowed_phases, "this phase cannot authorize repair")
             validate_findings(run, target, receipt.get("findings"))
             node.update(findings=deepcopy(receipt["findings"]), candidate_sha=sha)
+        if v2 and receipt["blocker_kind"] == "decision" and "decisions" in receipt:
+            decisions = receipt["decisions"]
+            require(isinstance(decisions, list) and decisions and all(isinstance(d, dict) and
+                    set(d) == {"id", "question"} and all(isinstance(d[k], str) and d[k].strip() for k in d)
+                    for d in decisions), "stable decision IDs and questions required")
+            require(len({d["id"] for d in decisions}) == len(decisions), "duplicate decision ID")
+            node["decisions"] = deepcopy(decisions)
         if v2:
             node["candidate_sha"] = sha  # Preserve a reconciled write even when its CI is pending.
         node.update(status="blocked", reason=receipt["reason"], blocker_kind=receipt["blocker_kind"])
@@ -272,6 +313,25 @@ def record(run, receipt):
         require(SHA.fullmatch(sha), "candidate SHA required")
         if operation in READ_ONLY_PHASES:
             require(sha == active["candidate_sha"], "review/evidence does not match delegated SHA")
+        if operation in {"design_revision", "design_review"}:
+            validate_design_addendum(run, target, receipt, changed=operation == "design_revision")
+            if operation == "design_revision":
+                require(sha != active["candidate_sha"], "design repair must produce a new candidate SHA")
+                require(set(receipt.get("resolved_findings", [])) == {f["id"] for f in node["findings"]},
+                        "design repair must name all resolved findings")
+                node["design_revision"].update(phase="design_review", report_url=receipt["report_url"])
+            else:
+                require(receipt.get("design_report_url") == node["design_revision"]["report_url"],
+                        "independent design review must bind the saved addendum")
+                node.pop("design_revision")
+                node["phase_index"] = phases(node).index("tests" if node["kind"] == "ticket" else "implementation")
+                node["design_review_url"] = receipt["report_url"]
+                # A later implementation must produce a code candidate, not just reuse the document SHA.
+                node["repair_from_sha"] = sha
+            node["candidate_sha"] = sha
+            result["events"].append(deepcopy(receipt))
+            result["active"] = None
+            return result
         if v2 and operation == "implementation" and "repair_from_sha" in node:
             require(sha != node["repair_from_sha"], "repair must produce a new candidate SHA")
             resolved = receipt.get("resolved_findings")
@@ -321,16 +381,57 @@ def repair(run, target):
     require(run["version"] == 2, "legacy runs require reconciled resume, not an implicit upgrade")
     require(run["active"] is None and run["actions"] < MAX_ACTIONS, "active work or action budget exhausted")
     node = run["nodes"][target]
-    require(node["status"] == "blocked" and node.get("blocker_kind") == "defect",
+    require(node["status"] == "blocked" and node.get("blocker_kind") in {"defect", "technical_design"},
             "only actionable code/test/AC defects permit automatic repair")
     require(node["repairs"] < MAX_REPAIRS, "repair budget exhausted; persist checkpoint")
     result = deepcopy(run)
     node = result["nodes"][target]
+    technical = node["blocker_kind"] == "technical_design"
     node.update(status="pending", reason="", repairs=node["repairs"] + 1,
                 phase_index=phases(node).index("implementation"), repair_from_sha=node["candidate_sha"])
-    for key in ("verification", "verification_url", "review_url", "integration", "blocker_kind"):
-        node.pop(key, None)
+    if technical:
+        node["design_revision"] = {"phase": "design_revision"}
+    invalidate_evidence(node)
     result["events"].append({"repair": target})
+    return result
+
+
+def resume_decision(run, target, receipt):
+    """Resume only after answers were saved in scope; independent design review comes next.
+
+    This receipt is not authorization: the coordinator must independently read the
+    user's answer and committed diff. New scope/changed ACs require a separate plan.
+    """
+    next_actions(run)
+    require(run["version"] == 2 and run["active"] is None and run["actions"] < MAX_ACTIONS,
+            "decision resume needs an idle version-2 journal with remaining actions")
+    node = run["nodes"][target]
+    require(node["status"] == "blocked" and node.get("blocker_kind") == "decision" and node.get("decisions"),
+            "resume requires a recorded decision blocker")
+    require(node["repairs"] < MAX_REPAIRS, "repair budget exhausted")
+    answers = receipt.get("answers")
+    require(isinstance(answers, list) and len(answers) == len(node["decisions"]), "all recorded answers required")
+    require(all(isinstance(a, dict) and set(a) == {"id", "question", "answer", "source_url"} and
+                all(isinstance(v, str) and v.strip() for v in a.values()) for a in answers), "invalid answer")
+    expected = {d["id"]: d["question"] for d in node["decisions"]}
+    require(len({a.get("id") for a in answers}) == len(answers) and {a.get("id") for a in answers} == set(expected),
+            "answer IDs do not match the recorded questions")
+    for answer in answers:
+        require(answer.get("question") == expected[answer["id"]] and isinstance(answer.get("answer"), str)
+                and answer["answer"].strip(), "answer question mismatch or empty answer")
+        source_report(run, answer.get("source_url"))
+    sha = receipt.get("candidate_sha", "")
+    require(isinstance(sha, str) and SHA.fullmatch(sha) and sha != node["candidate_sha"], "answer must be applied at a new SHA")
+    source_report(run, receipt.get("report_url"))
+    require(receipt.get("report_readback") is True, "answer application readback required")
+    validate_design_addendum(run, target, receipt)
+    result = deepcopy(run)
+    node = result["nodes"][target]
+    node.update(status="pending", reason="", candidate_sha=sha, repairs=node["repairs"] + 1,
+                design_revision={"phase": "design_review", "report_url": receipt["report_url"]},
+                findings=[{"id": a["id"]} for a in answers], started=True)
+    invalidate_evidence(node)
+    result["events"].append({"decision_resume": target, "receipt": deepcopy(receipt)})
     return result
 
 
@@ -364,6 +465,8 @@ def verify_journal(run):
             expected = repair(expected, event["repair"])
         elif set(event) == {"retry", "observation_url"}:
             expected = retry(expected, event["retry"], event["observation_url"])
+        elif set(event) == {"decision_resume", "receipt"}:
+            expected = resume_decision(expected, event["decision_resume"], event["receipt"])
         else:
             expected = record(claim(expected, event["target"]), event)
     if run["active"] is not None:
@@ -416,10 +519,11 @@ def save_json(path, value):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("init", "next", "claim", "record", "retry", "repair"))
+    parser.add_argument("action", choices=("init", "next", "claim", "record", "retry", "repair", "resume-decision"))
     parser.add_argument("journal", type=Path)
     parser.add_argument("input", nargs="?", help="request/receipt path, or target ID")
     parser.add_argument("--observation-url")
+    parser.add_argument("--receipt", type=Path, help="saved decision application receipt for resume-decision")
     args = parser.parse_args()
     try:
         with journal_lock(args.journal) as path:
@@ -437,6 +541,9 @@ def main():
                     run = retry(run, args.input, args.observation_url or "")
                 elif args.action == "repair":
                     run = repair(run, args.input)
+                elif args.action == "resume-decision":
+                    require(args.receipt is not None, "decision receipt path required")
+                    run = resume_decision(run, args.input, read_json(args.receipt))
             if args.action != "next":
                 save_json(path, run)
             print(json.dumps(next_actions(run), indent=2))

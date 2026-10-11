@@ -34,6 +34,31 @@ def finding(kind="technical"):
 
 
 class DesignClosureTests(unittest.TestCase):
+    def test_failed_reservation_is_reconciled_without_freeing_its_repair_budget(self):
+        data = record()
+        data["active"] = {"kind": "repair", "base_sha": SHA, "finding_ids": ["DR1"], "session_id": 9282723}
+        observation = {"session_id": 9282723, "project_id": 87329027, "status": "failed", "observed_head": SHA}
+        self.assertTrue(callable(getattr(closure, "reconcile_interrupted", None)), "terminal reservation recovery missing")
+        with self.assertRaises(ValueError):
+            closure.reconcile_interrupted(data, observation | {"status": "running"}, BASE + "/-/issues/10#note_200")
+        with self.assertRaises(ValueError):
+            closure.reconcile_interrupted(data, observation | {"session_id": 1}, BASE + "/-/issues/10#note_200")
+        restored = closure.reconcile_interrupted(data, observation, BASE + "/-/issues/10#note_200")
+        self.assertIsNone(restored["active"])
+        self.assertEqual(len(restored["repairs"]), 1)
+        self.assertEqual(restored["repairs"][0]["outcome"], "interrupted")
+        self.assertEqual(restored["repairs"][0]["base_sha"], restored["repairs"][0]["result_sha"])
+        self.assertEqual(closure.assess(restored, SHA)["action"], "validate")
+        self.assertIsNotNone(data["active"])
+        partial = closure.reconcile_interrupted(data, observation | {"observed_head": NEXT}, BASE + "/-/issues/10#note_201")
+        self.assertEqual(partial["candidate_sha"], NEXT)
+        self.assertEqual(partial["review"], data["review"])
+        partial["structural_sha"] = NEXT
+        self.assertEqual(closure.assess(partial, NEXT)["action"], "review", "new SHA must not reuse old review")
+        partial["repairs"] = []
+        with self.assertRaisesRegex(ValueError, "budget"):
+            closure.assess(partial, NEXT)
+
     def test_saved_or_structurally_valid_is_not_complete(self):
         data = record()
         data["review"] = None

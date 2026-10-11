@@ -11,11 +11,22 @@ one delegate per slice, then a verified checkpoint; the trusted controller owns
 continuation. The user should not select/restart each phase. Preserve settled intent,
 all cumulative budgets and actual approval boundaries across sessions.
 
+Retain one approved objective across stage boundaries. An epic execute request
+includes its in-scope design prerequisites; do not ask the user to separately finish
+Design and authorize the same implementation again. Use the controller's derived
+next_action, rechecking remote evidence. A design-only request still stops at closure.
+Distinguish acknowledged answers from saved/reviewed artifacts. Apply persisted
+answers, then obtain fresh independent review; do not re-ask settled questions.
+Terminal failed workers require reconciled recovery, not indefinite active-owner
+waiting. Preserve consumed attempts and note any truly unverified status precisely.
+
 Compare docs/plan/project.md with actual issues, branches, MRs, jobs and active
 sessions. Reuse settled decisions, respect in-flight work, and pin explicit epic or
 project focus. Never silently authorize backlog or turn a ticket-only request into
 an epic run. Missing scope belongs to Planning; missing design intent to Design.
-They conduct interviews before execution. Development prepares minimal tests itself.
+They conduct necessary interviews within the same objective before dependent work.
+Development prepares minimal tests itself. No change of scope or spending authority
+is implied by an execution request.
 
 Follow design-readiness.md's ordered preflight before journal initialization/claims:
 --handoff, independent design review, historical-evidence reconciliation, then

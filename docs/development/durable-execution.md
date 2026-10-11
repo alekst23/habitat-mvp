@@ -14,7 +14,7 @@ Planning/Design procedures and project assessment into one chat. It does not
 change this controller's installation status or add chat dispatch privileges.
 Its read-only assessment can consume these records; only the controller writes
 its protected state or launches the next session. The single-epic/serial limit,
-manual init/resume boundary and missing post-pinned-design revision remain explicit.
+manual init/resume boundary and limits on post-pinned-design revisions remain explicit.
 
 The user does not pick the next ticket, collect reviews, or restart ordinary
 technical work. The controller continues after saved progress and reconciles
@@ -132,6 +132,68 @@ independence: the separate reviewer and coordinator retain that responsibility.
 
 ## Durable controller storage and failure behavior
 
+### Persistent objective and decision resume (local revision)
+
+An execute request may start with unfinished prerequisite design. `design_sha`
+pins the observed starting revision, not a claim of design approval. The same
+objective continues through closure, execution, tests, repairs and independent
+review. Design completion alone cannot complete an execute request. Each dispatch
+carries a derived `next_action` and any pending answers; these are frozen for that
+session, then recomputed from the next accepted checkpoint.
+
+For a terminated design reservation, independently read the native session,
+branch head, diff and operation notes. Use `ctx_design_closure.py` with
+`--current-sha SHA --reconcile-session OBSERVATION.json --report-url SOURCE_NOTE`.
+The observation contains `session_id`, `project_id`, terminal `status` and
+`observed_head`. Persist/read back the returned record. Interrupted repairs still
+consume their reserved cycle even if no commit survived. Running, unknown or
+unreadable sessions cannot be cleared. This helper validates a receipt; it is not
+a replacement for remote ownership checks.
+
+For a controller checkpoint requesting a decision, an authorized operator uses
+`resume` with `CTX_DECISION_ANSWERS`, a JSON array of objects containing exactly
+`id`, `question`, `answer`, `source_url`. IDs and questions must match the saved
+checkpoint. Source URLs must identify readable notes on the source issue; the
+adapter verifies attribution and the recorded question/answer. A worker's own
+report is not user authorization. The protected operator action grants resume;
+this is not an authenticated chat bridge. Partial batches may answer some
+questions; the others remain unresolved.
+
+Every checkpoint preserves unanswered IDs and exact questions. When a save
+invalidates a design review, retain its outstanding decision findings with the old
+review SHA until a fresh review incorporates them; do not erase them with
+`review=null`. Only verified application receipts retire answered questions.
+
+Answers are queued, not applied, on resume. The next design slice saves them in
+scoped feature specifications/ticket documents and reads them back. Its final
+checkpoint adds optional `decision_applications`, one object per pending answer:
+`answer_sha256` (canonical answer-object hash), `candidate_sha`, `changed_paths`
+and `report_url`. Before execution, they name the new current epic SHA. During
+execution, they bind exactly to that target's replayed `resume-decision` receipt
+and saved candidate, which may be on its ticket branch rather than epic HEAD.
+Reports are always on the source issue; comparisons use the prior target candidate
+for journal applications and the prior epic candidate before execution.
+The controller checks the actual old-to-new diff, fully paginated tree identities
+(diff responses can omit files at server limits), exact changed paths, saved file
+identities/content hashes and reports before marking the batch applied. It uses
+the documented [repository APIs](https://docs.gitlab.com/api/repositories/) and
+[file readback API](https://docs.gitlab.com/api/repository_files/). This
+slice cannot mix unrelated code, acceptance-manifest or policy changes into its
+commit. Applied is not reviewed: fresh structural checks and independent design
+review are still required. Unknown intent, scope or AC changes require an explicit
+revision plan, not a forged application receipt.
+
+After execution starts, use the replayable `resume-decision` journal transition
+described in [single-shot development](single-shot-development.md). Scoped
+technical findings use `technical_design` repair and return through independent
+design review, tests, implementation and acceptance verification. Both preserve
+the pinned request/manifest and consume existing repair/action budgets. General
+cross-target design revision remains outside this bounded transition.
+
+Native input/tool-approval pauses are different: resolve them in the existing
+GitLab session, then `resume` reconciles that same session. It cannot approve tools
+or substitute an issue-note answer for GitLab's native approval control.
+
 State is `.ctx-controller/E<epic>.json` on **ctx/controller-state**, a separately
 protected non-default branch. Only the trusted controller identity may write it;
 the Duo service account must not. The adapter checks that it is protected and not
@@ -139,8 +201,9 @@ default, but permission membership must be checked during installation. It uses
 [last_commit_id optimistic concurrency](https://docs.gitlab.com/api/repository_files/#update-existing-file-in-repository)
 plus CI resource_group serialization. A loser cannot issue a dispatch. There is
 one immutable active authorized request per epic; init never resets an active run.
-The sole handoff is an explicit new execute request after completed design-only
-closure. It keeps the prior design receipt, histories and consumed controller
+An explicit new execute request is needed after a completed design-only request,
+but not when the existing request already authorizes execution. The handoff keeps
+the prior design receipt, histories and consumed controller
 budgets; it cannot restart a completed application execution or change the epic.
 
 Dispatch intent is committed/read back BEFORE POST. If the POST or state save is
@@ -210,7 +273,9 @@ run; it cannot implement. This schema is an example, not authorization to execut
 E2 now. Keep !8 open. The schedule owns subsequent ticks; no ticket-by-ticket
 human invocations. Progress lives on the source issue and in controller job output.
 After answering a real question/approval in the relevant issue/session, run one
-web pipeline with action=resume. It does not expand scope or reset budgets.
+web pipeline with action=resume and the verified `CTX_DECISION_ANSWERS` batch for
+checkpoint questions. For native approvals or resolved access, reconcile the
+existing control instead. Resume does not expand scope or reset budgets.
 
 Local checks:
 

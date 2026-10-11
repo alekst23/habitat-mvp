@@ -1,7 +1,9 @@
 # CTX Project: the conversational project owner
 
 Status: **v1.0.0 published and enabled on 2026-10-10**. Full catalog readback and
-chat-picker availability passed; no live smoke of model behavior has run.
+chat-picker availability passed. The user's live E2 conversation exposed lost
+objective/decision progression and stale-worker handling. **v1.1.0 is a local
+candidate, not published**; its behavioral acceptance remains pending.
 
 ## Open the agent
 
@@ -131,14 +133,23 @@ Preserve stable finding/decision IDs and links across sessions. A chat-authored
 decision report records the conversation; it is not authenticated controller-start
 authorization or a GitLab merge approval.
 
-The existing pre-execution design-closure loop already defines research, review
-and document repair. **A general design revision after the execution journal is
-pinned is not yet implemented.** It requires a versioned journal transition,
-affected-evidence invalidation, independent re-review and restoration of the
-affected ticket's phase without resetting budgets or changing approved intent.
-Neither the project agent nor this document supplies that transition. Preserve
-the existing journal and expose that exact boundary; never "fix" it by starting
-a new run, editing the pinned request or dropping acceptance criteria.
+The local revision preserves one authorized objective across prerequisite design,
+execution and repair. “Fully implement E2” is an execution objective, not a choice
+between design and execution. Closed design remains a gate before code work;
+finishing it does not require another “go.” Explicit design-only requests still
+stop at design. Controller installation remains a separate operational boundary.
+
+The journal now supports bounded target-local `technical_design` repair and
+`resume-decision`, invalidating affected evidence and requiring independent design
+review before fresh tests/implementation. It preserves the pinned request,
+acceptance manifest and cumulative budgets. General cross-target or scope/AC
+revision still requires an explicit plan; never start a new run to bypass it.
+
+Distinguish decisions acknowledged in chat, queued for application, saved at a
+verified SHA, and independently reviewed. Distinguish running/waiting sessions,
+terminal failures and unreadable status. A failed reservation requires actual
+session/head/diff/note reconciliation, not an indefinite “active” label or an
+unverified claim that no other writers exist.
 
 ## Execution connection: explicit current limitation
 
@@ -175,7 +186,9 @@ The prompt and registration are `.gitlab/duo/agents/ctx-project.md` and
 033dc8da20002486a6d18269b64e443191eebc20. Agent 1016538 v1.0.0 is private and
 enabled in Showcase. Its complete saved prompt equals that source with the final
 newline trimmed; the record contains both hashes. All 21 tools, no external MCP
-and the refreshed chat picker were verified. No model prompt was submitted.
+and the refreshed chat picker were verified. No model prompt was submitted during
+that publication check; the subsequent user-supplied E2 transcript is behavioral
+feedback, not a passed acceptance test for the local revision.
 Existing specialist registrations and controller enablement remain unchanged.
 The following live behavior checks remain required, not implied by publication:
 
@@ -193,8 +206,10 @@ The following live behavior checks remain required, not implied by publication:
    and an unavailable controller. None may cause a duplicate run or false completion.
 5. With controller setup separately verified, test one init, automatic technical
    continuation, a genuine product question and one resume without resetting
-   history. Retain job/session/note/SHA evidence. This step cannot claim the missing
-   post-pinned-design revision or chat bridge works.
+   history. Include target-local technical design repair and decision application,
+   stale failed-session recovery and continuation after design closes under an
+   execute objective. Retain job/session/note/SHA evidence. This does not validate
+   a chat bridge or unrestricted cross-target revision.
 6. Only after the relevant smokes pass consider retiring standalone Planning/Design
    entry points with explicit operator approval. Keep rollback registration history.
 

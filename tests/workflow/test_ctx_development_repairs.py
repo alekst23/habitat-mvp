@@ -83,6 +83,69 @@ def defect(run):
 
 
 class RepairLoopTests(unittest.TestCase):
+    def test_technical_design_repair_returns_through_independent_design_review(self):
+        run = dev.claim(advance(dev.new_run(repair_request()), "E2-1", "verify"), "E2-1")
+        blocked = defect(run) | {"blocker_kind": "technical_design"}
+        run = dev.record(run, blocked)
+        original = deepcopy(run["request"])
+        run = dev.repair(run, "E2-1")
+        self.assertEqual(dev.next_actions(run)["ready"][0]["component"], "design")
+        self.assertEqual(dev.phase(run["nodes"]["E2-1"]), "design_revision")
+        run = dev.claim(run, "E2-1")
+        doc_receipt = receipt(run, candidate_sha="d" * 40, resolved_findings=["regression-1"],
+            changed_paths=["docs/design/trust-core/technical.md"], affected_targets=["E2-1"],
+            acceptance_manifest_sha256=dev.scoped_manifest(run, "E2-1")[1])
+        with self.assertRaises(ValueError):
+            dev.record(run, doc_receipt | {"changed_paths": [".gitlab-ci.yml"]})
+        with self.assertRaises(ValueError):
+            dev.record(run, doc_receipt | {"acceptance_manifest_sha256": "f" * 64})
+        with self.assertRaises(ValueError):
+            dev.record(run, doc_receipt | {"affected_targets": ["E2-1", "E2-2"]})
+        run = dev.record(run, doc_receipt)
+        self.assertEqual(dev.phase(run["nodes"]["E2-1"]), "design_review")
+        self.assertEqual(dev.next_actions(run)["ready"][0]["component"], "epic_review")
+        run = dev.claim(run, "E2-1")
+        with self.assertRaises(ValueError):
+            dev.record(run, receipt(run, candidate_sha="c" * 40))
+        run = dev.record(run, receipt(run, design_report_url=doc_receipt["report_url"],
+            affected_targets=["E2-1"], acceptance_manifest_sha256=dev.scoped_manifest(run, "E2-1")[1]))
+        self.assertEqual(dev.phase(run["nodes"]["E2-1"]), "tests")
+        run = advance(run, "E2-1", "implementation")
+        run = dev.claim(run, "E2-1")
+        run = dev.record(run, receipt(run, candidate_sha="e" * 40, resolved_findings=["regression-1"]))
+        run = advance(run, "E2-1")
+        self.assertEqual(run["request"], original)
+        self.assertEqual(run["nodes"]["E2-1"]["repairs"], 1)
+        dev.verify_journal(run)
+        tampered = deepcopy(run)
+        tampered["nodes"]["E2-1"]["repairs"] = 0
+        with self.assertRaises(ValueError):
+            dev.verify_journal(tampered)
+
+    def test_answered_decision_resumes_same_journal_without_reusing_old_evidence(self):
+        run = dev.claim(advance(dev.new_run(repair_request()), "E2-1", "verify"), "E2-1")
+        questions = [{"id": "Q6", "question": "Who may create an account?"}]
+        run = dev.record(run, receipt(run, response="blocked", blocker_kind="decision",
+                                      reason="Need product choice", decisions=questions))
+        original, history = deepcopy(run["request"]), deepcopy(run["events"])
+        answers = {"answers": [{"id": "Q6", "question": questions[0]["question"],
+                               "answer": "Anyone with an email", "source_url": PROJECT + "/-/issues/10#note_200"}],
+                   "candidate_sha": "d" * 40, "report_url": PROJECT + "/-/issues/10#note_201",
+                   "report_readback": True, "changed_paths": ["docs/design/trust-core/spec.md"],
+                   "affected_targets": ["E2-1"],
+                   "acceptance_manifest_sha256": dev.scoped_manifest(run, "E2-1")[1]}
+        self.assertTrue(callable(getattr(dev, "resume_decision", None)), "decision resume transition missing")
+        with self.assertRaises(ValueError):
+            dev.resume_decision(run, "E2-1", answers | {"answers": []})
+        with self.assertRaises(ValueError):
+            dev.resume_decision(run, "E2-1", answers | {"candidate_sha": run["nodes"]["E2-1"]["candidate_sha"]})
+        run = dev.resume_decision(run, "E2-1", answers)
+        self.assertEqual(dev.phase(run["nodes"]["E2-1"]), "design_review")
+        self.assertNotIn("verification_url", run["nodes"]["E2-1"])
+        self.assertEqual(run["request"], original)
+        self.assertEqual(run["events"][:-1], history)
+        dev.verify_journal(run)
+
     def test_manifest_is_pinned_and_covers_exact_planned_tickets(self):
         value = repair_request()
         dev.new_run(value)
@@ -222,8 +285,8 @@ class RepairLoopTests(unittest.TestCase):
         flow = ctx.read_yaml(path)
         owner = next(c for c in flow["components"] if c["name"] == "coordinate")
         workers = {s["name"] for s in owner["subagents"]}
-        for phase in set(dev.V2_TICKET_PHASES + dev.V2_EPIC_PHASES):
-            self.assertIn("browser" if phase == "verify" else phase, workers)
+        for phase in set(dev.V2_TICKET_PHASES + dev.V2_EPIC_PHASES + ("design_revision", "design_review")):
+            self.assertIn(dev.component(phase), workers)
         prompt = next(p for p in flow["prompts"] if p["prompt_id"] == "coordinate_prompt")["prompt_template"]["system"]
         self.assertIn("VERSION 2", prompt)
         self.assertIn("repair JOURNAL TARGET", prompt)

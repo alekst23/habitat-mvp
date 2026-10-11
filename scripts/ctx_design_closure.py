@@ -1,5 +1,6 @@
 """Design closure assessment; no network, execution, or approval authority."""
 import argparse
+from copy import deepcopy
 import json
 from pathlib import Path
 import re
@@ -64,8 +65,29 @@ def assess(record, current_sha):
             "invalid research attempts")
     for repair in repairs:
         require(isinstance(repair, dict) and sha(repair.get("base_sha")) and sha(repair.get("result_sha"))
-                and repair["base_sha"] != repair["result_sha"], "invalid repair receipt")
+                and (repair["base_sha"] != repair["result_sha"] or repair.get("outcome") == "interrupted"), "invalid repair receipt")
+        if "outcome" in repair:
+            require(repair["outcome"] == "interrupted" and type(repair.get("session_id")) is int and repair["session_id"] > 0,
+                    "invalid interrupted repair identity")
         note_url(repair.get("report_url"), source)
+    reconciliations = record.get("reconciliations", [])
+    require(isinstance(reconciliations, list) and len(reconciliations) <= 64, "invalid reconciliation history")
+    for item in reconciliations:
+        require(isinstance(item, dict) and set(item) == {"reservation", "observation", "report_url"},
+                "invalid reconciliation receipt")
+        reservation, observed = item["reservation"], item["observation"]
+        require(isinstance(reservation, dict) and reservation.get("kind") in {"repair", "research", "review"}
+                and sha(reservation.get("base_sha")) and type(reservation.get("session_id")) is int
+                and reservation["session_id"] > 0, "invalid reconciled reservation")
+        require(isinstance(observed, dict) and set(observed) == {"session_id", "project_id", "status", "observed_head"}
+                and observed["session_id"] == reservation["session_id"] and observed["project_id"] == record["project_id"]
+                and observed["status"] in {"failed", "stopped", "finished"} and sha(observed["observed_head"]),
+                "invalid terminal reconciliation")
+        note_url(item["report_url"], source)
+        if reservation["kind"] == "repair":
+            require(any(r.get("session_id") == observed["session_id"] and r["base_sha"] == reservation["base_sha"]
+                        and r["result_sha"] == observed["observed_head"] and r.get("outcome") == "interrupted"
+                        for r in repairs), "reconciled repair lost its consumed budget")
     review = record.get("review")
     groups = {kind: [] for kind in KINDS}
     if review is not None:
@@ -126,13 +148,51 @@ def assess(record, current_sha):
     return result("complete")
 
 
+def reconcile_interrupted(record, observation, report_url):
+    """Consume a failed reservation after actual remote reconciliation, never on age alone.
+
+    The caller must read the identified session, actual head/diff, and saved report.
+    This local function validates the receipt, not remote ownership or report truth.
+    """
+    assess(record, record["candidate_sha"])
+    active = record["active"]
+    require(active and type(active.get("session_id")) is int and active["session_id"] > 0,
+            "resolve the reservation's actual session identity before recovery")
+    require(set(observation) == {"session_id", "project_id", "status", "observed_head"} and
+            observation["session_id"] == active["session_id"] and observation["project_id"] == record["project_id"] and
+            observation["status"] in {"failed", "stopped", "finished"} and sha(observation["observed_head"]),
+            "terminal same-project session and observed head required; unknown is not running or failed")
+    note_url(report_url, record["source_issue_iid"])
+    result = deepcopy(record)
+    if active["kind"] == "repair":
+        require(len(result["repairs"]) < MAX_REPAIRS, "repair budget exhausted; retain the unresolved reservation")
+        result["repairs"].append({"base_sha": active["base_sha"], "result_sha": observation["observed_head"],
+                                  "report_url": report_url, "outcome": "interrupted", "session_id": active["session_id"]})
+    result.setdefault("reconciliations", []).append({"reservation": deepcopy(active),
+        "observation": deepcopy(observation), "report_url": report_url})
+    # Preserve outstanding questions/findings. A changed SHA makes this review stale;
+    # unchanged documents may reuse their verified review after structural checks.
+    result.update(active=None, candidate_sha=observation["observed_head"], structural_sha=None, handoff_sha=None)
+    assess(result, result["candidate_sha"])
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("record", type=Path)
     parser.add_argument("--current-sha", required=True)
+    parser.add_argument("--reconcile-session", type=Path, help="verified terminal-session observation JSON")
+    parser.add_argument("--report-url", help="saved/read-back source-issue recovery report")
     args = parser.parse_args()
     try:
-        result = assess(json.loads(args.record.read_text(), object_pairs_hook=unique_object), args.current_sha)
+        record = json.loads(args.record.read_text(), object_pairs_hook=unique_object)
+        if args.reconcile_session:
+            observation = json.loads(args.reconcile_session.read_text(), object_pairs_hook=unique_object)
+            require(observation["observed_head"] == args.current_sha, "recovery head mismatch")
+            record = reconcile_interrupted(record, observation, args.report_url)
+            result = {"record": record, "assessment": assess(record, args.current_sha)}
+        else:
+            result = assess(record, args.current_sha)
         print(json.dumps(result, sort_keys=True))
         return 0
     except (ValueError, OSError, TypeError, KeyError) as exc:

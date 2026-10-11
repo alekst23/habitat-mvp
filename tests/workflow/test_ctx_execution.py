@@ -1,5 +1,6 @@
 """Controller transition/transport tests, not evidence of native Duo execution."""
 from copy import deepcopy
+import base64
 import json
 from pathlib import Path
 import sys
@@ -77,6 +78,51 @@ def receipt(state, outcome="continue"):
 
 
 class ControllerTests(unittest.TestCase):
+    def test_execute_objective_survives_design_closure_and_failed_worker(self):
+        self.store.state = execution.new_run({**request(), "mode": "execute", "objective": "Fully implement E2"})
+        self.controller.tick()
+        self.assertIn('"next_action"', self.api.starts[-1], "dispatch must carry the derived next action")
+        self.api.status = "failed"
+        self.controller.tick()
+        self.assertEqual(self.store.state["request"]["objective"], "Fully implement E2")
+        self.controller.tick()
+        self.assertIn('"reconcile_session_id":1', self.api.starts[-1])
+        value = receipt(self.store.state)
+        value["closure"].update(structural_sha=SHA, handoff_sha=SHA, review={"sha": SHA, "reviewer": "independent",
+            "report_url": f"https://gitlab.com/{execution.PROJECT_PATH}/-/issues/10#note_44", "verdict": "ready", "findings": []})
+        self.publish(value)
+        self.api.status = "finished"
+        state = self.controller.tick()
+        self.assertEqual(state["status"], "ready", "closed design must not finish an execute objective")
+        self.assertEqual(execution.next_step(state)["action"], "execution_preflight")
+        self.assertEqual(state["recoveries"], 1)
+
+    def test_resume_requires_persisted_answers_for_a_decision_checkpoint(self):
+        self.controller.tick()
+        value = receipt(self.store.state, "needs_decision")
+        value["closure"].update(structural_sha=SHA, review={"sha": SHA, "reviewer": "independent",
+            "report_url": f"https://gitlab.com/{execution.PROJECT_PATH}/-/issues/10#note_44", "verdict": "blocked",
+            "findings": [{"id": "Q6", "kind": "decision", "summary": "Who may create an account?",
+                          "owner": "user", "action": "Choose eligibility", "tickets": ["E2-1"]}]})
+        self.publish(value)
+        self.api.status = "finished"
+        state = self.controller.tick()
+        self.assertTrue(callable(getattr(execution, "resume_run", None)), "verified resume transition missing")
+        with self.assertRaisesRegex(ValueError, "answer"):
+            execution.resume_run(state, [])
+        answers = [{"id": "Q6", "question": "Who may create an account?", "answer": "Anyone with an email",
+                    "source_url": f"https://gitlab.com/{execution.PROJECT_PATH}/-/issues/10#note_200"}]
+        resumed = execution.resume_run(state, answers)
+        self.assertEqual(resumed["request"], state["request"])
+        self.assertEqual(resumed["attempts"], state["attempts"])
+        self.assertEqual(execution.next_step(resumed)["action"], "apply_decisions")
+        self.assertEqual(state["status"], "needs_decision", "input state must not mutate")
+        self.store.state = resumed
+        self.controller.tick()
+        forgotten = receipt(self.store.state)
+        with self.assertRaisesRegex(ValueError, "unanswered decision"):
+            execution.validate_checkpoint(forgotten, self.store.state, 2, SHA)
+
     def setUp(self):
         self.store, self.api = Store(), API()
         self.controller = execution.Controller(self.api, self.store, CONFIG, now=lambda: 100)
@@ -111,6 +157,75 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(self.store.state["status"], "needs_decision")
         self.assertIsNotNone(self.store.state["active"])
         self.assertEqual(len(self.api.starts), 1)
+        with self.assertRaisesRegex(ValueError, "native session"):
+            execution.resume_run(self.store.state, [], self.api.sessions(1, "")[0])
+        for status in ("running", "failed"):
+            self.api.status = status
+            resumed = execution.resume_run(self.store.state, [], self.api.sessions(1, "")[0])
+            self.assertEqual(resumed["active"], self.store.state["active"])
+            self.assertEqual(resumed["attempts"], self.store.state["attempts"])
+        foreign = self.api.sessions(1, "")[0] | {"id": 2}
+        with self.assertRaises(ValueError):
+            execution.resume_run(self.store.state, [], foreign)
+
+    def test_answer_application_readback_then_review_continues_same_execute_objective(self):
+        self.store.state = execution.new_run({**request(), "mode": "execute", "objective": "Fully implement E2"})
+        self.controller.tick()
+        value = receipt(self.store.state, "needs_decision")
+        question = "Who may create an account?"
+        value["closure"].update(structural_sha=SHA, review={"sha": SHA, "reviewer": "independent",
+            "report_url": f"https://gitlab.com/{execution.PROJECT_PATH}/-/issues/10#note_44", "verdict": "blocked",
+            "findings": [{"id": "Q6", "kind": "decision", "summary": question,
+                          "owner": "user", "action": "Choose eligibility", "tickets": ["E2-1"]}]})
+        self.publish(value)
+        self.api.status = "finished"
+        state = self.controller.tick()
+        answer = {"id": "Q6", "question": question, "answer": "Anyone with an email",
+                  "source_url": f"https://gitlab.com/{execution.PROJECT_PATH}/-/issues/10#note_200"}
+        for change in ({"id": "invented"}, {"question": "Changed question"}, {"source_url": "https://example.com"}):
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                execution.resume_run(state, [answer | change])
+        self.store.state = execution.resume_run(state, [answer])
+        self.controller.tick()
+        self.assertIn('"action":"apply_decisions"', self.api.starts[-1])
+        self.assertIn('"answer":"Anyone with an email"', self.api.starts[-1])
+        saved = receipt(self.store.state)
+        next_sha = "b" * 40
+        saved["candidate_sha"] = saved["closure"]["candidate_sha"] = next_sha
+        saved["decision_applications"] = [{"answer_sha256": execution.digest(answer), "candidate_sha": next_sha,
+            "changed_paths": ["docs/design/onboarding/spec.md"],
+            "report_url": f"https://gitlab.com/{execution.PROJECT_PATH}/-/issues/10#note_201"}]
+        for change in ({"answer_sha256": "0" * 64}, {"candidate_sha": SHA}, {"changed_paths": [".gitlab-ci.yml"]}):
+            invalid = deepcopy(saved)
+            invalid["decision_applications"][0].update(change)
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                execution.validate_checkpoint(invalid, self.store.state, 2, next_sha)
+        self.api.head = lambda branch: next_sha
+        def unavailable(*args):
+            raise ValueError("artifact readback failed")
+        self.api.verify_decision_applications = unavailable
+        self.publish(saved, note_id=8)
+        with self.assertRaisesRegex(ValueError, "readback"):
+            self.controller.tick()
+        self.assertEqual(self.store.state["answer_batches"][0]["status"], "pending")
+        self.assertEqual(self.store.state["checkpoint"], value)
+        verified = []
+        self.api.verify_decision_applications = lambda v, s: verified.append(v)
+        result = self.controller.tick()
+        self.assertEqual(verified, [saved])
+        self.assertEqual(result["answer_batches"][0]["status"], "applied")
+        self.assertEqual(execution.next_step(result)["action"], "validate")
+        self.controller.tick()
+        reviewed = receipt(self.store.state)
+        reviewed["candidate_sha"] = next_sha
+        reviewed["closure"].update(candidate_sha=next_sha, structural_sha=next_sha, handoff_sha=next_sha,
+            review={"sha": next_sha, "reviewer": "independent", "verdict": "ready", "findings": [],
+                    "report_url": f"https://gitlab.com/{execution.PROJECT_PATH}/-/issues/10#note_202"})
+        self.publish(reviewed, note_id=9)
+        result = self.controller.tick()
+        self.assertEqual(execution.next_step(result)["action"], "execution_preflight")
+        self.assertEqual(result["request"]["objective"], "Fully implement E2")
+        self.assertEqual(len(result["attempts"]), 3)
 
     def test_failed_and_finished_without_receipt_recover_but_never_complete(self):
         self.controller.tick()
@@ -172,6 +287,14 @@ class ControllerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "history"):
             execution.validate_checkpoint(changed, self.store.state, 1, SHA)
         changed["closure"]["research_attempts"] = ["R1"]
+        prior["closure"]["reconciliations"] = [{"reservation": {"kind": "review", "base_sha": SHA, "session_id": 42},
+            "observation": {"session_id": 42, "project_id": execution.PROJECT_ID, "status": "failed", "observed_head": SHA},
+            "report_url": f"https://gitlab.com/{execution.PROJECT_PATH}/-/issues/10#note_200"}]
+        self.store.state["checkpoint_sha256"] = execution.digest(prior)
+        changed["previous_checkpoint_sha256"] = self.store.state["checkpoint_sha256"]
+        with self.assertRaisesRegex(ValueError, "reconciliation history"):
+            execution.validate_checkpoint(changed, self.store.state, 1, SHA)
+        changed["closure"]["reconciliations"] = deepcopy(prior["closure"]["reconciliations"])
         changed["journal"] = {"fake": "implementation"}
         with self.assertRaisesRegex(ValueError, "execution before"):
             execution.validate_checkpoint(changed, self.store.state, 1, SHA)
@@ -242,6 +365,51 @@ class ControllerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "claim budget"):
             execution.validate_checkpoint(changed, self.store.state, 2, SHA)
 
+    def test_execution_answer_binds_ticket_candidate_not_unrelated_epic_head(self):
+        from test_ctx_development_repairs import repair_request
+        from test_ctx_development import receipt as worker_receipt
+        import ctx_development as dev
+        self.store.state = execution.new_run({**request(), "mode": "execute"})
+        self.controller.tick()
+        prior = receipt(self.store.state, "needs_decision")
+        prior["closure"].update(structural_sha=SHA, handoff_sha=SHA, review={"sha": SHA, "reviewer": "independent",
+            "report_url": f"https://gitlab.com/{execution.PROJECT_PATH}/-/issues/10#note_44", "verdict": "ready", "findings": []})
+        scoped = repair_request()
+        scoped.update(project_path=execution.PROJECT_PATH, run_id="e2-test",
+                      session_url=f"https://gitlab.com/{execution.PROJECT_PATH}/-/automate/agent-sessions/1")
+        scoped["epics"][0]["design_sha"] = SHA
+        run = dev.new_run(scoped)
+        for _ in range(3):
+            run = dev.claim(run, "E2-1")
+            run = dev.record(run, worker_receipt(run,
+                report_url=f"https://gitlab.com/{execution.PROJECT_PATH}/-/issues/10#note_{run['actions']}"))
+        run = dev.claim(run, "E2-1")
+        answer = {"id": "Q6", "question": "Who?", "answer": "Anyone",
+                  "source_url": f"https://gitlab.com/{execution.PROJECT_PATH}/-/issues/10#note_200"}
+        blocked = worker_receipt(run, response="blocked", reason="Question", blocker_kind="decision",
+            decisions=[{"id": answer["id"], "question": answer["question"]}], report_url=answer["source_url"])
+        prior["journal"] = dev.record(run, blocked)
+        self.store.state.update(active=None, status="needs_decision", checkpoint=prior,
+                                checkpoint_sha256=execution.digest(prior), checkpoint_note_id=7)
+        self.store.state = execution.resume_run(self.store.state, [answer])
+        self.controller.tick()
+        saved = receipt(self.store.state)
+        saved["closure"] = prior["closure"]
+        report = f"https://gitlab.com/{execution.PROJECT_PATH}/-/issues/10#note_201"
+        application = {"answers": [answer], "candidate_sha": "d" * 40, "report_url": report,
+            "report_readback": True, "changed_paths": ["docs/design/onboarding/spec.md"],
+            "affected_targets": ["E2-1"], "acceptance_manifest_sha256": dev.scoped_manifest(prior["journal"], "E2-1")[1]}
+        saved["journal"] = dev.resume_decision(prior["journal"], "E2-1", application)
+        saved["decision_applications"] = [{"answer_sha256": execution.digest(answer), "candidate_sha": "d" * 40,
+            "changed_paths": application["changed_paths"], "report_url": report}]
+        execution.validate_checkpoint(saved, self.store.state, 2, SHA)
+        self.assertEqual(execution.application_base(saved, self.store.state, saved["decision_applications"][0]),
+                         prior["journal"]["nodes"]["E2-1"]["candidate_sha"])
+        invalid = deepcopy(saved)
+        invalid["decision_applications"][0]["candidate_sha"] = SHA
+        with self.assertRaises(ValueError):
+            execution.validate_checkpoint(invalid, self.store.state, 2, SHA)
+
     def test_admission_and_ci_job_boundaries(self):
         self.assertTrue(admission(100, 699)["delegate"])
         self.assertFalse(admission(100, 700)["delegate"])
@@ -260,6 +428,69 @@ class ControllerTests(unittest.TestCase):
 
 
 class TransportTests(unittest.TestCase):
+    def test_decision_artifacts_require_actual_diff_files_and_report_readback(self):
+        api = transport.GitLab("test-only")
+        path, new = "docs/design/onboarding/spec.md", "b" * 40
+        raw = b"# Onboarding\nAnyone with an email may create an account.\n"
+        comparison = {"compare_timeout": False, "diffs": [{"new_path": path}]}
+        file = {"file_path": path, "commit_id": new, "encoding": "base64",
+                "content": base64.b64encode(raw).decode(), "content_sha256": transport.hashlib_sha(raw)}
+        note = {"id": 201, "body": new + " " + path}
+        calls = []
+        def rest(method, url, data=None):
+            calls.append((method, url))
+            return deepcopy(comparison if "/compare?" in url else file if "/files/" in url else note)
+        api.rest = rest
+        trees = {SHA: {path: ("a" * 40, "blob", "100644")},
+                 new: {path: ("b" * 40, "blob", "100644")}}
+        api.tree_files = lambda ref: deepcopy(trees[ref])
+        checkpoint = {"candidate_sha": new, "decision_applications": [{"changed_paths": [path], "candidate_sha": new,
+            "report_url": f"https://gitlab.com/{execution.PROJECT_PATH}/-/issues/10#note_201"}]}
+        state = {"checkpoint": {"candidate_sha": SHA}, "request": request()}
+        api.verify_decision_applications(checkpoint, state)
+        self.assertTrue(all(method == "GET" for method, url in calls))
+        self.assertIn("straight=true", calls[0][1])
+        for target, key, bad in ((comparison, "compare_timeout", True),
+                                 (comparison, "diffs", [{"new_path": ".gitlab-ci.yml"}]),
+                                 (comparison, "diffs", [{"new_path": path, "too_large": True}]),
+                                 (file, "commit_id", SHA), (file, "content_sha256", "0" * 64),
+                                 (note, "body", "saved")):
+            old = target[key]
+            target[key] = bad
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                api.verify_decision_applications(checkpoint, state)
+            target[key] = old
+        trees[new][".gitlab-ci.yml"] = ("c" * 40, "blob", "100644")
+        with self.assertRaisesRegex(ValueError, "tree"):
+            api.verify_decision_applications(checkpoint, state)
+
+    def test_repository_tree_read_is_complete_and_rejects_repeated_pages(self):
+        api = transport.GitLab("test-only")
+        pages = [([{"path": "docs", "type": "tree", "mode": "040000", "id": SHA},
+                   {"path": "docs/spec.md", "type": "blob", "mode": "100644", "id": SHA}], {"X-Next-Page": "2"}),
+                 ([{"path": "app.py", "type": "blob", "mode": "100644", "id": "b" * 40}], {})]
+        calls = []
+        api.request = lambda *args: (calls.append(args) or pages[len(calls) - 1])
+        self.assertEqual(set(api.tree_files(SHA)), {"docs/spec.md", "app.py"})
+        self.assertIn("page=2", calls[-1][1])
+        api.request = lambda *args: pages[0]
+        with self.assertRaises(ValueError):
+            api.tree_files(SHA)
+
+    def test_answer_provenance_is_read_not_inferred_from_a_worker_note(self):
+        api = transport.GitLab("test-only")
+        answer = {"id": "Q6", "question": "Who?", "answer": "Anyone",
+                  "source_url": f"https://gitlab.com/{execution.PROJECT_PATH}/-/issues/10#note_200"}
+        note = {"id": 200, "system": False, "author": {"id": 7}, "body": "Q6 Who? Anyone"}
+        api.note = lambda source, note_id: note
+        api.verify_answers([answer], 10, [99])
+        for key, bad in (("system", True), ("author", {"id": 99}), ("body", "Q6 acknowledged")):
+            old = note[key]
+            note[key] = bad
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                api.verify_answers([answer], 10, [99])
+            note[key] = old
+
     def test_state_compare_and_swap_and_full_readback(self):
         class Repo:
             stored = None

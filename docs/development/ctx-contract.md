@@ -58,6 +58,47 @@ invariants, not conflicting numbering formulas or unsafe cleanup commands.
 
 ## Execution context and supervision
 
+### Persistent objective (local revision; publication/activation pending)
+
+The approved objective is the unit of work. "Fully implement E2" retains one
+epic-scoped execute objective through prerequisite design repair/research,
+independent design review, development, acceptance validation, fixes and reviewed
+MR preparation. A technical finding changes the next eligible action, not the
+objective or the user's authorization. Do not ask design OR execution when the
+user has explicitly requested implementation. Plan-only, design-only, read-only,
+pause and cancellation remain narrower boundaries. Merge, deployment, provider
+enablement, spending and scope expansion require separate authority.
+
+An unmet gate blocks downstream work, not safe work that satisfies that gate.
+Ask only genuine product decisions, unavailable access, additional authority or a
+precise exhausted/conflicting boundary. Record objective/phase/decisions/evidence/
+next action in existing epic progress and source reports; the controller's immutable
+request and replayed journal own execution. Do not create a competing state store.
+
+Distinguish running, awaiting native input/approval, terminal interrupted and
+unverified ownership using actual session evidence. A reservation alone is not a
+live worker. Terminal recovery reconciles saved commits/reports and consumes its
+reserved budget; it never resets a run or treats unsaved work as completed.
+
+Decision states are acknowledged, queued for the owning writer, saved/read-back in
+artifacts, and independently reviewed. Persist stable IDs, exact questions/answers,
+affected artifacts and honest provenance. Read-only conversation answers do not
+authorize writes until scoped design/execute is requested. A controller resume
+retains the objective, attempts and limits; recorded answers are applied before
+re-asking. The protected operator action supplies authority, not an agent-written
+note. The missing authenticated chat bridge is still an installation/integration gap.
+
+After journal initialization, bounded technical_design repairs use document
+addenda and separate design_review, then repeat tests/implementation/verification/
+review. The pinned request and acceptance manifest never change. Target-crossing
+effects or changed behavior/ACs need an explicit revision plan; do not disguise
+them as a technical repair. See the journal guide for executable receipt checks.
+
+Deployment is separate: a disabled controller, missing credentials or missing
+dispatch tool means not started. Retain the requested objective and complete
+unblocked allowed work, but never promise background continuation. Agents cannot
+install their own credentials or change workflow security controls.
+
 The orchestrating flow supplies project identity, source issue, epic/ticket IDs,
 MR and source SHA when available, run/pipeline ID, operation, and permitted target.
 Resolve the default branch from the project. Check identity before external writes.

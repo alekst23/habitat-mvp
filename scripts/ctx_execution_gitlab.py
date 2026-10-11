@@ -14,8 +14,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from ctx_execution import (Controller, PROJECT_ID, PROJECT_PATH, canonical, digest,
-                           integer, new_run, require, sha, unique_object)
+from ctx_execution import (Controller, PROJECT_ID, PROJECT_PATH, application_base, canonical, digest,
+                           integer, new_run, next_step, require, resume_run, sha, unique_object)
 
 API = "https://gitlab.com/api/v4"
 STATE_BRANCH = "ctx/controller-state"
@@ -136,6 +136,78 @@ class GitLab:
     def note(self, source, note_id):
         return self.rest("GET", f"/issues/{source}/notes/{note_id}")
 
+    def verify_answers(self, answers, source, reporting_authors):
+        """Read provenance; the protected operator resume action is the authorization.
+
+        Agent-written notes alone must never authorize start/resume or wider scope.
+        """
+        for answer in answers:
+            note_id = int(answer["source_url"].rsplit("note_", 1)[1])
+            note = self.note(source, note_id)
+            require(note["id"] == note_id and note.get("system") is False and
+                    integer(note["author"]["id"], 1, 2**63) and note["author"]["id"] not in reporting_authors,
+                    "answer requires an attributed non-worker source note")
+            require(all(answer[k] in note["body"] for k in ("id", "question", "answer")),
+                    "source note does not contain the recorded question and answer")
+
+    def tree_files(self, ref):
+        """Read complete tree identities; compare diffs alone can omit files at server limits."""
+        require(sha(ref), "tree revision must be pinned")
+        files, seen = {}, set()
+        for page in range(1, 101):
+            query = urlencode({"ref": ref, "recursive": "true", "per_page": 100, "page": page})
+            rows, headers = self.request("GET", f"/projects/{PROJECT_ID}/repository/tree?" + query)
+            require(isinstance(rows, list), "invalid tree response")
+            for row in rows:
+                require(isinstance(row, dict) and isinstance(row.get("path"), str) and row["path"] not in seen
+                        and sha(row.get("id")) and row.get("type") in {"blob", "tree", "commit"}
+                        and isinstance(row.get("mode"), str), "invalid or repeated tree entry")
+                seen.add(row["path"])
+                if row["type"] != "tree":
+                    files[row["path"]] = (row["id"], row["type"], row["mode"])
+            next_page = headers.get("X-Next-Page")
+            if not next_page:
+                # GitLab.com may omit pagination headers: probe a full page's successor.
+                if len(rows) < 100:
+                    return files
+            else:
+                require(str(next_page) == str(page + 1), "invalid tree pagination")
+        raise ValueError("tree pagination limit; no partial diff evidence")
+
+    def verify_decision_applications(self, checkpoint, state):
+        """Verify actual changed paths, saved files and report readback before acknowledging answers."""
+        groups = {}
+        for application in checkpoint["decision_applications"]:
+            pair = (application_base(checkpoint, state, application), application["candidate_sha"])
+            groups.setdefault(pair, []).append(application)
+        for (old, new), applications in groups.items():
+            self.verify_application_group(old, new, applications, state["request"]["source_issue_iid"])
+
+    def verify_application_group(self, old, new, applications, source):
+        comparison = self.rest("GET", "/repository/compare?" + urlencode({"from": old, "to": new, "straight": "true"}))
+        diffs = comparison.get("diffs")
+        require(comparison.get("compare_timeout") is False and isinstance(diffs, list) and diffs,
+                "decision diff unavailable or truncated")
+        require(all(not any(d.get(k) for k in ("deleted_file", "renamed_file", "collapsed", "too_large")) for d in diffs),
+                "decision diff contains deletion/rename or incomplete evidence")
+        paths = {p for application in applications for p in application["changed_paths"]}
+        require(paths == {d["new_path"] for d in diffs}, "decision application diff differs from the scoped receipt")
+        before, after = self.tree_files(old), self.tree_files(new)
+        changed = {p for p in before.keys() | after.keys() if before.get(p) != after.get(p)}
+        require(changed == paths and all(after.get(p, (None, None, None))[1:] == ("blob", "100644") for p in paths),
+                "complete tree diff differs from scoped document receipt")
+        for path in sorted(paths):
+            value = self.rest("GET", "/repository/files/" + quote(path, safe="") + "?" + urlencode({"ref": new}))
+            require(value.get("file_path") == path and value.get("commit_id") == new and value.get("encoding") == "base64",
+                    "decision artifact readback identity mismatch")
+            raw = base64.b64decode(value["content"], validate=True)
+            require(hashlib_sha(raw) == value["content_sha256"], "decision artifact readback hash mismatch")
+        for application in applications:
+            note_id = int(application["report_url"].rsplit("note_", 1)[1])
+            note = self.note(source, note_id)
+            require(note["id"] == note_id and new in note["body"] and
+                    all(p in note["body"] for p in application["changed_paths"]), "decision application report readback mismatch")
+
 
 class GitLabStore:
     """One immutable request per epic, with optimistic concurrency on every mutation.
@@ -187,7 +259,9 @@ def authorize_execution(old, request, config):
             and all(request[k] == old["request"][k] for k in ("project_id", "epic_issue_iid", "source_issue_iid", "branch"))
             and request["design_sha"] == old["checkpoint"]["candidate_sha"], "execution authorization changed epic/design")
     state = new_run(request)
-    for key in ("checkpoint", "checkpoint_sha256", "checkpoint_note_id", "attempts", "recoveries"):
+    for key in ("checkpoint", "checkpoint_sha256", "checkpoint_note_id", "attempts", "recoveries", "answer_batches"):
+        if key not in old:
+            continue
         state[key] = old[key]
     state["design_authorization"] = {"request": old["request"], "request_sha256": old["request_sha256"]}
     state["config_sha256"] = digest(config)
@@ -231,11 +305,18 @@ def main():
             if args.action == "tick":
                 state = Controller(api, store, config).tick()
             elif args.action == "resume":
-                require(state["status"] in {"needs_decision", "needs_access", "blocked"}, "run is not awaiting input")
-                state.update(status="running" if state["active"] else "ready",
-                             summary="Human requested reconciliation after input; all prior limits retained.")
+                answers = json.loads(os.environ.get("CTX_DECISION_ANSWERS", "[]"), object_pairs_hook=unique_object)
+                session = None
+                if state["active"]:
+                    sessions = api.sessions(state["active"]["session_id"], state["active"]["marker"])
+                    require(len(sessions) == 1, "native session status is missing or ambiguous")
+                    session = sessions[0]
+                resumed = resume_run(state, answers, session)
+                api.verify_answers(answers, state["request"]["source_issue_iid"], config["report_author_ids"])
+                state = resumed
                 store.save(state, revision)
         print(json.dumps({"status": state["status"], "summary": state["summary"],
+                          "objective": state["request"]["objective"], "next_action": next_step(state),
                           "sessions_used": len(state["attempts"]), "recoveries_used": state["recoveries"],
                           "checkpoint_note_id": state["checkpoint_note_id"]}))
         return 0
