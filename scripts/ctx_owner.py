@@ -95,7 +95,8 @@ def validate(value):
 
 def render(value):
     validate(value)
-    return f"{MARKER}\n```json\n{json.dumps(value, sort_keys=True, indent=2)}\n```\n{END}"
+    encoded = json.dumps(value, sort_keys=True, indent=2).replace("<", "\\u003c")
+    return f"{MARKER}\n```json\n{encoded}\n```\n{END}"
 
 
 def parse(body):
@@ -106,14 +107,19 @@ def parse(body):
     return validate(json.loads(encoded[8:-4], object_pairs_hook=dev.unique_object))
 
 
-def select(notes, *, source_issue_iid, epic):
+def select(notes, *, source_issue_iid, epic, trusted_author_ids):
     """Select complete caller-read notes; never fall back past a broken newer record.
 
     Notes must come from the verified source item, with server IDs/URLs, after
-    pagination and author checks. A JSON body cannot authenticate its own author.
+    pagination, with server-returned author_id. The caller obtains trusted writer
+    IDs from verified registration/session evidence, never note-body claims.
+    Untrusted authors cannot inject or poison state. This offline filter cannot
+    authenticate caller-supplied metadata or grant authority to a trusted writer.
     Legacy notes require agent-owned migration, not a fresh run or user log copying.
     """
     require(isinstance(notes, list), "source notes must be a list")
+    require(isinstance(trusted_author_ids, list) and trusted_author_ids and
+            all(type(i) is int and i > 0 for i in trusted_author_ids), "verified trusted writer IDs required")
     candidates, ids = [], set()
     for note in notes:
         require(isinstance(note, dict) and type(note.get("id")) is int and note["id"] > 0 and
@@ -121,6 +127,9 @@ def select(notes, *, source_issue_iid, epic):
         ids.add(note["id"])
         closure.note_url(note.get("url"), source_issue_iid)
         require(note["url"].endswith(f"#note_{note['id']}"), "note URL/ID mismatch")
+        require(type(note.get("author_id")) is int and note["author_id"] > 0, "server note author ID required")
+        if note["author_id"] not in trusted_author_ids:
+            continue
         if "<!-- ctx-owner-handoff:" not in note["body"]:
             continue
         value = parse(note["body"])
@@ -209,6 +218,7 @@ def main():
     parser.add_argument("input", type=Path)
     parser.add_argument("--source-issue", type=int)
     parser.add_argument("--epic")
+    parser.add_argument("--trusted-author-id", type=int, action="append", dest="trusted_author_ids")
     parser.add_argument("--observation", type=Path)
     parser.add_argument("--report-url")
     args = parser.parse_args()
@@ -222,7 +232,8 @@ def main():
                 return 0
             if args.action == "resume":
                 require(args.source_issue is not None and args.epic is not None, "verified source/epic required")
-                result = select(value, source_issue_iid=args.source_issue, epic=args.epic)
+                result = select(value, source_issue_iid=args.source_issue, epic=args.epic,
+                                trusted_author_ids=args.trusted_author_ids)
             elif args.action == "recover-closure":
                 require(args.observation is not None, "actual terminal observation required")
                 result = recover_closure(value, dev.read_json(args.observation), args.report_url)
