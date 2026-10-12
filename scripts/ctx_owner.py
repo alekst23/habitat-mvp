@@ -15,8 +15,10 @@ import ctx_development as dev
 import ctx_design_closure as closure
 from ctx_execution_budget import admission
 
-MARKER = "<!-- ctx-owner-handoff:v1 -->"
-END = "<!-- /ctx-owner-handoff -->"
+MARKER = "CTX_OWNER_HANDOFF_V1_BEGIN"
+END = "CTX_OWNER_HANDOFF_V1_END"
+LEGACY_MARKER = "<!-- ctx-owner-handoff:v1 -->"
+LEGACY_END = "<!-- /ctx-owner-handoff -->"
 PROJECT_ID = 87329027
 require = closure.require
 
@@ -95,19 +97,42 @@ def validate(value):
 
 def render(value):
     validate(value)
+    # Keep HTML in free text safe from the same note transport. Visible framing
+    # lives on separate lines, so marker text inside JSON strings cannot collide.
     encoded = json.dumps(value, sort_keys=True, indent=2).replace("<", "\\u003c")
-    return f"{MARKER}\n```json\n{encoded}\n```\n{END}"
+    return f"{MARKER}\n\n```json\n{encoded}\n```\n\n{END}"
 
 
-def parse(body):
-    require(isinstance(body, str) and body.count(MARKER) == body.count(END) == 1,
-            "missing or ambiguous native handoff")
-    encoded = body.split(MARKER, 1)[1].split(END, 1)[0].strip()
+def marker_lines(body):
+    require(isinstance(body, str), "note body must be text")
+    return [(i, line.strip()) for i, line in enumerate(body.splitlines())
+            if line.strip().startswith(("CTX_OWNER_HANDOFF_", "<!-- ctx-owner-handoff:",
+                                        "<!-- /ctx-owner-handoff"))]
+
+
+def decode_block(encoded):
     require(encoded.startswith("```json\n") and encoded.endswith("\n```"), "malformed native handoff")
     return validate(json.loads(encoded[8:-4], object_pairs_hook=dev.unique_object))
 
 
-def select(notes, *, source_issue_iid, epic, trusted_author_ids):
+def parse(body):
+    markers = marker_lines(body)
+    require([text for _, text in markers] in ([MARKER, END], [LEGACY_MARKER, LEGACY_END]),
+            "missing or ambiguous native handoff")
+    begin, end = (index for index, _ in markers)
+    return decode_block("\n".join(body.splitlines()[begin + 1:end]).strip())
+
+
+def parse_legacy(body):
+    """Explicit migration only, after select verifies the caller-selected note."""
+    require(not marker_lines(body), "marked handoffs must use ordinary parsing")
+    lines = body.splitlines()
+    fences = [i for i, line in enumerate(lines) if line.strip().startswith(("```", "~~~"))]
+    require(len(fences) == 2, "legacy note requires exactly one fenced JSON block")
+    return decode_block("\n".join(lines[fences[0]:fences[1] + 1]).strip())
+
+
+def select(notes, *, source_issue_iid, epic, trusted_author_ids, legacy_note_ids=None):
     """Select complete caller-read notes; never fall back past a broken newer record.
 
     Notes must come from the verified source item, with server IDs/URLs, after
@@ -120,6 +145,10 @@ def select(notes, *, source_issue_iid, epic, trusted_author_ids):
     require(isinstance(notes, list), "source notes must be a list")
     require(isinstance(trusted_author_ids, list) and trusted_author_ids and
             all(type(i) is int and i > 0 for i in trusted_author_ids), "verified trusted writer IDs required")
+    legacy_ids = [] if legacy_note_ids is None else legacy_note_ids
+    require(isinstance(legacy_ids, list) and all(type(i) is int and i > 0 for i in legacy_ids) and
+            len(legacy_ids) == len(set(legacy_ids)), "invalid/duplicate legacy note IDs")
+    migrated = set()
     candidates, ids = [], set()
     for note in notes:
         require(isinstance(note, dict) and type(note.get("id")) is int and note["id"] > 0 and
@@ -129,13 +158,19 @@ def select(notes, *, source_issue_iid, epic, trusted_author_ids):
         require(note["url"].endswith(f"#note_{note['id']}"), "note URL/ID mismatch")
         require(type(note.get("author_id")) is int and note["author_id"] > 0, "server note author ID required")
         if note["author_id"] not in trusted_author_ids:
+            require(note["id"] not in legacy_ids, "legacy note must have a verified trusted writer")
             continue
-        if "<!-- ctx-owner-handoff:" not in note["body"]:
+        if note["id"] in legacy_ids:
+            value = parse_legacy(note["body"])
+            migrated.add(note["id"])
+        elif marker_lines(note["body"]):
+            value = parse(note["body"])
+        else:
             continue
-        value = parse(note["body"])
         require(value["objective"]["source_issue_iid"] == source_issue_iid and
                 value["objective"]["epic"] == epic, "handoff source/epic mismatch")
         candidates.append((note["id"], note["url"], value))
+    require(migrated == set(legacy_ids), "selected legacy note not found")
     if not candidates:
         return {"action": "reconcile_legacy", "reason": "read existing notes/artifacts; preserve history, never initialize over it"}
     candidates.sort(key=lambda row: row[0])
@@ -219,10 +254,13 @@ def main():
     parser.add_argument("--source-issue", type=int)
     parser.add_argument("--epic")
     parser.add_argument("--trusted-author-id", type=int, action="append", dest="trusted_author_ids")
+    parser.add_argument("--legacy-note-id", type=int, action="append", dest="legacy_note_ids",
+                        help="Explicit verified marker-stripped checkpoint to migrate (resume only)")
     parser.add_argument("--observation", type=Path)
     parser.add_argument("--report-url")
     args = parser.parse_args()
     try:
+        require(args.legacy_note_ids is None or args.action == "resume", "legacy migration requires resume")
         if args.action == "parse":
             result = parse(args.input.read_text())
         else:
@@ -233,7 +271,7 @@ def main():
             if args.action == "resume":
                 require(args.source_issue is not None and args.epic is not None, "verified source/epic required")
                 result = select(value, source_issue_iid=args.source_issue, epic=args.epic,
-                                trusted_author_ids=args.trusted_author_ids)
+                                trusted_author_ids=args.trusted_author_ids, legacy_note_ids=args.legacy_note_ids)
             elif args.action == "recover-closure":
                 require(args.observation is not None, "actual terminal observation required")
                 result = recover_closure(value, dev.read_json(args.observation), args.report_url)

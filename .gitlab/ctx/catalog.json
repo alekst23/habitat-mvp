@@ -89,6 +89,7 @@
       "runtime_parallelism": "serial-fallback; native parallel delegation unverified",
       "publication_status": "Published and enabled v1.8.0 on 2026-10-11 UTC. Full saved 40873-byte YAML equals reviewed source after final-newline normalization. Resumable owner discovers durable state, derives next work and retains technical recovery; same 64-delegation ceiling, component tools, private visibility, service account and active Mention/Assign/Assign reviewer triggers. Controller remains disabled; live two-run acceptance pending.",
       "catalog_version": "1.8.0",
+      "candidate_status": "Local transport-safe handoff candidate; not published. Visible framing and explicit verified legacy-note migration address the session 9303064 persistence stop. Independent review, E2 helper sync, catalog publication and same-tool-path live readback remain required.",
       "published_source_commit": "462fd9f1dd85aae939f5f481e7e8b59fc60fa7f3",
       "publication_history": [
         {
@@ -113,7 +114,7 @@
         }
       ],
       "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234",
-      "definition_sha256": "d596106c64a8b730370adc8e61609f91a6b7217d78da7ec1d3a912f948203dd9",
+      "definition_sha256": "575262d3f5c6fb3d4eb1321b536c426531caebfc854e328439e0a6bd695c9779",
       "verification": "Source MR !31 passed pipeline 2936414071 at 462fd9f1dd85aae939f5f481e7e8b59fc60fa7f3; Duo follow-up review note 3994185023 confirmed both fixes and no new findings; merged main 56d930d5. Helper-sync MR !32 passed pipeline 2936414062 at 039ccb54 and independent follow-up review note 3994187239; merged E2 cbd92690. Product docs/design and docs/plan remain byte-for-byte unchanged from d2ebf02. 184 local workflow tests, validator, diff and secret scans passed. No E2 application run, MR !8 merge, permissions change or controller activation. Live two-run acceptance remains pending. Full saved YAML SHA-256 f474cc9682e0a5e8d16becb696ba448b79a025630bc9e72683d175a209bfb660 read back from catalog v1.8.0.",
       "managed_terminal_tokens": {
         "design": [

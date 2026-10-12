@@ -1,6 +1,7 @@
 """Native owner fixtures: durable restart/recovery, not live GitLab acceptance."""
 from copy import deepcopy
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -38,6 +39,62 @@ def select(notes):
 
 
 class OwnerTests(unittest.TestCase):
+    def test_render_survives_note_transport_stripping_html_comments(self):
+        value = snapshot()
+        value["objective"]["goal"] += " Quote <!-- ctx-owner-handoff:v1 --> and <!-- /ctx-owner-handoff -->"
+        published = re.sub(r"<!--[\s\S]*?-->", "", owner.render(value))
+        self.assertEqual(owner.parse(published), value)
+        self.assertEqual(select([note(value, 101) | {"body": published}])["handoff"], value)
+        self.assertEqual(owner.parse(published.replace("\n", "\r\n")), value)
+
+    def test_explicit_legacy_migration_preserves_full_state_and_trust_boundary(self):
+        value = snapshot()
+        value["objective"]["mode"] = "design-closure"
+        value["closure"]["repairs"] = [{"base_sha": "c" * 40, "result_sha": SHA,
+            "report_url": BASE + "/-/issues/10#note_98"}]
+        value["closure"]["active"] = {"kind": "repair", "base_sha": SHA,
+                                      "finding_ids": ["DR1"], "session_id": 123}
+        value = owner.recover_closure(value, {"project_id": 87329027, "session_id": 123,
+            "status": "failed", "observed_head": SHA}, BASE + "/-/issues/10#note_99")
+        value["session"]["delegations"] = 1  # Reserved, never dispatched: still consumed.
+        value["decisions"] = [{"id": "Q6", "question": "Who may sign up?", "answer": "Email owners",
+            "source_url": BASE + "/-/issues/10#note_99", "state": "queued", "targets": ["E2"]}]
+        body = "Legacy checkpoint\n```json\n" + json.dumps(value, indent=2) + "\n```"
+        legacy = note(value, 101) | {"body": body}
+        # No automatic adoption of arbitrary JSON and no change to ordinary parse.
+        self.assertEqual(select([legacy])["action"], "reconcile_legacy")
+        with self.assertRaises(ValueError):
+            owner.parse(body)
+        def migrate(notes, ids=(101,)):
+            return owner.select(notes, source_issue_iid=10, epic="E2", trusted_author_ids=[42],
+                                legacy_note_ids=list(ids))
+        restored = migrate([legacy])
+        self.assertEqual(restored["handoff"], value)
+        self.assertEqual(restored["next"]["action"], "reconcile_answers")
+        saved = note(owner.parse(owner.render(restored["handoff"])), 102)
+        self.assertEqual(migrate([legacy, saved])["handoff"], value)
+        reset = deepcopy(value)
+        reset["closure"]["repairs"] = []
+        with self.assertRaisesRegex(ValueError, "budget"):
+            migrate([legacy, note(reset, 102)])
+        for notes, ids in (([legacy], [999]), ([legacy], [101, 101]),
+                           ([legacy | {"author_id": 99}], [101]),
+                           ([legacy | {"body": body + "\n```json\n{}\n```"}], [101]),
+                           ([legacy | {"body": body.replace('"version": 1', '"version": 1, "version": 1', 1)}], [101])):
+            with self.subTest(notes=notes, ids=ids), self.assertRaises(ValueError):
+                migrate(notes, ids)
+
+    def test_legacy_marked_notes_and_visible_marker_ambiguity(self):
+        value = snapshot()
+        legacy = "<!-- ctx-owner-handoff:v1 -->\n```json\n" + json.dumps(value) + "\n```\n<!-- /ctx-owner-handoff -->"
+        self.assertEqual(owner.parse(legacy), value)
+        self.assertEqual(select([note(value, 101) | {"body": legacy}, note(value, 102)])["handoff"], value)
+        for index, body in enumerate((owner.render(value) + "\n" + legacy,
+                     owner.render(value).replace("CTX_OWNER_HANDOFF_V1_BEGIN", "CTX_OWNER_HANDOFF_V2_BEGIN"),
+                     owner.render(value).replace("CTX_OWNER_HANDOFF_V1_END", ""))):
+            with self.subTest(case=index), self.assertRaises(ValueError):
+                select([note(value, 101), note(value, 102) | {"body": body}])
+
     def test_user_text_containing_handoff_markers_round_trips(self):
         value = snapshot()
         value["objective"]["goal"] += " Quote " + owner.MARKER + " and " + owner.END
@@ -169,6 +226,13 @@ class OwnerTests(unittest.TestCase):
             bad = subprocess.run(command[:-1] + ["E9"], capture_output=True, text=True, timeout=10)
             self.assertEqual(bad.returncode, 2)
             self.assertEqual(json.loads(bad.stdout)["action"], "reconcile_state")
+            legacy = note(snapshot(), 101)
+            legacy["body"] = "```json\n" + json.dumps(snapshot()) + "\n```"
+            path.write_text(json.dumps([legacy]))
+            migrated = subprocess.run(command + ["--legacy-note-id", "101"], capture_output=True,
+                                      text=True, timeout=10)
+            self.assertEqual(migrated.returncode, 0, migrated.stdout + migrated.stderr)
+            self.assertEqual(json.loads(migrated.stdout)["handoff"], snapshot())
             self.assertEqual(list(Path(directory).iterdir()), [path])
 
 

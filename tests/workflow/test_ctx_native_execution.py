@@ -132,7 +132,9 @@ class NativeAdmissionTests(unittest.TestCase):
         for term in ("No controller installation is required", "Before EVERY",
                      "--delegations RESERVED_COUNT", "integrate.more means continue here",
                      "Native sessions do not auto-restart", "scripts/ctx_owner.py resume/next",
-                     "ctx-owner-handoff:v1", "next.owner_action", "NEXT AGENT RUN"):
+                     "ctx-owner-handoff:v1", "next.owner_action", "NEXT AGENT RUN",
+                     "CTX_OWNER_HANDOFF_V1_BEGIN", "CTX_OWNER_HANDOFF_V1_END",
+                     "--legacy-note-id", "never HTML comments"):
             self.assertIn(term, prompt)
         worker = next(p for p in flow["prompts"] if p["prompt_id"] == "design_prompt")["prompt_template"]["system"]
         self.assertIn("For mode=technical-addendum or mode=decision-application", worker)
@@ -145,9 +147,9 @@ class NativeAdmissionTests(unittest.TestCase):
             ".gitlab/duo/flows/ctx-development.yml"]
         self.assertNotIn("pending_catalog_version", catalog)
         self.assertEqual(catalog["catalog_version"], "1.8.0")
-        self.assertNotIn("candidate_status", catalog)
+        self.assertIn("not published", catalog["candidate_status"])
         self.assertIn("live two-run acceptance pending", catalog["publication_status"])
-        self.assertEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
+        self.assertNotEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
         self.assertEqual(catalog["publication_history"][-1]["catalog_version"], "1.7.0")
         controller = json.loads((ROOT / ".gitlab/ctx/controller.json").read_text())
         self.assertFalse(controller["enabled"])

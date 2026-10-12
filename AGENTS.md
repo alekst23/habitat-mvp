@@ -10,6 +10,13 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Local transport-fix candidate: ctx_owner.py now emits visible native handoff
+markers and can explicitly migrate a verified marker-stripped legacy note. Follow
+the recovery section of single-shot-development.md; preserve full state and exact
+readback. This candidate is not published or synchronized to E2. Development
+v1.8.0's session 9303064 stopped on the HTML-comment framing defect; do not claim
+runtime acceptance or retry the unchanged published flow as a remedy.
+
 Published resumable owner (Project v1.3.0 / Development v1.8.0): follow the handoff section
 in docs/development/single-shot-development.md. A short continue request restores
 the approved objective from source notes; scripts/ctx_owner.py validates the full

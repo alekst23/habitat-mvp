@@ -20,6 +20,10 @@ resource/receipt history; never substitute a prose summary. Read back and compar
 the complete parsed payload. The next run discovers this on the source issue from
 "Continue E2". Keep machine references in the handoff, not a long user command.
 Legacy checkpoints require reconciliation and lossless migration, never reset.
+New notes use visible CTX_OWNER_HANDOFF_V1_BEGIN and CTX_OWNER_HANDOFF_V1_END
+lines from the renderer, not HTML comments. Marker-stripped legacy notes need the
+guide's explicit verified-note migration, then a new complete read-verified note.
+Do not repair transport by committing checkpoint-only files that move the design SHA.
 
 Do not mark pending work complete or lose earlier failure evidence. Give the same
 ctx-development entry point, actual source/epic IIDs, exact refs and saved journal
