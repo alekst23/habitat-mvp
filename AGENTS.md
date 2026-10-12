@@ -10,12 +10,14 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
-Local transport-fix candidate: ctx_owner.py now emits visible native handoff
-markers and can explicitly migrate a verified marker-stripped legacy note. Follow
-the recovery section of single-shot-development.md; preserve full state and exact
-readback. This candidate is not published or synchronized to E2. Development
-v1.8.0's session 9303064 stopped on the HTML-comment framing defect; do not claim
-runtime acceptance or retry the unchanged published flow as a remedy.
+Development v1.9.0 is published/enabled (2026-10-12 UTC): ctx_owner.py emits visible
+handoff markers and explicitly migrates verified marker-stripped legacy notes.
+Follow single-shot-development.md's recovery section; preserve full state and exact
+readback. Source !35 and E2 helper sync !36 passed CI and independent Duo review,
+merging at 9deb5530 and 9b4e8810. Full saved catalog YAML matches source 25649246
+after final-newline normalization. E2 product docs/plan are unchanged from df380b13;
+MR !8 stays open. Project remains v1.3.0. References to v1.8.0 below are historical.
+Actual note-tool migration/delegation remains unverified; no execution was launched.
 
 Published resumable owner (Project v1.3.0 / Development v1.8.0): follow the handoff section
 in docs/development/single-shot-development.md. A short continue request restores
