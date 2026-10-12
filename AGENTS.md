@@ -10,7 +10,12 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
-Project v1.4.0 / Design v1.9.0 are local next-action candidates, not published.
+Project v1.4.0 / Design v1.9.0 are published and enabled (2026-10-12 UTC).
+Full saved prompts match reviewed source 0ab47996 after final-newline normalization;
+private visibility, unchanged tools and no external MCP were read back. Source
+MR !39 passed CI and independent Duo review, merging main at 661e5fdd. Publication
+did not change the E2 branch or start execution; no helper synchronization is needed
+for these chat-only prompt/shared-default-branch guide changes.
 Read docs/development/next-action.md: do authorized work or give the exact required
 human action in the same response as the result. Preserve read-only status, scoped
 closure loops, cumulative budgets and human-triggered dispatch. Transcript-derived
@@ -22,7 +27,7 @@ Follow single-shot-development.md's recovery section; preserve full state and ex
 readback. Source !35 and E2 helper sync !36 passed CI and independent Duo review,
 merging at 9deb5530 and 9b4e8810. Full saved catalog YAML matches source 25649246
 after final-newline normalization. E2 product docs/plan are unchanged from df380b13;
-MR !8 stays open. Project remains v1.3.0. References to v1.8.0 below are historical.
+MR !8 stayed open. Project was then v1.3.0. References to v1.8.0 below are historical.
 Actual note-tool migration/delegation remains unverified; no execution was launched.
 
 Published resumable owner (Project v1.3.0 / Development v1.8.0): follow the handoff section
@@ -42,8 +47,8 @@ and close operations under the `ctx-` prefix. Add the six delivery operations
 listed there. Lifecycle stages classify evidence; they do not define agent or
 operation boundaries.
 
-Planning is conversational. **CTX Project v1.3.0** is published and enabled with
-full catalog readback (2026-10-11 UTC); the chat picker was verified on v1.0.0.
+Planning is conversational. **CTX Project v1.4.0** is published and enabled with
+full catalog readback (2026-10-12 UTC); the chat picker was verified on v1.0.0.
 The user's E2 progression defects motivated this revision; live behavioral proof remains pending.
 It unifies Planning/Design procedures and project-status assessment in one chat;
 read docs/development/project-owner.md. When using CTX Project, Planning

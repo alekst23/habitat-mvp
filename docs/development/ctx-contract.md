@@ -6,16 +6,18 @@ reads/interviews are live-tested. Approved planning publication and revised
 development/delivery execution need separate validation. See
 [implementation status](gitlab-workflow.md).
 
-The published [CTX Project v1.3.0](project-owner.md) unifies assessment, Planning
+The published [CTX Project v1.4.0](project-owner.md) unifies assessment, Planning
 and Design in one conversation by loading the existing procedures. Catalog readback
 and enablement are verified; live model behavior is not. It does not retire the
 working specialist agents. Through CTX Project, stage names refer to modes and artifact ownership,
 not required chat switches. All scope, interview, evidence and security rules remain.
 
-The candidate [next-action contract](next-action.md) makes Project/Design responses
+The published [next-action contract](next-action.md) makes Project/Design responses
 actionable in the first reply: perform authorized work or give the exact next
 human action at a real boundary. Status remains read-only; guidance is not dispatch
-and does not enlarge repair budgets. Candidate catalog publication is still pending.
+and does not enlarge repair budgets. Project v1.4.0 / Design v1.9.0 full saved
+prompts, versions, unchanged tools and enablement were read back on 2026-10-12 UTC;
+live conversational acceptance remains pending.
 
 Preserve the original development process under the `ctx-` prefix and extend it
 with six delivery operations. The nine prize stages are a coverage map over this

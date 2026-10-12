@@ -9,13 +9,11 @@
   "system_prompt_file": "ctx-project.md",
   "system_prompt_sha256": "8d0449a58bb206da4f23548af1d7f56bba9d991299e7d193a8d8ffdebf957670",
   "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016538",
-  "catalog_version": "1.3.0",
-  "pending_catalog_version": "1.4.0",
-  "candidate_status": "Unpublished next-action contract: actionable first replies, complete bounded closure handoffs, plain-language review explanation and explicit budget/dispatch boundaries. Tools and published registration unchanged.",
+  "catalog_version": "1.4.0",
   "enabled_in_project": true,
-  "published_system_prompt_sha256": "2f6a8e9ff834cdb90dcecafbd87ae889f9182d02a5fa3e74c9c639cf912349f3",
-  "published_source_commit": "462fd9f1dd85aae939f5f481e7e8b59fc60fa7f3",
-  "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/31",
+  "published_system_prompt_sha256": "14dd6dd4233ac98cf2510893cd1fa261054e70c5f7e5900459acbeb2a79a5a7f",
+  "published_source_commit": "0ab47996c52ec70a2f137f1dd9243a91036a706b",
+  "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/39",
   "publication_history": [
     {
       "catalog_version": "1.0.0",
@@ -36,6 +34,13 @@
       "published_source_commit": "c1a472acaf05d483ea24ed9bac65c9cc46e7f819",
       "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/28",
       "verification": "passed 2026-10-11 UTC: full 18178-byte saved prompt exactly matches source c1a472a after final-newline normalization; private visibility, exact 21-tool set, no MCP, v1.2.0 and project enablement read back through UI"
+    },
+    {
+      "catalog_version": "1.3.0",
+      "published_system_prompt_sha256": "2f6a8e9ff834cdb90dcecafbd87ae889f9182d02a5fa3e74c9c639cf912349f3",
+      "published_source_commit": "462fd9f1dd85aae939f5f481e7e8b59fc60fa7f3",
+      "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/31",
+      "verification": "passed 2026-10-11 UTC: full 19790-byte saved prompt matched source after final-newline normalization; enabled/private, exact 21-tool set and no MCP read back. Native two-run acceptance remained pending."
     }
   ],
   "trigger": "Duo Chat Add new chat > CTX Project; refresh after enablement; no mention/assignment/flow trigger",
@@ -107,9 +112,9 @@
     "Create Merge Request"
   ],
   "external_mcp_servers": [],
-  "publication_status": "Published and enabled v1.3.0 on 2026-10-11 UTC: resumable-owner handoff, short Continue E2 requests and agent-owned technical recovery. Full 19790-byte saved prompt equals reviewed source after final-newline normalization. Same 21 tools, private visibility and no external MCP. Native flow invocation remains human-triggered; live two-run acceptance pending.",
+  "publication_status": "Published and enabled v1.4.0 on 2026-10-12 UTC: actionable first replies and complete bounded closure handoffs. Full 22596-byte saved prompt equals reviewed source after final-newline normalization. Same 21 tools, private visibility and no external MCP. Native flow invocation remains human-triggered; live next-action and two-run acceptance pending.",
   "verification": {
-    "catalog_readback": "passed 2026-10-11 UTC: full 19790-byte saved prompt matches source 462fd9f1 after final-newline normalization, SHA-256 2f6a8e9ff834cdb90dcecafbd87ae889f9182d02a5fa3e74c9c639cf912349f3. v1.3.0, enabled/private, exact 21-tool set and no MCP read back through UI.",
+    "catalog_readback": "passed 2026-10-12 UTC: full 22596-byte saved prompt matches source 0ab47996 after final-newline normalization, SHA-256 14dd6dd4233ac98cf2510893cd1fa261054e70c5f7e5900459acbeb2a79a5a7f. v1.4.0, enabled/private, exact 21-tool set and no MCP read back through UI. MR !39 passed pipeline 2940126601 and independent Duo review note 4000744687, then merged main at 661e5fdd. No E2 branch change or application session was initiated by publication.",
     "chat_picker": "passed 2026-10-10 after page refresh; CTX Project appears alongside Planning and Design; no prompt submitted",
     "chat_interview_save_smoke": "pending",
     "fresh_chat_status_reconciliation": "pending",

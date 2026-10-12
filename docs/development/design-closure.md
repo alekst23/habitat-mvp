@@ -47,7 +47,10 @@ invocation in the same response as the saved-design or review result, not after
 the user asks how. For authorized closure use the permitted review/repair/re-review
 loop, not review-only micro-handoffs unless explicitly requested. Exhausted limits
 need a supported remedy, not repeated Continue instructions or chat-side bypasses.
-The Project v1.4.0 / Design v1.9.0 prompt changes are unpublished candidates.
+Project v1.4.0 / Design v1.9.0 were published and read back on 2026-10-12 UTC
+from reviewed source 0ab47996 (MR !39). Tools, authority and budgets are unchanged;
+live next-action acceptance remains pending. This chat-only update required no
+E2 helper synchronization or application run.
 
 ## Supervisor algorithm (before any execution journal or ticket claim)
 
