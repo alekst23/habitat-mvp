@@ -1,12 +1,25 @@
 # CTX single-shot Development
 
-Local transport-fix candidate (not published): session 9303064 reported that the
-note tool dropped the v1 HTML-comment delimiters before readback. The candidate
-codec emits visible markers, retains intact legacy reads and supports explicit
-verified-note migration. Review, helper synchronization, catalog publication and
-real tool-path readback are still required; the published versions below are unchanged.
+**Published v1.9.0: transport-safe native handoffs.** Session 9303064 reported
+HTML-comment delimiter loss. The new codec emits visible markers, retains intact
+legacy reads and supports explicit verified-note migration. Source !35 at 25649246
+passed pipeline 2936852177 and independent Duo review note 3994970235, merging to
+main at 9deb5530. E2 helper sync !36 at 0f6d1883 passed pipeline 2936856436 and Duo
+review note 3994972774, merging at 9b4e8810. All 187 local tests, CTX validation,
+diff and outgoing secret checks passed. Product docs/design and docs/plan remain
+byte-identical to df380b13. The source and helper changes are now available to runs.
 
-**Published v1.8.0: resumable native multi-step execution is the default.**
+On 2026-10-12 UTC, full saved catalog v1.9.0 YAML (40948 bytes) matched source
+256492461fb329f2b018fc5aa3348a9a472f14ce after final-newline normalization, SHA-256
+080a37445951b671901af655666065282cd0174ed39d08befc07f7e9f15400bd. Private visibility,
+enabled state, service account, active Mention/Assign/Assign reviewer triggers,
+toolsets and 64-delegation ceiling are unchanged. Project remains v1.3.0.
+No execution was launched, no source checkpoint rewritten and MR !8 remains open.
+Same-tool-path migration and delegation still need live verification: local fixtures
+and catalog readback do not prove that runtime behavior. Resume with the existing
+Development mention plus `Continue E2`; the supervisor owns legacy reconciliation.
+
+Historical v1.8.0 baseline: resumable native multi-step execution is the default.
 One human invocation advances eligible phases/tickets, saving between delegations.
 No controller, protected controller state, scheduler or new credential is required.
 Full catalog readback passed on 2026-10-11 UTC after MR !31; MR !32 synchronized
@@ -265,7 +278,7 @@ reconciliation without duplicating saved work. Stop on actual missing adapters o
 permissions; preserve merge/deploy controls. Record session/job/note/SHA evidence.
 Publication and fixture tests do not count as that live smoke.
 
-Current publication: !31 pipeline 2936414071 passed at 462fd9f1; independent Duo
+Previous publication (v1.8.0): !31 pipeline 2936414071 passed at 462fd9f1; independent Duo
 review 3994185023 confirmed the delimiter/provenance fixes, then main merged at
 56d930d5. Helper-sync !32 pipeline 2936414062 and review 3994187239 passed at
 039ccb54; E2 merged at cbd92690. Product specs/plan are byte-for-byte unchanged.

@@ -87,10 +87,9 @@
       "mode": "bounded-supervisor",
       "max_delegations": 64,
       "runtime_parallelism": "serial-fallback; native parallel delegation unverified",
-      "publication_status": "Published and enabled v1.8.0 on 2026-10-11 UTC. Full saved 40873-byte YAML equals reviewed source after final-newline normalization. Resumable owner discovers durable state, derives next work and retains technical recovery; same 64-delegation ceiling, component tools, private visibility, service account and active Mention/Assign/Assign reviewer triggers. Controller remains disabled; live two-run acceptance pending.",
-      "catalog_version": "1.8.0",
-      "candidate_status": "Local transport-safe handoff candidate; not published. Visible framing and explicit verified legacy-note migration address the session 9303064 persistence stop. Independent review, E2 helper sync, catalog publication and same-tool-path live readback remain required.",
-      "published_source_commit": "462fd9f1dd85aae939f5f481e7e8b59fc60fa7f3",
+      "publication_status": "Published and enabled v1.9.0 on 2026-10-12 UTC. Full saved 40948-byte YAML equals reviewed source after final-newline normalization. Visible handoff framing and explicit trusted legacy-note migration repair the session 9303064 persistence stop. Same 64-delegation ceiling, component tools, private visibility, service account and active Mention/Assign/Assign reviewer triggers. Controller remains disabled; same-tool-path recovery and live two-run acceptance pending.",
+      "catalog_version": "1.9.0",
+      "published_source_commit": "256492461fb329f2b018fc5aa3348a9a472f14ce",
       "publication_history": [
         {
           "catalog_version": "1.5.0",
@@ -111,11 +110,18 @@
           "published_definition_sha256": "2444b4bfc77817004af195a9338c462d49ce480c9c70e6a761afb1176a44b45c",
           "catalog_saved_definition_sha256": "295840077d96585cff12da9cc72a2fcf716456e77488405da63eb623be967560",
           "verification": "MR !28 pipeline 2936042723 passed at c1a472a; Duo review note 3993463855 had no findings; merged main 64738d8. Full saved v1.7.0 YAML (40838 bytes) exactly equals committed source with final newline trimmed, including max_delegations=64 and unchanged toolsets. MR !29 pipeline 2936095389 passed at e86612d; independent follow-up review note 3993535891 confirmed the stale-decision fix; E2 merge d2ebf02 preserves docs/design and docs/plan byte-for-byte. 174 source tests passed. Source/helper secret and diff checks passed. No E2 application run, product MR !8 merge or controller activation. Native repeated delegation, repair and decision-resume behavior still needs live acceptance; application adapters/evidence remain separate prerequisites."
+        },
+        {
+          "catalog_version": "1.8.0",
+          "published_source_commit": "462fd9f1dd85aae939f5f481e7e8b59fc60fa7f3",
+          "published_definition_sha256": "d596106c64a8b730370adc8e61609f91a6b7217d78da7ec1d3a912f948203dd9",
+          "catalog_saved_definition_sha256": "f474cc9682e0a5e8d16becb696ba448b79a025630bc9e72683d175a209bfb660",
+          "verification": "Source !31 passed pipeline 2936414071 and independent follow-up review 3994185023; merged main 56d930d5. E2 sync !32 passed pipeline 2936414062 and independent review 3994187239; merged cbd92690. 184 local tests and full 40873-byte catalog readback passed. Subsequent native session 9303064 reported HTML-comment delimiter loss and stopped before dispatch; v1.9.0 repairs this transport defect. No successful live two-run acceptance was established."
         }
       ],
       "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234",
       "definition_sha256": "575262d3f5c6fb3d4eb1321b536c426531caebfc854e328439e0a6bd695c9779",
-      "verification": "Source MR !31 passed pipeline 2936414071 at 462fd9f1dd85aae939f5f481e7e8b59fc60fa7f3; Duo follow-up review note 3994185023 confirmed both fixes and no new findings; merged main 56d930d5. Helper-sync MR !32 passed pipeline 2936414062 at 039ccb54 and independent follow-up review note 3994187239; merged E2 cbd92690. Product docs/design and docs/plan remain byte-for-byte unchanged from d2ebf02. 184 local workflow tests, validator, diff and secret scans passed. No E2 application run, MR !8 merge, permissions change or controller activation. Live two-run acceptance remains pending. Full saved YAML SHA-256 f474cc9682e0a5e8d16becb696ba448b79a025630bc9e72683d175a209bfb660 read back from catalog v1.8.0.",
+      "verification": "Source !35 passed pipeline 2936852177 at 256492461fb329f2b018fc5aa3348a9a472f14ce and independent Duo review 3994970235 with no findings; merged main 9deb5530d295cf42d8f1db1417e6c1beb681f839. E2 helper sync !36 passed pipeline 2936856436 at 0f6d1883c2da231891b933f0f6568eaa1df22cb9 and independent Duo review 3994972774 with no findings; merged 9b4e88102972b525088ddc47f026a8a5c5277390. All 187 local tests, validator, diff and secret scans passed. E2 docs/design and docs/plan remain byte-identical to df380b13. Full saved v1.9.0 YAML SHA-256 080a37445951b671901af655666065282cd0174ed39d08befc07f7e9f15400bd read back on 2026-10-12 UTC, with enabled/private state, unchanged service account and active triggers. No source checkpoint rewritten, application/closure run launched, product MR !8 merge, permissions change or controller activation. Actual note-tool migration and live two-run acceptance remain pending.",
       "managed_terminal_tokens": {
         "design": [
           "ready",
@@ -155,8 +161,8 @@
           "blocked"
         ]
       },
-      "published_definition_sha256": "d596106c64a8b730370adc8e61609f91a6b7217d78da7ec1d3a912f948203dd9",
-      "catalog_saved_definition_sha256": "f474cc9682e0a5e8d16becb696ba448b79a025630bc9e72683d175a209bfb660"
+      "published_definition_sha256": "575262d3f5c6fb3d4eb1321b536c426531caebfc854e328439e0a6bd695c9779",
+      "catalog_saved_definition_sha256": "080a37445951b671901af655666065282cd0174ed39d08befc07f7e9f15400bd"
     },
     ".gitlab/duo/flows/ctx-delivery.yml": {
       "operations": [
