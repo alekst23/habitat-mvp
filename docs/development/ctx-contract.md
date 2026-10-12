@@ -12,6 +12,11 @@ and enablement are verified; live model behavior is not. It does not retire the
 working specialist agents. Through CTX Project, stage names refer to modes and artifact ownership,
 not required chat switches. All scope, interview, evidence and security rules remain.
 
+The candidate [next-action contract](next-action.md) makes Project/Design responses
+actionable in the first reply: perform authorized work or give the exact next
+human action at a real boundary. Status remains read-only; guidance is not dispatch
+and does not enlarge repair budgets. Candidate catalog publication is still pending.
+
 Preserve the original development process under the `ctx-` prefix and extend it
 with six delivery operations. The nine prize stages are a coverage map over this
 process. There is no one-operation-per-stage requirement.

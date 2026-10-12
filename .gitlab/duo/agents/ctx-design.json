@@ -7,9 +7,11 @@
   "project_id": 87329027,
   "project_path": "gitlab-ai-hackathon/transcend-october-2026/43066631/showcase",
   "system_prompt_file": "ctx-design.md",
-  "system_prompt_sha256": "29b34d2790da8a78467564d270ebb2568ae93dd522e9ed3818634e8e0791a09a",
+  "system_prompt_sha256": "ea335e9fb6f47cc2f697226d8bb4b96ec30de9d5436aa1bfa035bf175a7d172c",
   "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016255",
   "catalog_version": "1.8.0",
+  "pending_catalog_version": "1.9.0",
+  "candidate_status": "Unpublished next-action contract: actionable first replies, complete bounded closure handoffs, plain-language review explanation and explicit budget/dispatch boundaries. Tools and published registration unchanged.",
   "enabled_in_project": true,
   "operations": [
     "ctx-spec-interview",
@@ -63,6 +65,7 @@
     "catalog_saved_system_prompt_sha256": "97bd0e37eb75ad49df8273735e6f929138f8e63a27440379647dd738febd61b3"
   }],
   "verification": {
+    "next_action_live": "pending; replay docs/development/next-action.md transcript cases after publication; local prompt checks are not live conversation proof",
     "chat_interview_smoke": "passed 2026-10-07; source issue 10; project, issue, repository-file and issue-note reads observed; normal prose plus one design question with options; no write or flow-start call",
     "issue_note_save_readback": "user reports an earlier note on epic 2; revised commit-and-readback path not yet exercised",
     "design_commit_readback": "MR !8 contains design commit 89c3018 and a saved-spec report; structural/content defects found 2026-10-08. Expanded repair and new catalog behavior still require review/live validation.",

@@ -7,9 +7,11 @@
   "project_id": 87329027,
   "project_path": "gitlab-ai-hackathon/transcend-october-2026/43066631/showcase",
   "system_prompt_file": "ctx-project.md",
-  "system_prompt_sha256": "0be7beda3cc56ccae83d23e74d9a9aa41b0d47f7bd78536d40c43006fdd47265",
+  "system_prompt_sha256": "8d0449a58bb206da4f23548af1d7f56bba9d991299e7d193a8d8ffdebf957670",
   "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016538",
   "catalog_version": "1.3.0",
+  "pending_catalog_version": "1.4.0",
+  "candidate_status": "Unpublished next-action contract: actionable first replies, complete bounded closure handoffs, plain-language review explanation and explicit budget/dispatch boundaries. Tools and published registration unchanged.",
   "enabled_in_project": true,
   "published_system_prompt_sha256": "2f6a8e9ff834cdb90dcecafbd87ae889f9182d02a5fa3e74c9c639cf912349f3",
   "published_source_commit": "462fd9f1dd85aae939f5f481e7e8b59fc60fa7f3",
@@ -115,6 +117,7 @@
     "native_handoff": "v1.3.0 published/read back with Development v1.8.0. Source MR !31 passed pipeline 2936414071 at 462fd9f1dd85aae939f5f481e7e8b59fc60fa7f3; Duo follow-up review note 3994185023 confirmed both fixes and no new findings; merged main 56d930d5. Helper-sync MR !32 passed pipeline 2936414062 at 039ccb54 and independent follow-up review note 3994187239; merged E2 cbd92690. Product docs/design and docs/plan remain byte-for-byte unchanged from d2ebf02. 184 local workflow tests, validator, diff and secret scans passed. No E2 application run, MR !8 merge, permissions change or controller activation. Live two-run acceptance remains pending.",
     "technical_design_revision_during_execution": "bounded target-local addendum and decision-resume transitions published with Development v1.7.0; live verification pending; cross-target/scope/AC changes still need a revision plan",
     "user_e2_feedback": "v1.0.0 conversation exposed unsaved decisions, ambiguous execution handoff and stale failed-worker ownership; corrected candidate requires live acceptance",
-    "resumable_owner_live": "pending; publication and local fixtures are not the two-run live acceptance"
+    "resumable_owner_live": "pending; publication and local fixtures are not the two-run live acceptance",
+    "next_action_live": "pending; replay docs/development/next-action.md transcript cases after publication; local prompt checks are not live conversation proof"
   }
 }
