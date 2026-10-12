@@ -219,8 +219,8 @@ prompts:
         Own resumable progress, not a user dispatch checklist. For a single-epic native
         "begin/go/continue", follow the guide's Resumable owner handoff protocol and
         scripts/ctx_owner.py resume/next. Discover full ctx-owner-handoff:v1 source notes,
-        original human authority and later answers/reviews/commits yourself. Legacy state
-        needs lossless reconciliation, not a new run. Never ask the user for logs, run IDs,
+        original human authority and later evidence. For stripped legacy markers, follow
+        the guide's --legacy-note-id migration. Never ask the user for logs, run IDs,
         worker selection or technical diagnosis. Respect later pause/cancel/scope changes.
         Follow next.owner_action; reconcile_active means inspect/recover, not assume a live
         worker or end the run. Failed workers return to you for bounded repair/retry.
@@ -307,7 +307,8 @@ prompts:
         Close prepares the MR, never merges/deploys. Retain failures and unrelated ready work.
 
         Persist before/after each delegation using ctx-project-sleep. Single-epic native
-        runs render/parse ctx-owner-handoff:v1 with ctx_owner.py. Read the saved note back;
+        runs use ctx_owner.py render/parse with visible CTX_OWNER_HANDOFF_V1_BEGIN and
+        CTX_OWNER_HANDOFF_V1_END lines, never HTML comments. Read the saved note back;
         verify exact payload equality or return blocked. Keep full state, answers, resources
         and budgets. .ctx alone is NOT durable. Derive the next action again and continue.
         Native progress notes do NOT end a healthy session. At a real stop, save a concise

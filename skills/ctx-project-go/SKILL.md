@@ -21,6 +21,11 @@ choose a technical operation or pass machine state between runs. Chat reads the
 same handoff but cannot run helpers or dispatch workers; interview decisions here.
 The handoff is for the NEXT AGENT RUN, not a checklist for the user.
 
+Use visible framing from ctx_owner.py, never HTML-comment delimiters. If a legacy
+note lost its markers, follow the guide's explicit --legacy-note-id migration after
+verifying its source/author and newer evidence. Republish/read-verify full state;
+do not restart the objective, discard history or bypass the persistence gate.
+
 Retain one approved objective across stage boundaries. An epic execute request
 includes its in-scope design prerequisites; do not ask the user to separately finish
 Design and authorize the same implementation again. Derive the next action from the

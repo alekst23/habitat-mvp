@@ -1,5 +1,11 @@
 # CTX single-shot Development
 
+Local transport-fix candidate (not published): session 9303064 reported that the
+note tool dropped the v1 HTML-comment delimiters before readback. The candidate
+codec emits visible markers, retains intact legacy reads and supports explicit
+verified-note migration. Review, helper synchronization, catalog publication and
+real tool-path readback are still required; the published versions below are unchanged.
+
 **Published v1.8.0: resumable native multi-step execution is the default.**
 One human invocation advances eligible phases/tickets, saving between delegations.
 No controller, protected controller state, scheduler or new credential is required.
@@ -87,11 +93,44 @@ handoff but does not run shell helpers or claim it has dispatched the flow.
 ### Native payload (not a controller checkpoint)
 
 `ctx_owner.py render HANDOFF.json` validates and formats one JSON block between
-`<!-- ctx-owner-handoff:v1 -->` and `<!-- /ctx-owner-handoff -->`. Publish it below
+standalone visible `CTX_OWNER_HANDOFF_V1_BEGIN` and `CTX_OWNER_HANDOFF_V1_END`
+lines, separated from the fence by blank lines. Never use HTML comments for new
+handoffs: the observed note-tool path drops them. This changes framing, not the
+version-1 payload. Intact old HTML-comment frames remain readable. Publish it below
 the <=120-word status/result/agent-next/user-action summary. Read the note back,
 `ctx_owner.py parse NOTE.md`, and compare the entire payload to the intended value.
 Do this before dispatch and after each result, including final run boundaries.
 Do not truncate the journal or keep durable state solely in `.ctx`.
+
+### Recover a marker-stripped legacy note
+
+The supervisor owns this migration; do not ask the user to copy JSON or run helpers.
+Read the complete original note through the source-note tool and verify its server
+author/ID/URL, original authorization and later evidence. For one known legacy
+checkpoint whose markers were stripped, add `--legacy-note-id NOTE_ID` to the
+`resume` command above. Repeat only for independently verified legacy checkpoints
+needed to check their history. This opt-in accepts exactly one fenced JSON block,
+validates the entire ordinary payload and applies the same author/scope/continuation
+checks against marked notes. Unknown/untrusted IDs, multiple fences, duplicate JSON
+keys, malformed state and scope/history/budget loss fail closed. Ordinary `parse`
+does not accept markerless JSON, and unknown/mixed markers cannot use migration.
+
+Reconcile later stop notes, reservations and real sessions before acting. Render
+the recovered full payload in the new format, publish it with the legacy source
+links, read the saved note back through the same tool path and compare parsed values
+exactly. Continue the existing objective only after this succeeds. Do not modify or
+delete old notes, commit checkpoint-only files that move the design SHA, reset
+budgets, start another run, or skip persistence. If the new frame also fails, retain
+the failed note ID and stop without repeated probes; report the actual tool boundary.
+
+For the reported session 9303064 stop, inspect checkpoint 3994579905 and earlier
+record 3994455813 on #10, plus later stop/decision notes. Preserve design-closure
+scope, both consumed repairs, queued Q6/NR-12 answers from 3994412271, original
+run ID and the reserved-but-undispatched slot in session 9302989. Do not infer a
+new reservation for 9303064 or mark answers applied. This is a recovery lead from
+the report, not live verification of those notes or authority to widen E2 scope.
+
+### Payload fields
 
 The payload has:
 
