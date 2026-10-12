@@ -56,13 +56,14 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertTrue(project["catalog_url"].endswith("/agents/1016538"))
         self.assertEqual(project["catalog_version"], "1.3.0")
         prompt = (AGENTS / project["system_prompt_file"]).read_bytes()
-        self.assertNotIn("pending_catalog_version", project)
+        self.assertEqual(project["pending_catalog_version"], "1.4.0")
         self.assertEqual(project["published_source_commit"], "462fd9f1dd85aae939f5f481e7e8b59fc60fa7f3")
         self.assertEqual(project["published_system_prompt_sha256"],
                          "2f6a8e9ff834cdb90dcecafbd87ae889f9182d02a5fa3e74c9c639cf912349f3")
-        self.assertNotIn("candidate_status", project)
+        self.assertTrue(project["candidate_status"].startswith("Unpublished"))
         self.assertTrue(project["verification"]["resumable_owner_live"].startswith("pending"))
-        self.assertEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertNotEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertTrue(project["verification"]["next_action_live"].startswith("pending"))
         self.assertEqual(project["next_entrypoint"], "development-human-native-invocation-or-resume")
         previous = project["publication_history"][0]
         self.assertEqual(previous["catalog_version"], "1.0.0")
@@ -103,6 +104,41 @@ class ChatAgentRegistrationTests(unittest.TestCase):
                             "one explicit", "not yet implemented", "single-epic",
                             "active writer", "exact SHA", "behavioral acceptance remains pending"):
             self.assertIn(requirement.casefold(), guide.casefold())
+
+    def test_project_and_design_offer_the_next_action_without_another_prompt(self):
+        # Prompt regression checks, not proof that a live model follows the contract.
+        for name in ("ctx-project", "ctx-design"):
+            prompt = (AGENTS / f"{name}.md").read_text()
+            for requirement in (
+                "## Make the next step usable now",
+                "docs/development/next-action.md",
+                "Status-only requests remain read-only",
+                "in the SAME response",
+                "Result -> Next -> Your action",
+                "review-only",
+                "exhausted",
+                "not dispatched",
+                "Do not promise a final review",
+            ):
+                with self.subTest(agent=name, requirement=requirement):
+                    self.assertTrue(requirement in prompt, f"{name} missing: {requirement}")
+        guide_path = ROOT / "docs/development/next-action.md"
+        self.assertTrue(guide_path.is_file(), "missing next-action contract")
+        guide = guide_path.read_text()
+        for scenario in (
+            "Status only", "Repair saved", "Review returned findings",
+            "Budget exhausted", "Active or uncertain writer", "Design complete",
+            "Explicit review-only", "Missing trigger access",
+        ):
+            with self.subTest(scenario=scenario):
+                self.assertIn(scenario, guide)
+        design = json.loads((AGENTS / "ctx-design.json").read_text())
+        self.assertEqual(design["catalog_version"], "1.8.0")
+        self.assertEqual(design["pending_catalog_version"], "1.9.0")
+        self.assertTrue(design["candidate_status"].startswith("Unpublished"))
+        self.assertEqual(design["published_system_prompt_sha256"],
+                         "29b34d2790da8a78467564d270ebb2568ae93dd522e9ed3818634e8e0791a09a")
+        self.assertTrue(design["verification"]["next_action_live"].startswith("pending"))
 
     def test_agent_validation_rejects_changed_identity_capabilities_and_unloaded_procedures(self):
         catalog = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())

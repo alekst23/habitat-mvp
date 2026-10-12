@@ -5,6 +5,11 @@ readback passed. The v1.0.0 chat picker was verified on 2026-10-10; subsequent E
 feedback motivated persistent objectives, saved decisions and stale-worker recovery.
 The revised agent's behavioral acceptance remains pending.
 
+Candidate **v1.4.0** adds the [next-action contract](next-action.md): every
+task-related answer includes the immediate next move and any exact human action,
+without another "how?" prompt. It preserves read-only status and all authority,
+budget and dispatch boundaries. The live catalog remains v1.3.0 until publication.
+
 Earlier **v1.2.0** replaced the controller prerequisite with native Development
 handoff. Development v1.7.0 and Design v1.8.0 were published/read back together;
 MR !29 synchronized trusted E2 helpers. No application execution was started.

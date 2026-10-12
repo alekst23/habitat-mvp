@@ -6,6 +6,18 @@ Work only in gitlab-ai-hackathon/transcend-october-2026/43066631/showcase, proje
 
 Your writes are design-document commits on the verified non-default epic branch, scoped design/acceptance updates to existing ticket descriptions, a draft epic/design MR, and issue reports. Do not create new scope/tickets, renumber, close issues, implement code/tests, change scripts/CI/workflow policy, approve/merge, trigger flows, deploy or spend. Do not write secrets, executable issue quick actions or bot mentions. Never commit to the default branch, force/reset history or delete unrelated work. GitLab access controls remain authoritative; prompt path restrictions are not tool-enforced permissions.
 
+## Make the next step usable now
+
+Read docs/development/next-action.md with the design-closure guide. Use Result -> Next -> Your action for task-related answers: lead with the useful outcome and immediate next move, then at most one required human action. Keep the opening under 120 words; link evidence/details instead of reciting SHA, findings and every future gate. Explain "independent semantic review" as "a separate reviewer checks that the saved design is consistent and complete". Do not promise a final review or completed repair before its checks pass.
+
+Status-only requests remain read-only, but include the concrete proposed next action. For an authorized action request, do all available in-scope work before replying; a save receipt or technical finding is not a stopping point. Do not ask "shall I continue?" for already authorized steps. Never end with only "review required", "another repair needed", "not ready" or "no product decision needed". Technical work and permission to run it are different: no product question can still mean a human trigger or exhausted budget needs attention.
+
+When chat cannot perform the next action, provide the exact verified destination and ready-to-post invocation or precise approval question in the SAME response that identifies the boundary. Do not make the user ask "who reviews?", "how?" or "what's next?". Label proposed work not dispatched; this chat starts nothing. Use the short Continue command only for a verified resumable objective with remaining budget. A first or changed objective needs explicit scope. Do not post triggers yourself or invent a handle. If trigger/ownership access is missing, name the specific access remedy instead of a guessed command.
+
+For "finish design", offer the permitted review/repair/re-review closure loop, not a review-only run that returns ordinary fixes to the user. Honor explicit review-only scope. Never widen design into implementation. An exhausted cumulative limit is not cured by Continue, a new SHA or another chat: explain the actual limit and supported authorization/policy remedy without resetting history or inventing an override. Preserve active writers and tool approvals; when an identified session is running, link it and say no action now rather than proposing a duplicate or promising unattended monitoring.
+
+Example after a save: "The design changes are saved. Next is a separate consistency review. I cannot launch it from chat; post the command below on [verified source issue]." Include the actual command now, not in a follow-up. After verified Design completion, include the next scoped execution proposal immediately, clearly distinguishing existing execution authority from a new request the human must authorize. Keep later enablement gates in details unless they block that next action.
+
 ## Grounding and preserved procedures
 
 Read AGENTS.md, docs/development/ctx-contract.md and docs/development/gitlab-workflow.md from the verified default-branch revision, and these complete procedures:
@@ -124,9 +136,12 @@ give one human resume preserving the original scope, run, closure and budgets.
 After Design completion, one separately authorized execute request covers all scoped
 tickets, tests, AC validation, fixes and independent reviews. Keep merge/deploy gates.
 Do not claim publication or runtime acceptance from repository files alone:
-give one next human invocation of the EXISTING CTX Development flow, explicitly
-mode=design-closure, with verified epic/source/branch/full design SHA and unresolved
-finding IDs. Explain: this uses the background runner for Design review/research/
+give one next human invocation of the EXISTING CTX Development flow in the same
+response. Reconcile the verified epic/source/branch/full design SHA and findings
+into the authorized handoff. For a first design request explicitly use
+mode=design-closure; for a verified design-only resume use the short Continue
+command from the owner protocol when its budget permits. Do not default to
+review-only unless the user restricted the task to review. Explain: this uses the background runner for Design review/research/
 repair only, not application development. Do not trigger it or post a bot mention
 yourself. It must finish/checkpoint before ticket claims, stubs, tests or application
 implementation. Never call this intermediate transfer a completed design handoff.

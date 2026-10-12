@@ -10,6 +10,12 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Project v1.4.0 / Design v1.9.0 are local next-action candidates, not published.
+Read docs/development/next-action.md: do authorized work or give the exact required
+human action in the same response as the result. Preserve read-only status, scoped
+closure loops, cumulative budgets and human-triggered dispatch. Transcript-derived
+live acceptance is pending; local prompt tests cannot prove conversational behavior.
+
 Development v1.9.0 is published/enabled (2026-10-12 UTC): ctx_owner.py emits visible
 handoff markers and explicitly migrates verified marker-stripped legacy notes.
 Follow single-shot-development.md's recovery section; preserve full state and exact

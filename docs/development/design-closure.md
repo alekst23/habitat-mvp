@@ -42,6 +42,13 @@ That boundary is a tool handoff, not design completion. Never make the user coll
 reviews, decide ordinary contract fields, or say continue after each save. Approval
 cards and branch/merge protections still apply.
 
+Follow the [next-action contract](next-action.md): include that exact human
+invocation in the same response as the saved-design or review result, not after
+the user asks how. For authorized closure use the permitted review/repair/re-review
+loop, not review-only micro-handoffs unless explicitly requested. Exhausted limits
+need a supported remedy, not repeated Continue instructions or chat-side bypasses.
+The Project v1.4.0 / Design v1.9.0 prompt changes are unpublished candidates.
+
 ## Supervisor algorithm (before any execution journal or ticket claim)
 
 1. Resolve project, source, epic, branch and current SHA. Load this guide and helpers
