@@ -4,12 +4,12 @@ The published [native execution revision](single-shot-development.md) restores b
 same-session review/research/repair. Save/read back each coherent unit and continue
 while admitted; a save alone does not end the session. Preserve cumulative budgets
 and Design ownership. Only verified optional controller envelopes use one-unit
-slices. Design v1.8.0 and Development v1.7.0 are published/read back; live behavior
+slices. Design v1.9.0 and Development v1.9.0 are published/read back; live behavior
 remains unverified. Earlier publication evidence below is historical.
 
 This contract supersedes the earlier handoff of unfinished design to Development.
 The published setup retains the two specialist agents and existing background
-flows, not a bot per skill. The published [CTX Project v1.2.0](project-owner.md)
+flows, not a bot per skill. The published [CTX Project v1.4.0](project-owner.md)
 applies Planning/Design as modes in one chat and leaves the specialists available
 until live validation. Design mode owns the interview and saved documents in
 either entry point. The existing Development supervisor supplies independent
@@ -47,7 +47,10 @@ invocation in the same response as the saved-design or review result, not after
 the user asks how. For authorized closure use the permitted review/repair/re-review
 loop, not review-only micro-handoffs unless explicitly requested. Exhausted limits
 need a supported remedy, not repeated Continue instructions or chat-side bypasses.
-The Project v1.4.0 / Design v1.9.0 prompt changes are unpublished candidates.
+Project v1.4.0 / Design v1.9.0 were published and read back on 2026-10-12 UTC
+from reviewed source 0ab47996 (MR !39). Tools, authority and budgets are unchanged;
+live next-action acceptance remains pending. This chat-only update required no
+E2 helper synchronization or application run.
 
 ## Supervisor algorithm (before any execution journal or ticket claim)
 
@@ -171,16 +174,23 @@ Historical publication verified 2026-10-09 UTC: workflow !20 merged at 2ffcb740;
 !21 merged onto E2 at 849c3450. Both pipelines and 139 local tests passed. Existing
 Design v1.6.0 and Development v1.5.0 were enabled/private; complete saved prompt/YAML
 matched source except the final newline. Tools, MCP settings, bot and triggers were
-unchanged. E2 product documents are untouched and !8 remains open. No chat or flow
-was started. Current Design v1.8.0 and Development v1.7.0 publication/readback and
-E2 helper synchronization are recorded in gitlab-workflow.md. **Step 1 is complete
-for the current versions; start the live test at step 2 using current evidence.**
+unchanged. That publication left E2 product documents untouched and !8 open, and
+started no chat or flow. The later Design v1.8.0 / Development v1.7.0 rollout and
+E2 helper synchronization are recorded in gitlab-workflow.md as history.
 
-1. Merge the reviewed workflow change, synchronize the same trusted helpers/guides
-   into ctx/epic-i2 without changing product requirements, and run CI. Publish/read
-   back Design v1.8.0 and Development v1.7.0 in the existing catalog entries. Preserve
-   tools, visibility, service account and triggers. A push alone changes neither
-   live catalog item; future changes require a fresh complete readback.
+Current Design v1.9.0 / Project v1.4.0 readback is recorded in their agent JSON
+records and next-action.md (2026-10-12 UTC, source !39). Development v1.9.0 and
+its E2 helper sync were already published through !35/!36 (see AGENTS.md).
+**Step 1 is complete; start the live test at step 2 using current evidence.**
+This chat-only update did not change E2, start execution or require another sync.
+
+1. Completed publication prerequisite: merge reviewed workflow changes and verify
+   CI, then publish/read back the current catalog entries. Synchronize E2 only when
+   trusted runner helpers change; chat prompts/shared-default-branch guides alone
+   do not need that sync. Current versions are Design v1.9.0, Project v1.4.0 and
+   Development v1.9.0. Preserve tools, visibility, service account and triggers.
+   A push alone does not update a catalog item; future publications require fresh
+   complete readback.
 2. Open a NEW CTX Design chat: “Resume E2 from source issue #10 and MR !8. Read the
    design review note 3986618583 and historical research findings 3986648196 on #10.
    Repair the in-scope design; distinguish technical work, research and decisions.

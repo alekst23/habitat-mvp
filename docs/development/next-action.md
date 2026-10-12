@@ -1,7 +1,8 @@
 # Next-action contract for Project and Design chat
 
-Status: repository candidate for Project v1.4.0 and Design v1.9.0. Publication and
-live conversation acceptance are pending. This changes guidance and handoffs, not
+Status: Project v1.4.0 and Design v1.9.0 published and enabled on 2026-10-12 UTC.
+Full saved prompt/version/tool readback passed against reviewed source 0ab47996
+(MR !39); live conversation acceptance is pending. This changes guidance and handoffs, not
 tools, scope, review gates, budgets or automatic dispatch. It does not implement
 comment-context compaction.
 

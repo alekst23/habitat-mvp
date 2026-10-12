@@ -54,15 +54,15 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertEqual(project["display_name"], "CTX Project")
         self.assertTrue(project["enabled_in_project"])
         self.assertTrue(project["catalog_url"].endswith("/agents/1016538"))
-        self.assertEqual(project["catalog_version"], "1.3.0")
+        self.assertEqual(project["catalog_version"], "1.4.0")
         prompt = (AGENTS / project["system_prompt_file"]).read_bytes()
-        self.assertEqual(project["pending_catalog_version"], "1.4.0")
-        self.assertEqual(project["published_source_commit"], "462fd9f1dd85aae939f5f481e7e8b59fc60fa7f3")
+        self.assertNotIn("pending_catalog_version", project)
+        self.assertEqual(project["published_source_commit"], "0ab47996c52ec70a2f137f1dd9243a91036a706b")
         self.assertEqual(project["published_system_prompt_sha256"],
-                         "2f6a8e9ff834cdb90dcecafbd87ae889f9182d02a5fa3e74c9c639cf912349f3")
-        self.assertTrue(project["candidate_status"].startswith("Unpublished"))
+                         "14dd6dd4233ac98cf2510893cd1fa261054e70c5f7e5900459acbeb2a79a5a7f")
+        self.assertNotIn("candidate_status", project)
         self.assertTrue(project["verification"]["resumable_owner_live"].startswith("pending"))
-        self.assertNotEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
         self.assertTrue(project["verification"]["next_action_live"].startswith("pending"))
         self.assertEqual(project["next_entrypoint"], "development-human-native-invocation-or-resume")
         previous = project["publication_history"][0]
@@ -72,7 +72,7 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         previous = project["publication_history"][1]
         self.assertEqual(previous["catalog_version"], "1.1.0")
         self.assertEqual(previous["published_system_prompt_sha256"], "197e9f37dcc9483a7310d599290e0c1730cb2be2d6a790e4b773e2a6978ef8ff")
-        self.assertEqual(project["publication_history"][-1]["catalog_version"], "1.2.0")
+        self.assertEqual(project["publication_history"][-1]["catalog_version"], "1.3.0")
         self.assertTrue(project["verification"]["catalog_readback"].startswith("passed"))
         self.assertTrue(project["verification"]["chat_picker"].startswith("passed"))
         self.assertEqual(project["verification"]["chat_interview_save_smoke"], "pending")
@@ -133,11 +133,17 @@ class ChatAgentRegistrationTests(unittest.TestCase):
             with self.subTest(scenario=scenario):
                 self.assertIn(scenario, guide)
         design = json.loads((AGENTS / "ctx-design.json").read_text())
-        self.assertEqual(design["catalog_version"], "1.8.0")
-        self.assertEqual(design["pending_catalog_version"], "1.9.0")
-        self.assertTrue(design["candidate_status"].startswith("Unpublished"))
+        self.assertEqual(design["catalog_version"], "1.9.0")
+        self.assertNotIn("pending_catalog_version", design)
+        self.assertNotIn("candidate_status", design)
+        self.assertEqual(design["published_source_commit"], "0ab47996c52ec70a2f137f1dd9243a91036a706b")
         self.assertEqual(design["published_system_prompt_sha256"],
-                         "29b34d2790da8a78467564d270ebb2568ae93dd522e9ed3818634e8e0791a09a")
+                         "ea335e9fb6f47cc2f697226d8bb4b96ec30de9d5436aa1bfa035bf175a7d172c")
+        prompt = (AGENTS / design["system_prompt_file"]).read_bytes()
+        self.assertEqual(design["published_system_prompt_sha256"], hashlib.sha256(prompt).hexdigest())
+        self.assertEqual(design["catalog_saved_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertEqual(design["publication_history"][-1]["catalog_version"], "1.8.0")
+        self.assertTrue(design["verification"]["v1_9_configuration_readback"].startswith("passed"))
         self.assertTrue(design["verification"]["next_action_live"].startswith("pending"))
 
     def test_agent_validation_rejects_changed_identity_capabilities_and_unloaded_procedures(self):
