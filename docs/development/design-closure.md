@@ -35,8 +35,8 @@ existing design.json schema and ticket execution statuses. Any later design chan
 requires new checks and independent review. A link or local validator result alone
 does not attest reviewer independence, remote content or actual CI execution.
 
-Standalone Design and published Project v1.4.0 have no shell, public-web retrieval
-or flow-start tool. Published and activated **Project v1.5.0** instead uses
+Standalone Design has no shell, public-web retrieval or flow-start tool, as was
+also true of previous Project v1.4.0. Published **Project v1.5.0** instead uses
 [native session handoff](project-session-handoff.md) to start/retrieve approved
 closure work. It preserves Design ownership, scope and budgets; no commands/results
 need copying. The following human-trigger fallback is for registrations without
@@ -184,8 +184,9 @@ unchanged. That publication left E2 product documents untouched and !8 open, and
 started no chat or flow. The later Design v1.8.0 / Development v1.7.0 rollout and
 E2 helper synchronization are recorded in gitlab-workflow.md as history.
 
-Current Design v1.9.0 / Project v1.4.0 readback is recorded in their agent JSON
-records and next-action.md (2026-10-12 UTC, source !39). Development v1.9.0 and
+Current Design v1.9.0 and Project v1.5.0 readbacks are recorded in their agent JSON
+records: Design on 2026-10-12 UTC (source !39), Project on 2026-10-13 UTC
+(source !42; see project-session-handoff.md). Development v1.9.0 and
 its E2 helper sync were already published through !35/!36 (see AGENTS.md).
 **Step 1 is complete; start the live test at step 2 using current evidence.**
 This chat-only update did not change E2, start execution or require another sync.
@@ -193,7 +194,7 @@ This chat-only update did not change E2, start execution or require another sync
 1. Completed publication prerequisite: merge reviewed workflow changes and verify
    CI, then publish/read back the current catalog entries. Synchronize E2 only when
    trusted runner helpers change; chat prompts/shared-default-branch guides alone
-   do not need that sync. Current versions are Design v1.9.0, Project v1.4.0 and
+   do not need that sync. Current versions are Design v1.9.0, Project v1.5.0 and
    Development v1.9.0. Preserve tools, visibility, service account and triggers.
    A push alone does not update a catalog item; future publications require fresh
    complete readback.

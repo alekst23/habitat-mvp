@@ -1,6 +1,6 @@
 # Next-action contract for Project and Design chat
 
-Status: Project v1.4.0 and Design v1.9.0 published and enabled on 2026-10-12 UTC.
+Initial rollout: Project v1.4.0 and Design v1.9.0 were published and enabled on 2026-10-12 UTC.
 Full saved prompt/version/tool readback passed against reviewed source 0ab47996
 (MR !39); live conversation acceptance is pending. This changes guidance and handoffs, not
 tools, scope, review gates, budgets or automatic dispatch. It does not implement
@@ -69,8 +69,9 @@ A first or changed objective must state its requested scope and exclusions. Keep
 technical references in the saved handoff when writes are authorized. A read-only
 assessment must not publish one just to make a shorter command possible.
 
-Standalone Design and Project v1.4.0 cannot launch the flow or post a bot mention
-indirectly. The activated Project v1.5.0 uses native session tools, not bot comments.
+Standalone Design cannot launch the flow or post a bot mention indirectly; the
+previous Project v1.4.0 had the same limit. Published Project v1.5.0 uses native
+session tools, not bot comments.
 For a genuine missing capability, say so once,
 with the action that crosses this boundary in the same response. If the handle or
 ownership cannot be verified, give the exact missing access step; no placeholder

@@ -15,7 +15,7 @@ This supersedes the manual-handoff instructions below. The 24-tool registration,
 full prompt, description, private visibility, no MCP and enablement were read back.
 Source !42 passed CI and Duo review before merge; live acceptance is pending.
 
-Published **v1.4.0** adds the [next-action contract](next-action.md): every
+Previous **v1.4.0** introduced the retained [next-action contract](next-action.md): every
 task-related answer includes the immediate next move and any exact human action,
 without another "how?" prompt. It preserves read-only status and all authority,
 budget and dispatch boundaries. Source MR !39 passed pipeline 2940126601 and
@@ -32,7 +32,7 @@ MR !29 synchronized trusted E2 helpers. No application execution was started.
 Published in **v1.3.0**: [resumable owner handoffs](single-shot-development.md#resumable-owner-handoff)
 make a short "Continue E2" resolve the original objective and technical next action
 from source notes. The runner owns recovery; chat owns the interactive interview.
-The v1.4.0 registration still has no worker-dispatch tool. This is not a general
+The previous v1.4.0 registration had no worker-dispatch tool. This is not a general
 claim about all GitLab agents: the native flow already has managed subagents.
 Development v1.8.0 was published/read back with this agent. Source !31 and E2
 helper-sync !32 are merged after CI and independent review; live two-run acceptance
@@ -215,7 +215,7 @@ writes, starts or sends input. The integration needs its own live smoke.
 
 Previous v1.4.0 used 21 tools: the 19-tool Planning capability set (GitLab reads,
 scoped issues/comments, branches, commits and draft MRs), plus read-only List Duo
-Sessions and Get Duo Session. There is no shell, public web tool, flow/session-start,
+Sessions and Get Duo Session. That version had no shell, public web tool, flow/session-start,
 session-input, controller-start/resume tool or external MCP server.
 Session-read coverage follows the [GitLab MCP tool contracts](https://docs.gitlab.com/user/model_context_protocol/mcp_server_tools/#list_duo_sessions).
 Path and intent restrictions are prompt rules; GitLab permissions remain essential.

@@ -67,8 +67,8 @@ It unifies Planning/Design procedures and project-status assessment in one chat;
 read docs/development/project-owner.md. When using CTX Project, Planning
 and Design are modes in the same conversation, not instructions to open another
 agent. Status requests are read-only. Shared skills, evidence, scope and security
-boundaries remain; published v1.4.0 has no shell, flow-start or controller-write tool.
-Published v1.5.0 changes only the Project session handoff as described above.
+boundaries remain. Previous v1.4.0 had no flow-start tool; v1.5.0 adds only the
+native session tools described above, with no shell or controller-write tool.
 CTX Planning and CTX Design remain available; do not retire them before live acceptance.
 The two background flow entry points are `ctx-development` and `ctx-delivery` in
 `.gitlab/duo/flows/`. Reusable instructions live in `skills/ctx-*/SKILL.md`;
@@ -132,7 +132,7 @@ The CTX Project agent follows the same order and artifact ownership as modes
 within one chat. It uses the existing interview/planning/design skills directly,
 not the standalone registrations as subagents. Reads of protected controller state
 are for assessment only; writes stay with the controller. Direct native chat
-dispatch is published in v1.5.0 as described above. The published revision keeps one
+dispatch is published in v1.5.0 as described above. Project v1.5.0 keeps one
 approved objective across design/execution, verifies answer application, reconciles
 terminal reservations and supports bounded target-local technical design addenda
 through independent re-review. Pinned ACs/history/budgets stay intact; cross-target

@@ -109,9 +109,9 @@ affected artifacts and honest provenance. Read-only conversation answers do not
 authorize writes until scoped design/execute is requested. A native resume retains
 the objective, attempts and limits; recorded answers are applied before re-asking.
 The human's scoped request and verified authenticated invocation supply execution
-authority, not an agent-written note. Published Project v1.4.0 cannot initiate
-flows; after activation, the v1.5.0 session protocol carries that approved request
-through native tools. The runner must verify provenance using the single-shot
+authority, not an agent-written note. Project v1.5.0 carries that approved request
+through native session tools; previous v1.4.0 could not initiate flows.
+The runner must verify provenance using the single-shot
 guide's native intake rule. No controller installation is required for either path.
 
 After journal initialization, bounded technical_design repairs use document
@@ -124,7 +124,7 @@ Deployment is separate. The native Development coordinator continues eligible ph
 and tickets inside one invocation, saving/read-verifying between delegations. A disabled
 controller is not a native execution blocker. Missing actual permissions, credentials,
 application adapters or uncertain ownership still block affected work. Cross-session
-auto-restart is unavailable: checkpoint at a real stop. Activated Project v1.5.0
+auto-restart is unavailable: checkpoint at a real stop. Published Project v1.5.0
 retrieves it and takes an eligible continuation on conversational re-entry; otherwise
 give one verified human resume. Workers never recursively start another flow.
 Agents cannot install credentials or change workflow security controls.
