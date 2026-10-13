@@ -65,4 +65,6 @@ Planning published. Confirmed: Default is the initial generic template; users se
 
 **D11-6 — Connection consent model (user, chat, 2026-10-13):** Owners create Gmail and Reddit connections in a dedicated Connections area, then explicitly attach a connection to an instance capability. The creation wizard and built-in chat may guide this process but never receive OAuth credentials. Connection credentials remain outside agent context; revocation detaches the connection and blocks its later use. Affected tickets: E11-2, E11-3, E11-4 and E11-5.
 
-Design pending an interview covering reservation/reconciliation behavior, detailed connection revocation/audit behavior, network-policy behavior, lifecycle/status vocabulary, authentication entry point, and page-level behavior.
+**D11-7 — Network policy model (user, chat, 2026-10-13):** Each enabled capability uses a fixed system allow-list for its required endpoints. `network.fetch` may additionally use owner-added exact HTTPS domains. All other destinations are denied; wildcard deny rules are not used as a substitute for this allow-list. Affected tickets: E11-1, E11-2, E11-3, E11-4 and E11-5.
+
+Design pending an interview covering reservation/reconciliation behavior, detailed connection revocation/audit behavior, lifecycle/status vocabulary, authentication entry point, and page-level behavior.
