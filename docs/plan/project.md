@@ -20,7 +20,9 @@ on resume rather than recreated. Add the planning session URL when available.
 
 | Epic | Issue | Branch | State |
 |---|---|---|---|
-| EPIC-I2: Habitat MVP — First Runnable Foundation | #2 | ctx/epic-i2 | planning |
+| E11: AICL MVP — Configurable AI Control Layer | #11 | ctx/epic-i11 | planning; Design pending |
+
+The earlier E2/PayPal foundation is retained as historical scope and evidence. It is superseded for MVP planning by E11; no prior issue is closed or deleted.
 
 ## Ticket backlog
 
