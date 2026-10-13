@@ -11,9 +11,19 @@ A signed-in owner creates and manages configurable instances of predefined agent
 
 The MVP includes a public landing page; authenticated workspace; template catalog and configuration wizard; agent list; agent detail/status; built-in chat creation flow; and visible configuration/control history. Tenant identity derives from authentication and all mutation/validation fails closed.
 
+## Control-policy MVP delta
+
+Default instances begin with a name, free-form instructions, and enabled AICL capabilities. The AICL MVP also includes:
+
+- per-instance inference and compute limits, enforced before use with fail-closed handling for missing or exhausted limits;
+- owner-authorized Gmail and Reddit OAuth connections, stored outside agent context and injected only by the relevant AICL component; and
+- outbound network policy with an allow-list as the baseline. Wildcard deny rules are not a substitute for an allow-list and are deferred unless a concrete use case requires them.
+
+Detailed limit units, connection scopes, consent/revocation behavior, network-policy schema, and capability-to-domain mapping are Design pending.
+
 ## Exclusions
 
-No PayPal, funding, billing, ads, external action execution, BYOA sandboxing, arbitrary user code, direct credentials, provider enablement, deployment, live spend, or public/external MCP API.
+No PayPal, funding/billing capture, ads, external action execution, BYOA sandboxing, arbitrary user code, direct credentials, provider enablement, deployment, live spend, or public/external MCP API.
 
 ## Tickets and dependencies
 
@@ -41,4 +51,4 @@ No PayPal, funding, billing, ads, external action execution, BYOA sandboxing, ar
 
 ## Design progress
 
-Planning published. Design pending an interview covering template catalog, configuration fields, lifecycle/status vocabulary, authentication entry point, and page-level behavior.
+Planning published. Confirmed: Default is the initial generic template; users set name, free-form instructions and enabled AICL capabilities. Control-policy delta confirmed: per-instance inference/compute limits, owner-authorized Gmail/Reddit connections and outbound allow-list policy. Design pending an interview covering capability catalog, limit semantics, connection consent/revocation, network-policy behavior, lifecycle/status vocabulary, authentication entry point, and page-level behavior.
