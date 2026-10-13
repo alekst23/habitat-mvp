@@ -51,4 +51,8 @@ No PayPal, funding/billing capture, ads, external action execution, BYOA sandbox
 
 ## Design progress
 
-Planning published. Confirmed: Default is the initial generic template; users set name, free-form instructions and enabled AICL capabilities. Control-policy delta confirmed: per-instance inference/compute limits, owner-authorized Gmail/Reddit connections and outbound allow-list policy. Design pending an interview covering capability catalog, limit semantics, connection consent/revocation, network-policy behavior, lifecycle/status vocabulary, authentication entry point, and page-level behavior.
+Planning published. Confirmed: Default is the initial generic template; users set name, free-form instructions and enabled AICL capabilities. Control-policy delta confirmed: per-instance inference/compute limits, owner-authorized Gmail/Reddit connections and outbound allow-list policy.
+
+**D11-1 — Default capability controls (user, chat, 2026-10-13):** Default starts with granular capabilities `inference`, `gmail.read`, `gmail.send`, `reddit.read`, `reddit.post`, and `network.fetch`, all disabled until enabled by the owner. `gmail.send` and `reddit.post` additionally require a per-action owner confirmation; enabled capability and available limits alone do not authorize those outbound writes. Affected tickets: E11-1, E11-2, E11-3, E11-4 and E11-5.
+
+Design pending an interview covering limit semantics, connection consent/revocation, network-policy behavior, lifecycle/status vocabulary, authentication entry point, and page-level behavior.
