@@ -1,7 +1,7 @@
 # E11: AICL MVP — Configurable AI Control Layer
 
 Project ID: 87329027  
-Source issue: #10  
+Source issue: #11  
 Epic issue: #11  
 Epic branch: `ctx/epic-i11`
 
@@ -79,4 +79,4 @@ Planning published. Confirmed: Default is the initial generic template; users se
 
 **D11-13 — Connection sharing (user, chat, 2026-10-13):** One owner-controlled Gmail or Reddit connection may be explicitly attached to multiple Default instances of that owner. Attachment is per instance/capability; revocation detaches every attachment. Affected tickets: E11-1, E11-2, E11-3, E11-4 and E11-5.
 
-All settled decisions will be incorporated into the feature specifications, technical contracts, ticket designs, and acceptance manifest before independent review.
+Design specified: scenarios, contracts, ticket mappings and acceptance manifest are saved. Independent semantic review is pending before implementation.
