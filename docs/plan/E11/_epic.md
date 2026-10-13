@@ -75,4 +75,6 @@ Planning published. Confirmed: Default is the initial generic template; users se
 
 **D11-11 — Budget reservation and settlement (user, chat, 2026-10-13):** Before inference or compute begins, AICL reserves the maximum estimated USD against both applicable daily and monthly budgets. It settles against measured usage after completion. Unknown outcomes retain their reservation until reconciliation; failure to price, reserve, validate, or reconcile denies further work. Affected tickets: E11-1, E11-2, E11-4 and E11-5.
 
-Design pending an interview covering detailed connection revocation/audit behavior.
+**D11-12 — Connection revocation and audit (user, chat, 2026-10-13):** Revocation immediately detaches a connection from every instance, blocks new use, invalidates stored credentials, and appends an audit event. Historical activity remains visible in redacted form. Affected tickets: E11-1, E11-2, E11-3, E11-4 and E11-5.
+
+Design interview still needs the connection-sharing model. All settled decisions will be incorporated into the feature specifications, technical contracts, ticket designs, and acceptance manifest before independent review.
