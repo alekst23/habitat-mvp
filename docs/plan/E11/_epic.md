@@ -71,4 +71,6 @@ Planning published. Confirmed: Default is the initial generic template; users se
 
 **D11-9 — Authentication entry point (user, chat, 2026-10-13):** The MVP uses email magic-link sign-in. Authenticated session context derives tenant and owner identity for all AICL reads and mutations; client-supplied tenant identity is ignored. Affected tickets: E11-1, E11-2, E11-3, E11-4 and E11-5.
 
-Design pending an interview covering reservation/reconciliation behavior, detailed connection revocation/audit behavior, and page-level behavior.
+**D11-10 — First-run page flow (user, chat, 2026-10-13):** The landing page explains AICL control and leads to **Create your first agent**. After sign-in, an empty workspace offers **Create with wizard** and **Create with chat**. Both paths create the same canonical Default instance. Affected tickets: E11-3, E11-4 and E11-5.
+
+Design pending an interview covering reservation/reconciliation behavior and detailed connection revocation/audit behavior.
