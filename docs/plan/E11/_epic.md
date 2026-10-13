@@ -63,4 +63,6 @@ Planning published. Confirmed: Default is the initial generic template; users se
 
 **D11-5 — Default budgets (user, chat, 2026-10-13):** Default instances start with $0 daily and $0 monthly inference and compute budgets. No inference or compute proceeds until the owner explicitly configures a positive applicable limit. Affected tickets: E11-1, E11-3, E11-4 and E11-5.
 
-Design pending an interview covering reservation/reconciliation behavior, connection consent/revocation, network-policy behavior, lifecycle/status vocabulary, authentication entry point, and page-level behavior.
+**D11-6 — Connection consent model (user, chat, 2026-10-13):** Owners create Gmail and Reddit connections in a dedicated Connections area, then explicitly attach a connection to an instance capability. The creation wizard and built-in chat may guide this process but never receive OAuth credentials. Connection credentials remain outside agent context; revocation detaches the connection and blocks its later use. Affected tickets: E11-2, E11-3, E11-4 and E11-5.
+
+Design pending an interview covering reservation/reconciliation behavior, detailed connection revocation/audit behavior, network-policy behavior, lifecycle/status vocabulary, authentication entry point, and page-level behavior.
