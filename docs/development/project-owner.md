@@ -1,20 +1,21 @@
 # CTX Project: the conversational project owner
 
-Status: **v1.4.0 published and enabled on 2026-10-12 UTC**. Full prompt/tool/version
+Status: **v1.5.0 published and enabled on 2026-10-13 UTC**. Full prompt/tool/version
 readback passed. The v1.0.0 chat picker was verified on 2026-10-10; subsequent E2
 feedback motivated persistent objectives, saved decisions and stale-worker recovery.
 The revised agent's behavioral acceptance remains pending.
 
-**Local v1.5.0 candidate, not published:** [Project-owned session handoff](project-session-handoff.md)
+**Published v1.5.0:** [Project-owned session handoff](project-session-handoff.md)
 adds discovery/start/input tools to Project only. After approved scope, it starts
 the existing Development flow, saves a verified session receipt and retrieves
 results when the user says **check progress**. No copied commands/results or request
 to monitor the runner. One session mutation per user turn; native workers keep the
 inner loop. Status-only stays read-only, and idle chat does not wake automatically.
-This candidate supersedes the manual-handoff instructions below only after the
-24-tool registration and prompt are published/read back. Live acceptance is pending.
+This supersedes the manual-handoff instructions below. The 24-tool registration,
+full prompt, description, private visibility, no MCP and enablement were read back.
+Source !42 passed CI and Duo review before merge; live acceptance is pending.
 
-Published **v1.4.0** adds the [next-action contract](next-action.md): every
+Previous **v1.4.0** introduced the retained [next-action contract](next-action.md): every
 task-related answer includes the immediate next move and any exact human action,
 without another "how?" prompt. It preserves read-only status and all authority,
 budget and dispatch boundaries. Source MR !39 passed pipeline 2940126601 and
@@ -31,7 +32,7 @@ MR !29 synchronized trusted E2 helpers. No application execution was started.
 Published in **v1.3.0**: [resumable owner handoffs](single-shot-development.md#resumable-owner-handoff)
 make a short "Continue E2" resolve the original objective and technical next action
 from source notes. The runner owns recovery; chat owns the interactive interview.
-The v1.4.0 registration still has no worker-dispatch tool. This is not a general
+The previous v1.4.0 registration had no worker-dispatch tool. This is not a general
 claim about all GitLab agents: the native flow already has managed subagents.
 Development v1.8.0 was published/read back with this agent. Source !31 and E2
 helper-sync !32 are merged after CI and independent review; live two-run acceptance
@@ -53,8 +54,8 @@ Then continue in that same chat:
 > questions, and save and verify feature-level specifications on the existing epic
 > branch when no active writer owns them. Keep !8 open; do not implement.
 
-With live v1.4.0, the user invokes the existing native Development flow once after
-scoped intent is settled. After v1.5.0 activation, say **Finish the approved design**
+With the previous v1.4.0, the user invoked the existing native Development flow once
+after scoped intent was settled. With v1.5.0, say **Finish the approved design**
 or **Implement the approved scope** here; Project starts the selected Development
 flow and returns its actual session link. Return with **check progress** to let it
 retrieve results and take the next eligible action. Technical phases/tickets advance
@@ -187,9 +188,9 @@ terminal failures and unreadable status. A failed reservation requires actual
 session/head/diff/note reconciliation, not an indefinite “active” label or an
 unverified claim that no other writers exist.
 
-## Execution connection: candidate and live capabilities
+## Execution connection: published native session capabilities
 
-The v1.5.0 candidate uses [project-session-handoff.md](project-session-handoff.md),
+Published v1.5.0 uses [project-session-handoff.md](project-session-handoff.md),
 including verified original authority, session identity, durable request/outcome,
 uncertain dispatch recovery, current native approvals and one mutation per turn.
 It adds List Duo Agents And Flows, Start Duo Session and Send Duo Session Input.
@@ -210,11 +211,11 @@ and cumulative budgets. An uncertain start never becomes a second start or bot
 mention. **Check progress** continues existing authority; **status only** never
 writes, starts or sends input. The integration needs its own live smoke.
 
-### Manual fallback for live v1.4.0 or confirmed unavailable capability
+### Manual fallback for rollback to v1.4.0 or confirmed unavailable capability
 
-Live v1.4.0 uses 21 tools: the 19-tool Planning capability set (GitLab reads,
+Previous v1.4.0 used 21 tools: the 19-tool Planning capability set (GitLab reads,
 scoped issues/comments, branches, commits and draft MRs), plus read-only List Duo
-Sessions and Get Duo Session. There is no shell, public web tool, flow/session-start,
+Sessions and Get Duo Session. That version had no shell, public web tool, flow/session-start,
 session-input, controller-start/resume tool or external MCP server.
 Session-read coverage follows the [GitLab MCP tool contracts](https://docs.gitlab.com/user/model_context_protocol/mcp_server_tools/#list_duo_sessions).
 Path and intent restrictions are prompt rules; GitLab permissions remain essential.
@@ -244,7 +245,7 @@ The future chat-to-controller bridge is **not yet implemented**. It must authent
 the requesting user, enforce project/scope/version/allowed-action checks, reject
 duplicate/uncertain dispatch and leave controller credentials outside chat/agent CI.
 An issue note or prompt cannot grant this authority. Do not expose an arbitrary HTTP
-or shell tool as a shortcut. The v1.5.0 candidate uses native session tools instead,
+or shell tool as a shortcut. Published v1.5.0 uses native session tools instead,
 not this future controller bridge. Merely answering in idle chat cannot wake it;
 an active, authorized turn must perform and verify the session action.
 

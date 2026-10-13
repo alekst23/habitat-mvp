@@ -10,18 +10,20 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
-Local **Project v1.5.0 candidate** adds native session discovery/start/input and a
+Published **Project v1.5.0** adds native session discovery/start/input and a
 durable conversational handoff; read docs/development/project-session-handoff.md.
-It is NOT published: live v1.4.0 still has 21 tools. After reviewed publication and
-24-tool readback, Project starts approved Development work, returns a real session
+Full prompt/description, 24 tools, private visibility, no MCP and enablement were
+read back on 2026-10-13 UTC. Source !42 passed CI and independent Duo review, merging
+main at ec89eb3. Project starts approved Development work, returns a real session
 link and handles **check progress** without copied commands/results. Status-only
 remains read-only. One session mutation per user turn; native workers retain the
 inner loop and cannot recursively start flows. Preserve scope, original authority,
 cumulative budgets and explicit current approvals. No idle-chat auto-wake, duplicate
 uncertain starts or controller activation. This narrowly supersedes the older
 Project human-trigger-only statements below, not standalone Design/Planning limits.
+Live launch/input/re-entry acceptance remains pending; no E2 run was started.
 
-Project v1.4.0 / Design v1.9.0 are published and enabled (2026-10-12 UTC).
+Previous rollout: Project v1.4.0 / Design v1.9.0 were published and enabled (2026-10-12 UTC).
 Full saved prompts match reviewed source 0ab47996 after final-newline normalization;
 private visibility, unchanged tools and no external MCP were read back. Source
 MR !39 passed CI and independent Duo review, merging main at 661e5fdd. Publication
@@ -58,15 +60,15 @@ and close operations under the `ctx-` prefix. Add the six delivery operations
 listed there. Lifecycle stages classify evidence; they do not define agent or
 operation boundaries.
 
-Planning is conversational. **CTX Project v1.4.0** is published and enabled with
-full catalog readback (2026-10-12 UTC); the chat picker was verified on v1.0.0.
+Planning is conversational. **CTX Project v1.5.0** is published and enabled with
+full catalog readback (2026-10-13 UTC); the chat picker was verified on v1.0.0.
 The user's E2 progression defects motivated this revision; live behavioral proof remains pending.
 It unifies Planning/Design procedures and project-status assessment in one chat;
 read docs/development/project-owner.md. When using CTX Project, Planning
 and Design are modes in the same conversation, not instructions to open another
 agent. Status requests are read-only. Shared skills, evidence, scope and security
-boundaries remain; published v1.4.0 has no shell, flow-start or controller-write tool.
-The v1.5.0 candidate changes only the Project session handoff as described above.
+boundaries remain. Previous v1.4.0 had no flow-start tool; v1.5.0 adds only the
+native session tools described above, with no shell or controller-write tool.
 CTX Planning and CTX Design remain available; do not retire them before live acceptance.
 The two background flow entry points are `ctx-development` and `ctx-delivery` in
 `.gitlab/duo/flows/`. Reusable instructions live in `skills/ctx-*/SKILL.md`;
@@ -129,8 +131,8 @@ changes return to Planning; never send users there merely to save Design's work.
 The CTX Project agent follows the same order and artifact ownership as modes
 within one chat. It uses the existing interview/planning/design skills directly,
 not the standalone registrations as subagents. Reads of protected controller state
-are for assessment only; writes stay with the controller. Missing direct chat
-dispatch is an unpublished v1.5.0 candidate as described above. The published revision keeps one
+are for assessment only; writes stay with the controller. Direct native chat
+dispatch is published in v1.5.0 as described above. Project v1.5.0 keeps one
 approved objective across design/execution, verifies answer application, reconciles
 terminal reservations and supports bounded target-local technical design addenda
 through independent re-review. Pinned ACs/history/budgets stay intact; cross-target

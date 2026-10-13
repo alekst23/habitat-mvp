@@ -6,7 +6,7 @@ reads/interviews are live-tested. Approved planning publication and revised
 development/delivery execution need separate validation. See
 [implementation status](gitlab-workflow.md).
 
-The published [CTX Project v1.4.0](project-owner.md) unifies assessment, Planning
+The published [CTX Project v1.5.0](project-owner.md) unifies assessment, Planning
 and Design in one conversation by loading the existing procedures. Catalog readback
 and enablement are verified; live model behavior is not. It does not retire the
 working specialist agents. Through CTX Project, stage names refer to modes and artifact ownership,
@@ -19,7 +19,7 @@ and does not enlarge repair budgets. Project v1.4.0 / Design v1.9.0 full saved
 prompts, versions, unchanged tools and enablement were read back on 2026-10-12 UTC;
 live conversational acceptance remains pending.
 
-Local **Project v1.5.0 candidate**, not published: [native session handoff](project-session-handoff.md)
+Published **Project v1.5.0**, read back on 2026-10-13 UTC: [native session handoff](project-session-handoff.md)
 adds discovery/start/input to Project only. On an authorized action it starts the
 existing Development flow, persists the real session and retrieves/continues on
 **check progress**. Status-only remains read-only. One mutation per user turn,
@@ -109,9 +109,9 @@ affected artifacts and honest provenance. Read-only conversation answers do not
 authorize writes until scoped design/execute is requested. A native resume retains
 the objective, attempts and limits; recorded answers are applied before re-asking.
 The human's scoped request and verified authenticated invocation supply execution
-authority, not an agent-written note. Published Project v1.4.0 cannot initiate
-flows; after activation, the v1.5.0 session protocol carries that approved request
-through native tools. The runner must verify provenance using the single-shot
+authority, not an agent-written note. Project v1.5.0 carries that approved request
+through native session tools; previous v1.4.0 could not initiate flows.
+The runner must verify provenance using the single-shot
 guide's native intake rule. No controller installation is required for either path.
 
 After journal initialization, bounded technical_design repairs use document
@@ -124,7 +124,7 @@ Deployment is separate. The native Development coordinator continues eligible ph
 and tickets inside one invocation, saving/read-verifying between delegations. A disabled
 controller is not a native execution blocker. Missing actual permissions, credentials,
 application adapters or uncertain ownership still block affected work. Cross-session
-auto-restart is unavailable: checkpoint at a real stop. Activated Project v1.5.0
+auto-restart is unavailable: checkpoint at a real stop. Published Project v1.5.0
 retrieves it and takes an eligible continuation on conversational re-entry; otherwise
 give one verified human resume. Workers never recursively start another flow.
 Agents cannot install credentials or change workflow security controls.

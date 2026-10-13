@@ -1,12 +1,13 @@
 # CTX native GitLab workflow implementation
 
-**Local Project v1.5.0 candidate, not published:** [session handoff](project-session-handoff.md)
+**Project v1.5.0 published/read back on 2026-10-13 UTC:** [session handoff](project-session-handoff.md)
 adds native discovery/start/input to the existing Project agent only. It starts
 approved Development work, persists the real session and handles **check progress**
 without copied commands/results. Status-only remains read-only; no idle-chat wake-up
-or controller installation. Publish/read back the 24-tool prompt registration, then
-run the linked live smoke. Live Project remains v1.4.0; Design/Development v1.9.0.
-The older manual-handoff examples below remain fallback/history, not the candidate UX.
+or controller installation. The exact 24-tool set, full prompt and description,
+private visibility, no MCP and enabled version were verified. Live smoke remains
+pending. Design/Development stay v1.9.0; no E2 run was started by publication.
+The older manual-handoff examples below remain fallback/history, not the current UX.
 
 Historical release: **Project v1.3.0 and Development v1.8.0**, published/enabled and
 fully read back on 2026-10-11 UTC. The [resumable owner protocol](single-shot-development.md#resumable-owner-handoff)

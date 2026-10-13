@@ -47,13 +47,13 @@ pause/cancel/scope instructions. A first request still needs a bounded objective
 This codec covers one explicitly scoped epic (including ticket-only focus). Existing
 multi-epic journals and optional controller envelopes retain their own protocols;
 never split, upgrade or reset one to fit this schema. Project chat reads the same
-handoff but does not run shell helpers. Published Project v1.4.0 cannot dispatch;
-the unpublished v1.5.0 session-handoff candidate claims a start only after actual
+handoff but does not run shell helpers. Previous Project v1.4.0 could not dispatch;
+published v1.5.0 session handoff claims a start only after actual
 native-tool success and session readback, not after writing a note.
 
 ### Intake from an activated Project session handoff
 
-After Project v1.5.0 publication, a scoped native start can arrive from its session
+With published Project v1.5.0, a scoped native start can arrive from its session
 tools rather than a bot mention. Read [project-session-handoff.md](project-session-handoff.md).
 Use the explicit goal to resolve source issue/epic/branch/mode and its request-note
 URL/key; verify them against actual project/session identity and repository mappings.
@@ -129,7 +129,7 @@ provenance/start/input smoke; local prompt checks cannot prove API behavior.
    ownership uncertainty, or an execution limit. Finish other eligible work first.
    Ask product questions in plain language with options/recommendations, checking
    prior answers first. Keep the interview in Project; source-note questions provide
-   durable context. Activated Project v1.5.0 can retrieve this checkpoint and take
+   durable context. Published Project v1.5.0 can retrieve this checkpoint and take
    one eligible continuation on check progress; do not ask for copied results.
    Without that capability, at a limit the user only needs the verified trigger handle plus
    `Continue E2` on the source issue. The next agent run, not the user, reads the

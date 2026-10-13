@@ -1,8 +1,12 @@
 # Project-owned session handoff
 
-Status: **Project v1.5.0 candidate, not published**. The live v1.4.0 registration
-does not have these mutation tools. Native tool availability was inspected in the
-Showcase agent editor; an end-to-end launch/input/re-entry smoke remains pending.
+Status: **Project v1.5.0 published and enabled on 2026-10-13 UTC**. After explicit
+user confirmation, the full prompt, description, exact 24 tools, private visibility,
+no MCP and enablement were read back. Saved prompt SHA-256
+`bf0fb4828094dcd8859b5b1bfb7b607da25fdfb35a73d17492a1ee7ed6c72853` matches
+reviewed source `5982f64e` after final-newline normalization. Source MR !42 passed
+pipeline 2940520638 and Duo review note 4001358891, merging main at ec89eb3.
+No E2 run was launched. An end-to-end launch/input/re-entry smoke remains pending.
 This is a conversational protocol, not a new scheduler, controller or runtime lock.
 The background Development supervisor and its worker/repair limits are unchanged.
 
@@ -35,7 +39,7 @@ The gate is a prompt rule, not a platform-enforced quota or dollar guarantee.
 
 ## Capabilities and exact target
 
-Add only these three tools to Project's existing 21: **List Duo Agents And Flows**,
+Project now has these three tools in addition to its previous 21: **List Duo Agents And Flows**,
 **Start Duo Session**, **Send Duo Session Input**. Planning and Design keep their
 current registrations. No shell, arbitrary HTTP, external MCP server or credentials.
 
