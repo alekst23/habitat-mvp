@@ -77,4 +77,6 @@ Planning published. Confirmed: Default is the initial generic template; users se
 
 **D11-12 — Connection revocation and audit (user, chat, 2026-10-13):** Revocation immediately detaches a connection from every instance, blocks new use, invalidates stored credentials, and appends an audit event. Historical activity remains visible in redacted form. Affected tickets: E11-1, E11-2, E11-3, E11-4 and E11-5.
 
-Design interview still needs the connection-sharing model. All settled decisions will be incorporated into the feature specifications, technical contracts, ticket designs, and acceptance manifest before independent review.
+**D11-13 — Connection sharing (user, chat, 2026-10-13):** One owner-controlled Gmail or Reddit connection may be explicitly attached to multiple Default instances of that owner. Attachment is per instance/capability; revocation detaches every attachment. Affected tickets: E11-1, E11-2, E11-3, E11-4 and E11-5.
+
+All settled decisions will be incorporated into the feature specifications, technical contracts, ticket designs, and acceptance manifest before independent review.
