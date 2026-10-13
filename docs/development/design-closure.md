@@ -9,7 +9,7 @@ remains unverified. Earlier publication evidence below is historical.
 
 This contract supersedes the earlier handoff of unfinished design to Development.
 The published setup retains the two specialist agents and existing background
-flows, not a bot per skill. The published [CTX Project v1.4.0](project-owner.md)
+flows, not a bot per skill. The published [CTX Project v1.5.0](project-owner.md)
 applies Planning/Design as modes in one chat and leaves the specialists available
 until live validation. Design mode owns the interview and saved documents in
 either entry point. The existing Development supervisor supplies independent
@@ -36,7 +36,7 @@ requires new checks and independent review. A link or local validator result alo
 does not attest reviewer independence, remote content or actual CI execution.
 
 Standalone Design and published Project v1.4.0 have no shell, public-web retrieval
-or flow-start tool. After activation, the **Project v1.5.0 candidate** instead uses
+or flow-start tool. Published and activated **Project v1.5.0** instead uses
 [native session handoff](project-session-handoff.md) to start/retrieve approved
 closure work. It preserves Design ownership, scope and budgets; no commands/results
 need copying. The following human-trigger fallback is for registrations without

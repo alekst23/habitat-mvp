@@ -48,7 +48,7 @@ This codec covers one explicitly scoped epic (including ticket-only focus). Exis
 multi-epic journals and optional controller envelopes retain their own protocols;
 never split, upgrade or reset one to fit this schema. Project chat reads the same
 handoff but does not run shell helpers. Published Project v1.4.0 cannot dispatch;
-the unpublished v1.5.0 session-handoff candidate claims a start only after actual
+published v1.5.0 session handoff claims a start only after actual
 native-tool success and session readback, not after writing a note.
 
 ### Intake from an activated Project session handoff

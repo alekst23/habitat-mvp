@@ -6,7 +6,7 @@ reads/interviews are live-tested. Approved planning publication and revised
 development/delivery execution need separate validation. See
 [implementation status](gitlab-workflow.md).
 
-The published [CTX Project v1.4.0](project-owner.md) unifies assessment, Planning
+The published [CTX Project v1.5.0](project-owner.md) unifies assessment, Planning
 and Design in one conversation by loading the existing procedures. Catalog readback
 and enablement are verified; live model behavior is not. It does not retire the
 working specialist agents. Through CTX Project, stage names refer to modes and artifact ownership,
@@ -19,7 +19,7 @@ and does not enlarge repair budgets. Project v1.4.0 / Design v1.9.0 full saved
 prompts, versions, unchanged tools and enablement were read back on 2026-10-12 UTC;
 live conversational acceptance remains pending.
 
-Local **Project v1.5.0 candidate**, not published: [native session handoff](project-session-handoff.md)
+Published **Project v1.5.0**, read back on 2026-10-13 UTC: [native session handoff](project-session-handoff.md)
 adds discovery/start/input to Project only. On an authorized action it starts the
 existing Development flow, persists the real session and retrieves/continues on
 **check progress**. Status-only remains read-only. One mutation per user turn,
