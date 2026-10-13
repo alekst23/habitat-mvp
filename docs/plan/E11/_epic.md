@@ -59,4 +59,6 @@ Planning published. Confirmed: Default is the initial generic template; users se
 
 **D11-3 — Usage and budget presentation (user, chat, 2026-10-13):** AICL records usage in each base metric available (initially inference tokens and compute minutes). A versioned cost function converts that measured usage to USD for owner-facing budget display and daily/monthly limit evaluation. This is a control budget, not PayPal funding, billing capture, or a payment rail. Affected tickets: E11-1, E11-2, E11-3, E11-4 and E11-5.
 
-Design pending an interview covering default limits, price-table/cost-function source and update behavior, reservation/reconciliation behavior, connection consent/revocation, network-policy behavior, lifecycle/status vocabulary, authentication entry point, and page-level behavior.
+**D11-4 — Price table source (user, chat, 2026-10-13):** An operator-managed, versioned internal price table with effective dates supplies the cost function. Every usage record stores the applied price-table version so historical USD totals remain explainable after prices change. Affected tickets: E11-1, E11-3 and E11-5.
+
+Design pending an interview covering default limits and reservation/reconciliation behavior, connection consent/revocation, network-policy behavior, lifecycle/status vocabulary, authentication entry point, and page-level behavior.
