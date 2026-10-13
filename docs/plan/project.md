@@ -20,50 +20,38 @@ on resume rather than recreated. Add the planning session URL when available.
 
 | Epic | Issue | Branch | State |
 |---|---|---|---|
-| EPIC-I2: Habitat MVP — First Runnable Foundation | #2 | ctx/epic-i2 | planning |
+| E11: AICL MVP — Configurable AI Control Layer | #11 | ctx/epic-i11 | planning; Design pending |
+
+The earlier E2/PayPal foundation is retained as historical scope and evidence. It is superseded for MVP planning by E11; no prior issue is closed or deleted.
 
 ## Ticket backlog
 
 | Ticket | Issue | Wave | State |
 |---|---|---|---|
-| T-I3: Feasibility spikes | #3 | 1 | pending |
-| T-I4: Trust core | #4 | 2 | pending |
-| T-I5: Tool interface and onboarding | #5 | 3 | pending |
-| T-I6: Marketing agent and action broker | #6 | 4 | pending |
-| T-I7: Funding and control panel | #7 | 4 | pending |
-| T-I8: Demo and submission | #8 | 5 | pending |
+| E11-1: AICL domain and control foundation | #12 | 1 | design pending |
+| E11-2: Canonical creation service and web-app tools | #13 | 2 | design pending |
+| E11-3: Authenticated workspace and agent-creation wizard | #14 | 3 | design pending |
+| E11-4: Built-in chat agent creation surface | #15 | 3 | design pending |
+| E11-5: AICL web pages, instance management, and cross-surface proof | #16 | 4 | design pending |
 
 ## Ready next work
 
-1. Review/publish this revision; update the existing planning catalog version and
-   enable development/delivery. Validate the new versions in Duo.
-2. Resolve Duo access/credits and runner availability for live flow execution.
-3. Configure protected branches and mandatory CI checks.
-4. Reconcile the existing epic/tickets and stable numbering. Develop the foundation
-   ticket with the minimum tests, real app/CI commands and browser startup contract.
-5. Run `ctx-epic-design issue=2` to write technical design and reconcile tickets.
-6. Run `ctx-ticket-design issue=3` to start T-I3 (feasibility spikes, Wave 1).
-7. Run current-SHA AC validation and separate ticket/epic review. Enable required
-   application checks before implementation merges; then connect delivery adapters.
+1. Design E11: establish the template catalog, configurable instance fields, lifecycle/status vocabulary, authenticated entry point, and page-level behavior.
+2. Reconcile the E11 plan and its five issue mappings before implementation.
+3. Keep E2 issues #3–#9 as historical scope; do not revive their PayPal, campaign, or BYOA assumptions.
 
 ## Blockers and decisions
 
-- GitLab Duo access/credits: resolve before live flow execution.
-- The app, test startup, Playwright tests and application command adapters are missing.
-- Protected branches and mandatory CI checks: must be configured before implementation MRs merge.
-- Hosting/configuration/secrets adapters: not implemented; no deployment permitted yet.
-- Public repository/MIT license and hackathon submission: T-I8 scope.
-- Reddit Ads API access: may require separate approval; T-I3 spike resolves.
-- PayPal authorize-and-capture behavior: must be confirmed for account type; T-I3 spike resolves.
-- Open decisions: live vs. sandbox PayPal for demo, model provider, cloud browser, per-owner isolation, Habitat margin.
+- The application, test startup, browser tests, and application command adapters are missing.
+- Protected branches and mandatory CI checks remain prerequisites for implementation merges.
+- Detailed AICL template configuration, lifecycle, and UI behavior are Design decisions still to be specified.
+- No public MCP API, payment/funding, external-action, or provider-enablement scope is included in E11.
 
 ## Durable handoff
 
 Source issue: #10  
-Epic issue: #2 (EPIC-I2)  
-Epic branch: ctx/epic-i2  
-Spec: docs/design/habitat-foundation/spec.md  
-Epic plan: docs/plan/EPIC-I2/_epic.md  
-State: docs/plan/EPIC-I2/state.json  
-Source SHA: 4198664fc2bc917ee722146553b27fa41f0918c9  
-Next operation: ctx-epic-design issue=2
+Epic issue: #11 (E11)  
+Epic branch: ctx/epic-i11  
+Epic plan: docs/plan/E11/_epic.md  
+State: docs/plan/E11/state.json  
+Next operation: Design E11 in this conversation
