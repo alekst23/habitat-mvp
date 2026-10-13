@@ -73,4 +73,6 @@ Planning published. Confirmed: Default is the initial generic template; users se
 
 **D11-10 — First-run page flow (user, chat, 2026-10-13):** The landing page explains AICL control and leads to **Create your first agent**. After sign-in, an empty workspace offers **Create with wizard** and **Create with chat**. Both paths create the same canonical Default instance. Affected tickets: E11-3, E11-4 and E11-5.
 
-Design pending an interview covering reservation/reconciliation behavior and detailed connection revocation/audit behavior.
+**D11-11 — Budget reservation and settlement (user, chat, 2026-10-13):** Before inference or compute begins, AICL reserves the maximum estimated USD against both applicable daily and monthly budgets. It settles against measured usage after completion. Unknown outcomes retain their reservation until reconciliation; failure to price, reserve, validate, or reconcile denies further work. Affected tickets: E11-1, E11-2, E11-4 and E11-5.
+
+Design pending an interview covering detailed connection revocation/audit behavior.
