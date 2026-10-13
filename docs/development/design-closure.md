@@ -35,7 +35,13 @@ existing design.json schema and ticket execution statuses. Any later design chan
 requires new checks and independent review. A link or local validator result alone
 does not attest reviewer independence, remote content or actual CI execution.
 
-The chat tool set has no shell, public-web retrieval or flow-start tool. It must
+Standalone Design and published Project v1.4.0 have no shell, public-web retrieval
+or flow-start tool. After activation, the **Project v1.5.0 candidate** instead uses
+[native session handoff](project-session-handoff.md) to start/retrieve approved
+closure work. It preserves Design ownership, scope and budgets; no commands/results
+need copying. The following human-trigger fallback is for registrations without
+those tools, not an instruction for activated Project to refuse available tools.
+Chat must
 finish its routine document repairs itself, ask only material product questions,
 then offer one exact **human** invocation for the runner capabilities it lacks.
 That boundary is a tool handoff, not design completion. Never make the user collect

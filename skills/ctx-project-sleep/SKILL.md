@@ -3,6 +3,14 @@ name: ctx-project-sleep
 description: Save development progress, verified evidence and precise resume instructions across flow sessions.
 ---
 
+Role boundary: the persistence/journal/helper instructions below are for the native
+runner. CTX Project chat reads the full checkpoint but never rewrites it or commits
+checkpoint-only files to move the reviewed SHA. For the activated v1.5.0 session
+tools, use docs/development/project-session-handoff.md's compact request/receipt
+notes pointing to the original native state. Save actual session identity, result
+links and next action; return a check-progress re-entry without asking the user to
+copy commands/results. Status-only writes nothing; no unattended chat auto-wake.
+
 Reconcile completed, partial, in-flight and blocked work against GitLab. Save branch
 and candidate SHAs, evidence links, unresolved decisions and the next operation in
 the project/epic state and source issue. Commit state on the authorized epic branch.

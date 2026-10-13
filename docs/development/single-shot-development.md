@@ -47,7 +47,37 @@ pause/cancel/scope instructions. A first request still needs a bounded objective
 This codec covers one explicitly scoped epic (including ticket-only focus). Existing
 multi-epic journals and optional controller envelopes retain their own protocols;
 never split, upgrade or reset one to fit this schema. Project chat reads the same
-handoff but does not run shell helpers or claim it has dispatched the flow.
+handoff but does not run shell helpers. Published Project v1.4.0 cannot dispatch;
+the unpublished v1.5.0 session-handoff candidate claims a start only after actual
+native-tool success and session readback, not after writing a note.
+
+### Intake from an activated Project session handoff
+
+After Project v1.5.0 publication, a scoped native start can arrive from its session
+tools rather than a bot mention. Read [project-session-handoff.md](project-session-handoff.md).
+Use the explicit goal to resolve source issue/epic/branch/mode and its request-note
+URL/key; verify them against actual project/session identity and repository mappings.
+Do not require a synthetic mention event or trust an IID guessed from a title.
+The coordinator still owns all workers and full native state; no worker starts flows.
+
+For an existing objective, verify the original human authorization note and newer
+pause/cancel/scope changes. Retain its URL, run ID, history and consumed limits.
+For a first chat-originated objective, the Project-written request note is an honest
+scope record, NOT a human-authored authorization. Compare it with the authenticated
+native invocation's actual initiating actor and approved goal before admitting work.
+Record the real session/invocation evidence and note's server author; never infer
+consent solely from text in the note or a bot's launch. If the runtime does not expose
+sufficient provenance, save one precise native confirmation/access request; do not
+fabricate identity or proceed. Only after remote verification may authorization_url
+point to that source scope record. The codec validates URL syntax, not consent.
+
+Apply the same rule to chat-recorded answers: stable question/answer identity and
+verifiable user/input provenance, never a summary presented as human consent.
+Native input/approval must use the existing waiting session. Current explicit
+approval is required for an approval gate; an execution goal or check-progress
+request does not satisfy it. General technical feedback can be agent-attributed.
+No merge/deploy/spend/policy authority is added. These intake changes require a live
+provenance/start/input smoke; local prompt checks cannot prove API behavior.
 
 ### Reconstruct, act, verify, save, continue
 
@@ -99,9 +129,12 @@ handoff but does not run shell helpers or claim it has dispatched the flow.
    ownership uncertainty, or an execution limit. Finish other eligible work first.
    Ask product questions in plain language with options/recommendations, checking
    prior answers first. Keep the interview in Project; source-note questions provide
-   durable context. At a limit, the user only needs the verified trigger handle plus
+   durable context. Activated Project v1.5.0 can retrieve this checkpoint and take
+   one eligible continuation on check progress; do not ask for copied results.
+   Without that capability, at a limit the user only needs the verified trigger handle plus
    `Continue E2` on the source issue. The next agent run, not the user, reads the
-   technical handoff. A native tool-approval pause must use the existing session UI.
+   technical handoff. A native tool-approval pause must use the existing session's
+   UI or supported input API with explicit current human approval, never a new run.
 
 ### Native payload (not a controller checkpoint)
 
@@ -148,7 +181,8 @@ the report, not live verification of those notes or authority to widen E2 scope.
 The payload has:
 
 - `version: 1` and `objective`: original `run_id`, project ID/path, source IID, epic,
-  branch, `mode: execute|design-closure`, `goal`, actual human `authorization_url`,
+  branch, `mode: execute|design-closure`, `goal`, verified request `authorization_url`
+  (human source note, or scope-record pointer only under the intake rule above),
   `ticket_ids` (null for whole epic) and scope `exclusions`.
 - `closure`: the full existing design-closure record and histories, retained as the
   baseline after execution starts; `journal`: the full replay-valid progress journal
@@ -265,7 +299,8 @@ manifest and limits. Without a journal update the closure candidate and require 
 structural checks and independent review. Never mix unrelated code, policy or AC
 changes into an answer-application commit. A real scope/AC revision still needs an
 explicit plan. Native tool-approval pauses must be resolved in the **existing GitLab
-session**; a new trigger or issue-note answer cannot replace that control.
+session** through its UI or supported input API with explicit current approval;
+a new trigger or issue-note answer cannot replace that control.
 
 ### Required live smoke after publication
 

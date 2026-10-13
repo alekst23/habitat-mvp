@@ -1,6 +1,13 @@
 # GitLab workflows for the HABITAT submission
 
-Current catalog release: **CTX Project v1.3.0 / Development v1.8.0** is published
+Local **Project v1.5.0 candidate**, not published: [session handoff](development/project-session-handoff.md)
+lets Project start the approved existing Development flow and retrieve its results
+on **check progress**. Planning/design interviews stay here; technical workers stay
+inside Development. No copied commands/results, new controller, auto-waking chat
+or changes to stage evidence/merge/release gates. Live Project remains v1.4.0,
+Design/Development v1.9.0; configuration and behavioral acceptance are separate.
+
+Historical catalog release: **CTX Project v1.3.0 / Development v1.8.0** is published
 and enabled with full content/tool readback (2026-10-11 UTC). The [resumable owner](development/single-shot-development.md#resumable-owner-handoff)
 adds short continuation requests, durable native handoffs and agent-owned technical
 recovery. Source !31 and helper-sync !32 passed CI/independent review and merged;
@@ -89,7 +96,10 @@ the still-pending live E2 test.
 The chat contributes Plan/design preparation; it does not establish implementation
 or delivery-stage evidence. See [usage and boundaries](development/gitlab-workflow.md#ctx-design-conversational-entry-point).
 
-Begin with human-invoked flows on issues/MRs. GitLab's documented flow triggers
+The initial integration uses human-invoked flows on issues/MRs. The Project v1.5.0
+candidate adds an explicit user-authorized native session API handoff instead of
+posting bot mentions. It still requires publication/readback and a live smoke.
+GitLab's documented flow triggers
 require human action; these definitions do not automatically invoke another flow
 or wake on a pipeline event. CI dependencies execute deterministic jobs; persistent
 handoffs let a human resume the same flow after a blocker. Future scheduling must

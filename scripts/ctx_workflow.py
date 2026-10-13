@@ -411,7 +411,28 @@ def validate_chat_agent(name, record, prompt, catalog):
     tools = record.get("tools_ui_labels")
     allowed = CHAT_TOOLS | ({"Create Issue"} if name != "ctx-design" else set())
     if name == "ctx-project":
-        allowed |= {"List Duo Sessions", "Get Duo Session"}
+        allowed |= {"List Duo Sessions", "Get Duo Session", "List Duo Agents And Flows",
+                    "Start Duo Session", "Send Duo Session Input"}
+        handoff = record.get("session_handoff")
+        expected_handoff = {
+            "allowed_entrypoint": "development",
+            "flow_catalog_item_id": 1016234,
+            "max_session_mutations_per_turn": 1,
+            "status_requests": "read_only",
+            "check_progress": "continue_authorized_objective",
+            "approval_policy": "explicit_current_request",
+            "automatic_wakeup": False,
+        }
+        require(isinstance(handoff, dict) and handoff == expected_handoff and
+                all(type(handoff[key]) is type(value) for key, value in expected_handoff.items()),
+                "project session handoff policy changed")
+        target = catalog.get("entrypoints", {}).get(handoff["allowed_entrypoint"], {})
+        flow_record = catalog.get("flows", {}).get(target.get("definition"), {})
+        expected_url = f"https://gitlab.com/{record['project_path']}/-/automate/flows/{handoff['flow_catalog_item_id']}"
+        require(target.get("kind") == "flow" and flow_record.get("catalog_url") == expected_url,
+                "project handoff flow identity changed")
+    else:
+        require("session_handoff" not in record, "specialist cannot gain session dispatch")
     require(isinstance(tools, list) and all(isinstance(t, str) for t in tools) and
             len(tools) == len(set(tools)) and set(tools) == allowed, "unexpected chat agent tools")
     expected = ([op for operations in CHAT_PROCEDURES.values() for op in operations] if name == "ctx-project"

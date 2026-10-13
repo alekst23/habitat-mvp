@@ -10,6 +10,17 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Local **Project v1.5.0 candidate** adds native session discovery/start/input and a
+durable conversational handoff; read docs/development/project-session-handoff.md.
+It is NOT published: live v1.4.0 still has 21 tools. After reviewed publication and
+24-tool readback, Project starts approved Development work, returns a real session
+link and handles **check progress** without copied commands/results. Status-only
+remains read-only. One session mutation per user turn; native workers retain the
+inner loop and cannot recursively start flows. Preserve scope, original authority,
+cumulative budgets and explicit current approvals. No idle-chat auto-wake, duplicate
+uncertain starts or controller activation. This narrowly supersedes the older
+Project human-trigger-only statements below, not standalone Design/Planning limits.
+
 Project v1.4.0 / Design v1.9.0 are published and enabled (2026-10-12 UTC).
 Full saved prompts match reviewed source 0ab47996 after final-newline normalization;
 private visibility, unchanged tools and no external MCP were read back. Source
@@ -54,7 +65,8 @@ It unifies Planning/Design procedures and project-status assessment in one chat;
 read docs/development/project-owner.md. When using CTX Project, Planning
 and Design are modes in the same conversation, not instructions to open another
 agent. Status requests are read-only. Shared skills, evidence, scope and security
-boundaries remain; the agent has no shell, flow-start or controller-write tool.
+boundaries remain; published v1.4.0 has no shell, flow-start or controller-write tool.
+The v1.5.0 candidate changes only the Project session handoff as described above.
 CTX Planning and CTX Design remain available; do not retire them before live acceptance.
 The two background flow entry points are `ctx-development` and `ctx-delivery` in
 `.gitlab/duo/flows/`. Reusable instructions live in `skills/ctx-*/SKILL.md`;
@@ -118,7 +130,7 @@ The CTX Project agent follows the same order and artifact ownership as modes
 within one chat. It uses the existing interview/planning/design skills directly,
 not the standalone registrations as subagents. Reads of protected controller state
 are for assessment only; writes stay with the controller. Missing direct chat
-dispatch remains an explicit implementation gap. The published revision keeps one
+dispatch is an unpublished v1.5.0 candidate as described above. The published revision keeps one
 approved objective across design/execution, verifies answer application, reconciles
 terminal reservations and supports bounded target-local technical design addenda
 through independent re-review. Pinned ACs/history/budgets stay intact; cross-target

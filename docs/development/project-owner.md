@@ -5,6 +5,15 @@ readback passed. The v1.0.0 chat picker was verified on 2026-10-10; subsequent E
 feedback motivated persistent objectives, saved decisions and stale-worker recovery.
 The revised agent's behavioral acceptance remains pending.
 
+**Local v1.5.0 candidate, not published:** [Project-owned session handoff](project-session-handoff.md)
+adds discovery/start/input tools to Project only. After approved scope, it starts
+the existing Development flow, saves a verified session receipt and retrieves
+results when the user says **check progress**. No copied commands/results or request
+to monitor the runner. One session mutation per user turn; native workers keep the
+inner loop. Status-only stays read-only, and idle chat does not wake automatically.
+This candidate supersedes the manual-handoff instructions below only after the
+24-tool registration and prompt are published/read back. Live acceptance is pending.
+
 Published **v1.4.0** adds the [next-action contract](next-action.md): every
 task-related answer includes the immediate next move and any exact human action,
 without another "how?" prompt. It preserves read-only status and all authority,
@@ -22,7 +31,7 @@ MR !29 synchronized trusted E2 helpers. No application execution was started.
 Published in **v1.3.0**: [resumable owner handoffs](single-shot-development.md#resumable-owner-handoff)
 make a short "Continue E2" resolve the original objective and technical next action
 from source notes. The runner owns recovery; chat owns the interactive interview.
-The existing registration still has no worker-dispatch tool. This is not a general
+The v1.4.0 registration still has no worker-dispatch tool. This is not a general
 claim about all GitLab agents: the native flow already has managed subagents.
 Development v1.8.0 was published/read back with this agent. Source !31 and E2
 helper-sync !32 are merged after CI and independent review; live two-run acceptance
@@ -44,9 +53,12 @@ Then continue in that same chat:
 > questions, and save and verify feature-level specifications on the existing epic
 > branch when no active writer owns them. Keep !8 open; do not implement.
 
-This is the conversational entry point, not a flow-start tool. After scoped intent
-is settled, the user invokes the existing native Development flow once; it advances
-technical phases/tickets internally. The controller stays disabled and is optional.
+With live v1.4.0, the user invokes the existing native Development flow once after
+scoped intent is settled. After v1.5.0 activation, say **Finish the approved design**
+or **Implement the approved scope** here; Project starts the selected Development
+flow and returns its actual session link. Return with **check progress** to let it
+retrieve results and take the next eligible action. Technical phases/tickets advance
+internally. The controller stays disabled and is optional.
 Standalone Planning/Design registrations remain available. Live loop acceptance is
 pending; neither a saved chat note nor this documentation starts execution.
 
@@ -80,8 +92,9 @@ owns intent and explanation, not execution journals or protected controller stat
 - **Design:** keep the ordered interactive interview and ordinary draft saves.
   Ask only what the user must decide; complete technical document work yourself
   when ownership permits. Save feature-local specs/contracts and stable AC mappings.
-- **Execution handoff:** record requested scope and give one native Development
-  invocation. Design approval alone is not execution authorization.
+- **Execution handoff:** record requested scope and use the activated session
+  protocol to start/reuse Development (manual invocation on v1.4.0). Design approval
+  alone is not execution authorization.
 - **Decision/resume:** read the actual question, capture its answer and affected
   scope, persist it with honest provenance, and retain the run's history/budgets.
 
@@ -174,9 +187,32 @@ terminal failures and unreadable status. A failed reservation requires actual
 session/head/diff/note reconciliation, not an indefinite “active” label or an
 unverified claim that no other writers exist.
 
-## Execution connection: explicit current limitation
+## Execution connection: candidate and live capabilities
 
-The agent uses 21 tools: the 19-tool Planning capability set (GitLab reads,
+The v1.5.0 candidate uses [project-session-handoff.md](project-session-handoff.md),
+including verified original authority, session identity, durable request/outcome,
+uncertain dispatch recovery, current native approvals and one mutation per turn.
+It adds List Duo Agents And Flows, Start Duo Session and Send Duo Session Input.
+Only the existing Development entry is allowed; no arbitrary flows or shell/MCP
+shortcut. These are prompt-level limits, not platform-enforced flow permissions.
+Do not enable or claim these capabilities from a repository merge alone.
+
+For an existing objective retain the actual human authorization note. A first
+chat-originated request needs verified authenticated invocation provenance as well
+as the honestly attributed scope record; a Project-written note cannot grant
+authority. The native intake rule is in single-shot-development.md. If provenance
+is unavailable, ask one precise native confirmation, not for logs or worker choices.
+
+After activation, running work gets a link and no user action now. A supported
+question stays in this conversation, then its answer goes to the same session.
+Terminal work is reconciled before one eligible continuation preserving the run
+and cumulative budgets. An uncertain start never becomes a second start or bot
+mention. **Check progress** continues existing authority; **status only** never
+writes, starts or sends input. The integration needs its own live smoke.
+
+### Manual fallback for live v1.4.0 or confirmed unavailable capability
+
+Live v1.4.0 uses 21 tools: the 19-tool Planning capability set (GitLab reads,
 scoped issues/comments, branches, commits and draft MRs), plus read-only List Duo
 Sessions and Get Duo Session. There is no shell, public web tool, flow/session-start,
 session-input, controller-start/resume tool or external MCP server.
@@ -208,8 +244,9 @@ The future chat-to-controller bridge is **not yet implemented**. It must authent
 the requesting user, enforce project/scope/version/allowed-action checks, reject
 duplicate/uncertain dispatch and leave controller credentials outside chat/agent CI.
 An issue note or prompt cannot grant this authority. Do not expose an arbitrary HTTP
-or shell tool as a shortcut. Native human invocation/resume remains explicit;
-merely answering in chat does not wake a stopped flow.
+or shell tool as a shortcut. The v1.5.0 candidate uses native session tools instead,
+not this future controller bridge. Merely answering in idle chat cannot wake it;
+an active, authorized turn must perform and verify the session action.
 
 Before a handoff, Project checks unresolved product questions against saved answers
 and asks the remaining ones here, with recommendations. Technical findings never
@@ -275,11 +312,13 @@ The following live behavior checks remain required, not implied by publication:
    stale review at a newer SHA, an active/uncertain writer, missing session access,
    and an unavailable controller. None may cause a duplicate run or false completion.
 5. Without controller setup, test one native invocation, repeated technical
-   delegation, a genuine product question and one manual resume without resetting
+   delegation, a genuine product question and one resume without resetting
    history. Include target-local technical design repair and decision application,
    stale failed-session recovery and continuation after design closes under an
-   execute objective. Retain job/session/note/SHA evidence. This does not validate
-   a chat bridge or unrestricted cross-target revision.
+   execute objective. Retain job/session/note/SHA evidence. For v1.5.0 also run every
+   session-handoff acceptance case, including fresh-chat recovery, explicit read-only,
+   uncertain starts and current approval input. Native-only tests do not validate
+   this chat integration or unrestricted cross-target revision.
 6. Only after the relevant smokes pass consider retiring standalone Planning/Design
    entry points with explicit operator approval. Keep rollback registration history.
 
