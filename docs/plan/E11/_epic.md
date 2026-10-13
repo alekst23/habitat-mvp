@@ -67,7 +67,7 @@ Planning published. Confirmed: Default is the initial generic template; users se
 
 **D11-7 — Network policy model (user, chat, 2026-10-13):** Each enabled capability uses a fixed system allow-list for its required endpoints. `network.fetch` may additionally use owner-added exact HTTPS domains. All other destinations are denied; wildcard deny rules are not used as a substitute for this allow-list. Affected tickets: E11-1, E11-2, E11-3, E11-4 and E11-5.
 
-**D11-8 — Instance lifecycle (user, chat, 2026-10-13):** Instances have `draft`, `active`, `paused`, and `archived` lifecycle states. Only active instances are eligible to use enabled capabilities. A zero budget, unavailable connection, or denied network destination is a visible blocked condition, not a lifecycle state. Affected tickets: E11-1, E11-3, E11-4 and E11-5.
+**D11-8 — Instance lifecycle and gating (user, chat, 2026-10-13; revised):** Instances have `draft`, `active`, `paused`, and `archived` lifecycle states; `paused` is owner-initiated. `gated` is a visible operational status, not a lifecycle state: an active instance is gated when a control prevents work, including exhausted daily/monthly budget, revoked required connection, disabled required capability, or denied network destination. It returns to active eligibility only after the owner resolves that control. Affected tickets: E11-1, E11-3, E11-4 and E11-5.
 
 **D11-9 — Authentication entry point (user, chat, 2026-10-13):** The MVP uses email magic-link sign-in. Authenticated session context derives tenant and owner identity for all AICL reads and mutations; client-supplied tenant identity is ignored. Affected tickets: E11-1, E11-2, E11-3, E11-4 and E11-5.
 
