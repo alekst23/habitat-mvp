@@ -42,8 +42,67 @@ class ChatAgentRegistrationTests(unittest.TestCase):
                 self.assertEqual(len(tools), len(set(tools)))
                 expected = shared | publishing | ({"Create Issue"} if name != "ctx-design" else set())
                 if name == "ctx-project":
-                    expected |= {"List Duo Sessions", "Get Duo Session"}
+                    expected |= {"List Duo Sessions", "Get Duo Session", "List Duo Agents And Flows",
+                                 "Start Duo Session", "Send Duo Session Input"}
                 self.assertEqual(set(tools), expected)
+
+    def test_project_session_handoff_is_bounded_and_restartable(self):
+        # Registration/prompt regressions only; native tool execution needs a live smoke.
+        record = json.loads((AGENTS / "ctx-project.json").read_text())
+        self.assertEqual(record.get("session_handoff"), {
+            "allowed_entrypoint": "development",
+            "flow_catalog_item_id": 1016234,
+            "max_session_mutations_per_turn": 1,
+            "status_requests": "read_only",
+            "check_progress": "continue_authorized_objective",
+            "approval_policy": "explicit_current_request",
+            "automatic_wakeup": False,
+        })
+        prompt = (AGENTS / "ctx-project.md").read_text()
+        for term in ("docs/development/project-session-handoff.md", "Check progress",
+                     "Start Duo Session", "Send Duo Session Input", "can_start_session",
+                     "ai_catalog_item_consumer_id", "dispatch_unknown", "workflow_id",
+                     "human_approval=true", "one session mutation per user turn",
+                     "Do not ask the user to monitor", "Read-only overrides continuation"):
+            self.assertIn(term, prompt)
+        for obsolete in ("this chat starts nothing", "No flow-start or controller-start tool is installed",
+                         "The human posts the trigger; you must not initiate it indirectly"):
+            self.assertNotIn(obsolete, prompt)
+        guide = (ROOT / "docs/development/project-session-handoff.md").read_text()
+        for requirement in ("CTX Project session handoff v1", "dispatch_unknown",
+                            "prepared request without an outcome", "not an atomic lease",
+                            "human_approval=true", "live-proven"):
+            self.assertIn(requirement, guide)
+
+    def test_session_handoff_policy_cannot_silently_widen(self):
+        catalog = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())
+        record = json.loads((AGENTS / "ctx-project.json").read_text())
+        prompt = (AGENTS / "ctx-project.md").read_bytes()
+        self.assertIn("session_handoff", record)
+        for key, value in (("allowed_entrypoint", "delivery"), ("flow_catalog_item_id", 1),
+                           ("max_session_mutations_per_turn", 2), ("max_session_mutations_per_turn", True),
+                           ("status_requests", "execute"), ("approval_policy", "automatic"),
+                           ("automatic_wakeup", True)):
+            changed = deepcopy(record)
+            changed["session_handoff"][key] = value
+            with self.subTest(field=key), self.assertRaises(workflow.Invalid):
+                workflow.validate_chat_agent("ctx-project", changed, prompt, catalog)
+        changed_catalog = deepcopy(catalog)
+        changed_catalog["flows"][".gitlab/duo/flows/ctx-development.yml"]["catalog_url"] = (
+            "https://gitlab.com/another/project/-/automate/flows/1016234"
+        )
+        with self.assertRaises(workflow.Invalid):
+            workflow.validate_chat_agent("ctx-project", record, prompt, changed_catalog)
+        for tool in ("List Duo Agents And Flows", "Start Duo Session", "Send Duo Session Input"):
+            changed = deepcopy(record)
+            changed["tools_ui_labels"].remove(tool)
+            with self.subTest(missing_tool=tool), self.assertRaises(workflow.Invalid):
+                workflow.validate_chat_agent("ctx-project", changed, prompt, catalog)
+        for name in ("ctx-design", "ctx-planning"):
+            specialist = json.loads((AGENTS / f"{name}.json").read_text())
+            specialist["session_handoff"] = record["session_handoff"]
+            with self.subTest(specialist=name), self.assertRaises(workflow.Invalid):
+                workflow.validate_chat_agent(name, specialist, (AGENTS / f"{name}.md").read_bytes(), catalog)
 
     def test_project_publication_record_preserves_specialists_and_pending_live_proof(self):
         catalog = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())
@@ -56,15 +115,17 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertTrue(project["catalog_url"].endswith("/agents/1016538"))
         self.assertEqual(project["catalog_version"], "1.4.0")
         prompt = (AGENTS / project["system_prompt_file"]).read_bytes()
-        self.assertNotIn("pending_catalog_version", project)
+        self.assertEqual(project["pending_catalog_version"], "1.5.0")
         self.assertEqual(project["published_source_commit"], "0ab47996c52ec70a2f137f1dd9243a91036a706b")
         self.assertEqual(project["published_system_prompt_sha256"],
                          "14dd6dd4233ac98cf2510893cd1fa261054e70c5f7e5900459acbeb2a79a5a7f")
-        self.assertNotIn("candidate_status", project)
+        self.assertTrue(project["candidate_status"].startswith("Unpublished"))
         self.assertTrue(project["verification"]["resumable_owner_live"].startswith("pending"))
-        self.assertEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertNotEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertTrue(project["verification"]["session_handoff_live"].startswith("pending"))
         self.assertTrue(project["verification"]["next_action_live"].startswith("pending"))
-        self.assertEqual(project["next_entrypoint"], "development-human-native-invocation-or-resume")
+        self.assertEqual(project["next_entrypoint"], "development-native-session-handoff")
+        self.assertEqual(project["published_next_entrypoint"], "development-human-native-invocation-or-resume")
         previous = project["publication_history"][0]
         self.assertEqual(previous["catalog_version"], "1.0.0")
         self.assertEqual(previous["published_source_commit"], "033dc8da20002486a6d18269b64e443191eebc20")
@@ -91,7 +152,7 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         for requirement in ("same conversation", "not call the standalone chat agents",
                             "status-only requests are read-only", "docs/plan/project.md",
                             "mode=design-closure", "Technical findings are agent work",
-                            "no shell", "No flow-start or controller-start tool",
+                            "no shell", "No controller-start tool",
                             "Never write ctx/controller-state", "do not reset",
                             "docs/development/project-owner.md", "current-SHA",
                             "Do not ask the user to copy review text", "in the same response",

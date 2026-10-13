@@ -18,7 +18,13 @@ The supervisor reads and validates the full ctx-owner-handoff:v1 using ctx_owner
 reconciles newer evidence, then follows the derived next action. Missing legacy
 structure is agent-owned reconciliation. Never ask the user to reconstruct logs,
 choose a technical operation or pass machine state between runs. Chat reads the
-same handoff but cannot run helpers or dispatch workers; interview decisions here.
+same handoff but cannot run helpers or dispatch workers directly; interview decisions here.
+In CTX Project only, after the v1.5.0 registration is published/activated, use
+docs/development/project-session-handoff.md to start the approved Development flow
+or send input to its existing session. Status-only stays read-only; check progress
+retrieves results and permits one eligible session mutation within existing scope.
+This does not grant runner workers recursive flow-start authority or turn receipt
+notes into full owner state. Until activation, give one verified manual fallback.
 The handoff is for the NEXT AGENT RUN, not a checklist for the user.
 
 Use visible framing from ctx_owner.py, never HTML-comment delimiters. If a legacy
@@ -68,4 +74,5 @@ state in place on the authorized non-default branch, never directly on main.
 Use ctx-project-sleep to save/read back progress after each delegation; saving alone
 does not stop a native run. Stop only for scoped completion, actual blockers, approval,
 uncertain ownership or exhausted limits. Native cross-session auto-resume is unavailable;
-give one exact manual resume at that boundary, never ask the user to dispatch each phase.
+save a handoff Project can retrieve on conversational re-entry (manual resume if
+its session tools are unavailable), never ask the user to dispatch each phase.

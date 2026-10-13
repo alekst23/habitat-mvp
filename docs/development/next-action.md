@@ -6,6 +6,13 @@ Full saved prompt/version/tool readback passed against reviewed source 0ab47996
 tools, scope, review gates, budgets or automatic dispatch. It does not implement
 comment-context compaction.
 
+**Project v1.5.0 candidate exception, not yet published:** after its 24-tool
+registration is activated, use [Project-owned session handoff](project-session-handoff.md)
+instead of a manual trigger. Project starts approved work, saves the session and
+handles **check progress** itself. The human-invocation examples below remain for
+standalone Design, live Project v1.4.0 or a confirmed unavailable capability. Never
+use them to retry uncertain dispatch. No changes to Design's tool set or autonomy.
+
 ## Help the user move, not interpret the workflow
 
 Use **Result -> Next -> Your action** in ordinary prose; labels are optional.
@@ -62,7 +69,9 @@ A first or changed objective must state its requested scope and exclusions. Keep
 technical references in the saved handoff when writes are authorized. A read-only
 assessment must not publish one just to make a shorter command possible.
 
-Chat still cannot launch the flow or post a bot mention indirectly. Say so once,
+Standalone Design and Project v1.4.0 cannot launch the flow or post a bot mention
+indirectly. The activated Project v1.5.0 uses native session tools, not bot comments.
+For a genuine missing capability, say so once,
 with the action that crosses this boundary in the same response. If the handle or
 ownership cannot be verified, give the exact missing access step; no placeholder
 command presented as runnable. Do not send the user to another chat to collect
@@ -86,8 +95,16 @@ checks protect the instructions' presence; they do not establish live behavior.
 | Design complete inside an already authorized execute objective | Preserve that objective; within a native run continue eligible preflight. From chat, give the appropriate verified resume if stopped, or identify the active session. | Re-ask design versus execution or start a duplicate run. |
 | Explicit review-only | Keep review read-only; explain findings and offer a separate scoped repair proposal if needed. | Silently request repair authority in the trigger. |
 | Missing trigger access | State exactly which project trigger/configuration cannot be read and the access/owner action needed. | Invent a bot handle or present placeholders as ready-to-run. |
+| Project v1.5.0: authorized closure needs a runner | Reconcile ownership/budgets, start the verified flow once, persist/read back its session receipt and return its link with the check-progress re-entry. | Ask the user to post a command or tell chat when it finishes; claim a start before tool readback. |
+| Project v1.5.0: Check progress | Read the saved session/results; observe active work or take one eligible continuation within existing authority. | Duplicate starts, inferred approvals, widened scope or an idle-chat monitoring promise. |
 
-Examples of useful openings (commands/links must be filled from live evidence):
+Example after verified Project v1.5.0 start:
+
+> I started CTX Development for the approved design review and repairs: [session].
+> You can leave it running. When you return, say **check progress**; I'll read the
+> results and take the next authorized step. No need to copy comments or commands.
+
+Manual-fallback examples (commands/links must be filled from live evidence):
 
 > The design changes are saved; they still need a separate consistency review.
 > I cannot launch the runner from chat. Post the command below on the source issue

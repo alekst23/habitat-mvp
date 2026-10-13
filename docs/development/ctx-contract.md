@@ -19,6 +19,14 @@ and does not enlarge repair budgets. Project v1.4.0 / Design v1.9.0 full saved
 prompts, versions, unchanged tools and enablement were read back on 2026-10-12 UTC;
 live conversational acceptance remains pending.
 
+Local **Project v1.5.0 candidate**, not published: [native session handoff](project-session-handoff.md)
+adds discovery/start/input to Project only. On an authorized action it starts the
+existing Development flow, persists the real session and retrieves/continues on
+**check progress**. Status-only remains read-only. One mutation per user turn,
+existing run/budgets, explicit current native approvals, no duplicate uncertain
+starts or idle-chat auto-wake. This is a narrowly scoped prompt protocol; tool
+permissions and live smoke still matter. Specialist agents/workers gain no dispatch.
+
 Preserve the original development process under the `ctx-` prefix and extend it
 with six delivery operations. The nine prize stages are a coverage map over this
 process. There is no one-operation-per-stage requirement.
@@ -100,8 +108,11 @@ artifacts, and independently reviewed. Persist stable IDs, exact questions/answe
 affected artifacts and honest provenance. Read-only conversation answers do not
 authorize writes until scoped design/execute is requested. A native resume retains
 the objective, attempts and limits; recorded answers are applied before re-asking.
-The human's scoped flow invocation supplies execution authority, not an agent-written
-note. Chat cannot initiate flows; no controller installation is required for this path.
+The human's scoped request and verified authenticated invocation supply execution
+authority, not an agent-written note. Published Project v1.4.0 cannot initiate
+flows; after activation, the v1.5.0 session protocol carries that approved request
+through native tools. The runner must verify provenance using the single-shot
+guide's native intake rule. No controller installation is required for either path.
 
 After journal initialization, bounded technical_design repairs use document
 addenda and separate design_review, then repeat tests/implementation/verification/
@@ -113,8 +124,10 @@ Deployment is separate. The native Development coordinator continues eligible ph
 and tickets inside one invocation, saving/read-verifying between delegations. A disabled
 controller is not a native execution blocker. Missing actual permissions, credentials,
 application adapters or uncertain ownership still block affected work. Cross-session
-auto-restart is unavailable: checkpoint with one human resume instruction at a real
-stop. Agents cannot install credentials or change workflow security controls.
+auto-restart is unavailable: checkpoint at a real stop. Activated Project v1.5.0
+retrieves it and takes an eligible continuation on conversational re-entry; otherwise
+give one verified human resume. Workers never recursively start another flow.
+Agents cannot install credentials or change workflow security controls.
 
 The orchestrating flow supplies project identity, source issue, epic/ticket IDs,
 MR and source SHA when available, run/pipeline ID, operation, and permitted target.
