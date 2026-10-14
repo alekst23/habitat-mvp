@@ -7,7 +7,7 @@
 - [AICL experience](aicl-experience/spec.md): landing, sign-in, workspace, wizard, chat, connections and instance management views ([technical](aicl-experience/technical.md)).
 - [Shared architecture](architecture.md): boundaries, application stack and layout, test layers, command argv and the consolidated configuration table.
 
-Status: E11 design is **specified** on `ctx/epic-i11` (a review candidate, not Design complete). An independent design review found issues that were repaired in cycle 1 of 3; a fresh independent review is pending. Provider enablement and the verify/browser command adapters are later gates and are not enabled.
+Status: E11 design is **specified** on `ctx/epic-i11` (a review candidate, not Design complete). Independent design reviews found issues that were repaired in cycles 1 and 2 of 3; a fresh independent review is pending. Provider enablement and the verify/browser command adapters are later gates and are not enabled.
 
 ## History
 

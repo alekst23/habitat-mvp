@@ -5,7 +5,7 @@
  "features": [
   {
    "id": "aicl-control-plane",
-   "purpose": "Instance control, lifecycle, USD budget enforcement, audit, confirmation primitives and the canonical creation service and web-app tools",
+   "purpose": "Instance control, lifecycle, USD budget enforcement, audit, confirmation primitives, the application composition foundation, and the canonical creation service and web-app tools",
    "tickets": [
     "E11-1",
     "E11-2"
@@ -90,6 +90,7 @@
    "owner": "E11-1",
    "consumers": [
     "E11-2",
+    "E11-3",
     "E11-5"
    ],
    "document": "docs/design/aicl-control-plane/technical.md",
@@ -101,6 +102,32 @@
    "owner": "E11-1",
    "consumers": [
     "E11-2",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "CsrfVerifier",
+   "owner": "E11-1",
+   "consumers": [
+    "E11-2",
+    "E11-3",
+    "E11-4",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "AppComposition",
+   "owner": "E11-1",
+   "consumers": [
+    "E11-2",
+    "E11-3",
+    "E11-4",
     "E11-5"
    ],
    "document": "docs/design/aicl-control-plane/technical.md",
@@ -121,6 +148,18 @@
   },
   {
    "id": "CreateInstanceResult",
+   "owner": "E11-2",
+   "consumers": [
+    "E11-3",
+    "E11-4",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "InstanceSnapshot",
    "owner": "E11-2",
    "consumers": [
     "E11-3",
