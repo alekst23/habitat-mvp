@@ -173,6 +173,7 @@
   {
    "id": "InstanceOperations",
    "owner": "E11-2",
+   "note": "E11-4 is listed only because it consumes InstanceSnapshot and the create path; chat holds no reference to the owner-UI mutation operations (set_lifecycle, set_capability, set_limits, domain, attach, resolve_gate)",
    "consumers": [
     "E11-3",
     "E11-4",

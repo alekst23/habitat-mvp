@@ -13,7 +13,7 @@
   },
   {
    "id": "E11-2.AC1",
-   "scenario": "F2-S1,F2-S2,F2-S3,F2-S4,F2-S5,F2-S6,F2-S7,F2-S8,F2-S9,F2-S10,F2-S11,F1-S14,F1-S15,F1-S16",
+   "scenario": "F2-S1,F2-S2,F2-S3,F2-S4,F2-S5,F2-S6,F2-S7,F2-S8,F2-S9,F2-S10,F2-S11,F1-S14,F1-S15,F1-S16,F1-S5,F1-S6,F1-S9",
    "statement": "Connections and network access remain owner-authorized, credential-isolated and allow-list controlled.",
    "ui": false,
    "methods": [
