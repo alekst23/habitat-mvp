@@ -56,6 +56,10 @@ These are the argv arrays a later maintainer-authorized foundation change would 
 | browser | `["npx", "--no-install", "playwright", "test", "--config", ".gitlab/ctx/playwright.config.ts"]` (the `ctx:browser` job already runs this after `npm ci`) | Needs `package-lock.json`, `npm run start:test` and Python dependencies in the Playwright image or an added install step; both are foundation items |
 | other adapters (`source-security`, `package`, `artifact-security`, `configure`) | unchanged and out of scope | The application has no deployment target |
 
+## Incremental composition delivery
+
+The application foundation deliberately starts with only E11-1's `Clock` required. Each later ticket appends its owned ports to `REQUIRED_PORTS` when it registers their implementations. `build_ports` enforces the active tuple only; E11-5 verifies the final tuple and all registered route and startup-hook extensions. `CaptureMagicLinkSender` and `/__test__/last-magic-link` belong to E11-3, while E11-1 retains only seeded-session and clock test routes.
+
 ## Consolidated configuration
 
 One table for the whole application. Owner is the ticket that implements the variable. "Required" means startup fails when missing or invalid; every secret is required and has no default. `.env.example` contains only the placeholders shown, never a real value.

@@ -180,6 +180,12 @@ First-party web-app tools (not a public or external MCP API) are served at `POST
 
 No other operation is a tool. Lifecycle, capability, limit, domain, connection, confirmation and gate operations are owner-UI form operations only, so chat cannot reach them. Tools return the error taxonomy above. The registry exposes no connection, secret, budget-writing or confirmation operation.
 
+## Incremental composition port delivery (DR-30)
+
+`Ports` is an incremental registry, not a promise that every future-ticket port exists in E11-1. `REQUIRED_PORTS` begins as `(clock,)` in E11-1 and is extended only by the ticket that introduces and registers a port. `build_ports(settings)` validates exactly the currently registered tuple; an unregistered future port never blocks an earlier ticket's `create_app` startup. E11-5 asserts the final required tuple: `clock`, `secret_store`, `credential_broker`, `provider_oauth`, `work_executor`, `resolver`, `magic_link_sender`, and `chat_model`.
+
+Ownership is: E11-1 owns `Clock` and the base registry; E11-2 owns `SecretStore`, `CredentialBroker`, `ProviderOAuthPort`, `WorkExecutorPort`, and `Resolver` with their fakes; E11-3 owns `MagicLinkSender`, `CaptureMagicLinkSender`, and the capture route; E11-4 owns `ChatModelPort`. E11-1's test routes are limited to seeded-session and clock facilities. The test server gains capture routes only when E11-3 registers its sender. This preserves the existing dependencies and waves.
+
 ## Process topology
 
 One FastAPI process (plus Uvicorn) serves HTML pages, form posts, `/app-tools/*` and the chat API. All services run in-process and share one SQLite database file (WAL mode, `busy_timeout` 5000 ms, foreign keys on). The call direction is: routes (E11-3/E11-4/E11-5) → `InstanceOperations` and `create_instance` (E11-2) → control-plane repositories, `BudgetPort`, `AuditLog` (E11-1). The authenticated `AuthContext` is resolved once per request by the configured `AuthProvider` and passed down explicitly. The budget controller owns holds, usage and the price table; UI projections only call `read_budget` and the audit readers. Transactions: each operation is one SQLite transaction (`BEGIN IMMEDIATE` for anything that writes), with the audit append inside it. There is no cross-process channel in the MVP; the reconciler (owner E11-2, connection document) is a `STARTUP_HOOKS` hook that runs once at startup and then every `AICL_RECONCILE_INTERVAL_SECONDS` in-process. E11-1 supplies only the `BudgetPort` operations it calls.

@@ -83,4 +83,4 @@ Planning published. Confirmed: Default is the initial generic template; users se
 
 **D11-13 — Connection sharing (user, chat, 2026-10-13):** One owner-controlled Gmail or Reddit connection may be explicitly attached to multiple Default instances of that owner. Attachment is per instance/capability; revocation detaches every attachment. Affected tickets: E11-1, E11-2, E11-3, E11-4 and E11-5.
 
-Design specified: scenarios, contracts, ticket mappings and acceptance manifest are saved and were repaired three times after independent review. A fresh independent same-SHA semantic review is pending before implementation; the later access (commands) and enablement (real providers) gates stay open.
+Design specified: scenarios, contracts, ticket mappings and acceptance manifest are saved. DR-30 repair clarifies incremental composition-port delivery: each ticket requires only its own registered ports, while E11-5 proves the full composed port set. A fresh independent same-SHA semantic review is pending before implementation; the later access (commands) and enablement (real providers) gates stay open.
