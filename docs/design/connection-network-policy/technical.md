@@ -1,15 +1,101 @@
 # Connection and network policy technical design
 
+Scope: E11-2 owns owner connections, OAuth, the secret store and credential broker, network policy, and the single work dispatch gate with its executor port. E11-1 supplies `AuthContext`, `AgentInstance`, `BudgetPort`, `AuditEvent` and `ActionConfirmation` (see [aicl-control-plane/technical.md](../aicl-control-plane/technical.md), including the shared error taxonomy, conventions and gate-reason vocabulary). E11-5 builds the pages that call these operations. Source locations are proposed under `backend/aicl/connections/`, `backend/aicl/network/` and `backend/aicl/work/`.
+
 ## Contracts
 
-E11-2 owns `Connection {id, owner_id, provider, status, secret_ref}`, `ConnectionAttachment {connection_id, instance_id, capability}`, and `NetworkPolicy {instance_id, capability, exact_https_domains}`. Secrets are encrypted behind `secret_ref`; neither tools nor chat receive their value.
+### Connection (owner E11-2)
 
-`attach_connection` verifies same-owner attachment and capability compatibility. `revoke_connection` invalidates the secret reference, removes every attachment, and appends a redacted audit event. `authorize_destination` permits only a capability’s fixed endpoints or an exact owner-added HTTPS `network.fetch` domain; all other destinations deny.
+`Connection {id, owner_id, tenant_id, provider, display_name, status, granted_scopes, secret_ref, provider_revoke_status, created_at, revoked_at, version}`. `secret_ref` is an opaque identifier of the encrypted secret; the credential value is never part of this model, any API or tool result, an audit event, a log line, the chat or the agent context. `provider` is `gmail | reddit`. `display_name` is 1 to 80 characters chosen by the owner (no provider account identifier is stored or shown). `status` is `active | reauthorization_required | revoked`; `provider_revoke_status` is `not_applicable | succeeded | failed` and is set only on revocation. `secret_ref` is null once revoked. Connections are visible only to their owner; another owner's connection is `not_found`.
+
+### ConnectionAttachment (owner E11-2)
+
+`ConnectionAttachment {id, instance_id, capability, connection_id, owner_id, tenant_id, created_at, detached_at}`. At most one active attachment per `(instance_id, capability)`; one connection may have active attachments on many instances of the same owner (D11-13). Only capabilities with a provider (`gmail.*`, `reddit.*`) can have attachments.
+
+`attach_connection(auth, instance_id, expected_version, capability, connection_id) -> MutationResult` requires: instance and connection both owned by `auth.owner_id` (otherwise `not_found`), instance not archived, connection `active`, capability provider equals the connection provider, and the connection's `granted_scopes` contain the capability's required scope from the table below (otherwise `validation_failed` with `scope_missing`). It replaces any existing attachment for that capability. `detach_connection(auth, instance_id, expected_version, capability)` detaches; an active instance whose capability then has no attachment is gated `connection_revoked` only when dispatch next requires it. Both bump `version`, append `connection.attached` or `connection.detached` and follow the version rules of the instance operations.
+
+### Revocation (owner E11-2)
+
+`revoke_connection(auth, connection_id) -> RevokeResult {connection, detached_instance_ids, provider_revoke_status}` is idempotent. It is an action, separate from any later use request:
+
+1. Transaction A: set `status=revoked`, detach every attachment, set `gated_reason=connection_revoked` on active instances that had an attachment, bump their `version`, append `connection.revoked` (details: `provider`, `connection_id`). From this commit on the connection cannot be used, because the broker checks status before reading any secret.
+2. Provider revoke: the broker reads the secret once and calls `ProviderOAuthPort.revoke` with a 5 second timeout.
+3. Transaction B: destroy the secret (`SecretStore.destroy`), set `secret_ref=null`, `provider_revoke_status` to `succeeded` or `failed`, append `connection.provider_revoke_succeeded` or `connection.provider_revoke_failed`.
+
+If the provider call fails or the process stops between steps, the credential is still destroyed locally: a startup sweeper destroys the secrets of every revoked connection that still has one and records `failed`. The UI then tells the owner that access must be removed in the provider's own account settings. Historical audit events and usage stay visible with redaction.
+
+### NetworkPolicy and authorize_destination (owner E11-2)
+
+`NetworkPolicy` is the immutable fixed allow-list in the table below (code constant, not environment-configurable) plus an instance's owner-added exact domains. `authorize_destination(instance, capability, url, hop_index) -> NetworkDecision {allowed, reason, rule}` is a pure function over the policy, the instance's `network_domains` and the SSRF host rules; `reason` is `allowed`, `unknown_capability`, `capability_not_networked`, `host_not_allowed`, `scheme_not_https`, `port_not_allowed`, `userinfo_not_allowed`, `ip_literal_not_allowed`, `address_not_public`, `method_not_allowed`, `path_not_allowed`, `redirect_limit` or `policy_unavailable`. Missing policy or an unknown capability always denies. There are no wildcard rules, no deny-rule evaluation and no pattern matching: a destination is allowed only by exact host (and path prefix and method for fixed endpoints) match.
+
+Capability to provider to scope to fixed endpoint table (a design value; exact provider scope strings and hosts must be re-verified against official provider documentation as part of the separate enablement, which stays out of this design):
+
+| Capability | Provider | Required OAuth scope | Fixed allowed endpoints (https, port 443) | Connection | Per-action confirmation |
+|---|---|---|---|---|---|
+| `inference` | none | none | none (fake model only; no real adapter) | no | no |
+| `gmail.read` | gmail | `https://www.googleapis.com/auth/gmail.readonly` | `gmail.googleapis.com`, GET, prefix `/gmail/v1/users/me/` | yes | no |
+| `gmail.send` | gmail | `https://www.googleapis.com/auth/gmail.send` | `gmail.googleapis.com`, POST, `/gmail/v1/users/me/messages/send` | yes | yes |
+| `reddit.read` | reddit | `read` | `oauth.reddit.com`, GET | yes | no |
+| `reddit.post` | reddit | `submit` | `oauth.reddit.com`, POST, `/api/submit` | yes | yes |
+| `network.fetch` | none | none | none fixed; owner-added exact domains only (GET and HEAD) | no | no |
+
+OAuth endpoints are used only by `ProviderOAuthPort` and are never available to a capability: Gmail `accounts.google.com/o/oauth2/v2/auth`, `oauth2.googleapis.com/token`, `oauth2.googleapis.com/revoke`; Reddit `www.reddit.com/api/v1/authorize`, `www.reddit.com/api/v1/access_token`, `www.reddit.com/api/v1/revoke_token` (Reddit authorization requests `duration=permanent` for a refresh token).
+
+### SSRF guard for owner domains (owner E11-2)
+
+`normalize_owner_domain(raw) -> host` is the only way a domain enters `network_domains`, and `authorize_destination` applies the same rules to every request URL and every redirect hop:
+
+- Scheme must be `https`; port must be absent or 443; userinfo (`user:pass@`) is rejected; no fragment-as-host tricks, and the URL parser used is the standard library's `urllib.parse` with a strict check that the parsed `hostname` equals the lowercase ASCII host.
+- The stored value is a bare host: lowercase ASCII DNS name, 1 to 253 characters, labels `[a-z0-9-]{1,63}` not starting or ending with `-`, at least two labels, IDNA names accepted only in their punycode form (`xn--`). No trailing dot, wildcard (`*`), path, query or port in the stored value.
+- IP literals (IPv4, IPv6, decimal, hex, octal or bracketed forms) are rejected, as are `localhost`, `*.local`, `*.internal` and single-label names.
+- At request time the host is resolved through a `Resolver` port and every returned address must be a public unicast address: loopback, private (RFC 1918, RFC 4193), link-local (including `169.254.169.254` and other cloud metadata addresses), CGNAT, multicast, reserved and unspecified ranges are `address_not_public`. The connection is made to the validated address (pinned), not re-resolved, to defeat DNS rebinding.
+- Redirects are not followed automatically. Each hop (`Location`) is re-authorized as a new request with `hop_index+1` against the same capability and the same instance domain list; more than 3 hops is `redirect_limit`.
+- A domain edit is an owner UI operation (`add_network_domain`, `remove_network_domain` in the instance operations); removing a domain takes effect for the next authorization. The MVP's executors are fakes, so the guard is proven by unit tests on `authorize_destination` and the fake resolver, and through the gate; no live network call is made.
+
+### SecretStore and CredentialBroker (owner E11-2)
+
+`SecretStore` (Protocol): `put(owner_id, connection_id, field, plaintext) -> secret_ref`, `get(secret_ref, owner_id, connection_id) -> bytes`, `destroy(secret_ref)`. The MVP implementation encrypts with AES-256-GCM using the key from `AICL_SECRET_ENCRYPTION_KEY` (base64, 32 bytes), a random 96-bit nonce per value and AAD `owner_id|connection_id|field`; a value moved to another record fails to decrypt. `destroy` overwrites the ciphertext and sets `destroyed_at`; `get` on a destroyed or mismatched reference raises `SecretUnavailable`. Fields are `access_token`, `refresh_token` and `expires_at`. Only the broker and the revocation path hold a `SecretStore`.
+
+`CredentialBroker` (Protocol): `call(authorized_work, operation) -> ProviderResult {status, response_summary}` where `operation` is a provider operation id from the table (`gmail.messages.list`, `gmail.messages.send`, `reddit.listing.read`, `reddit.submit`) with a bounded payload. The broker is the only component that sees credentials and credentials stay outside the agents (D11-6, D11-12): it re-checks that the attachment is active and the connection `active` (otherwise `connection_unavailable`), re-authorizes the provider endpoint through `authorize_destination`, reads the secret, refreshes the access token when expired (a failed refresh with `invalid_grant` sets the connection to `reauthorization_required` and denies), applies the credential inside its own outbound request through `ProviderOAuthPort.call`, and returns only a status and a bounded redacted response summary. No credential or token, short-lived or otherwise, is returned to the gate, executor, chat, tool, UI or logs. Errors: `connection_unavailable`, `secret_unavailable` (store or key unavailable, which denies and does not retry), `provider_error`, `endpoint_denied`, all mapped to `denied`/`unavailable` of the shared taxonomy without detail.
+
+### ProviderOAuthPort (owner E11-2)
+
+Protocol methods: `authorization_url(provider, scopes, state, code_challenge, redirect_uri) -> str`; `exchange_code(provider, code, code_verifier, redirect_uri) -> TokenSet {access_token, refresh_token | None, expires_at, granted_scopes}`; `refresh(provider, refresh_token) -> TokenSet`; `revoke(provider, token) -> None` (raises `ProviderRevokeError`); `call(provider, operation, access_token, payload) -> ProviderResult`. `FakeProviderOAuth` is the only enabled implementation: its authorization URL points at an in-app `/fake-provider/authorize` page in test mode, it accepts codes of the form `fake-code-<scenario>`, can be scripted to grant fewer scopes, fail a refresh or fail a revoke, records every call for assertions, and makes no network call. A real adapter for Gmail or Reddit is provider enablement, which is not part of this design and is rejected at startup (see Configuration).
+
+OAuth flow:
+
+- `begin_oauth(auth, provider, capabilities) -> {authorization_url}`: scopes are the union of the required scopes of the requested capabilities. It stores `OAuthState {state_hash, owner_id, session_id, provider, scopes, pkce_verifier_ciphertext, created_at, expires_at, used_at}` where `state` is 32 random bytes (URL-safe base64, stored as SHA-256 hash), the PKCE verifier is 64 random characters and the challenge is S256. State expires after 600 seconds and is single use. The redirect URI is exactly `AICL_PUBLIC_BASE_URL` + `/connections/oauth/callback`.
+- `GET /connections/oauth/callback?state&code` (route owned by E11-2) requires the session cookie. It looks up the state by hash and requires: unused, unexpired, same `session_id` and `owner_id`, matching provider. It marks the state used before exchanging the code, exchanges with the stored verifier, requires `granted_scopes` to contain every requested scope, stores the tokens through `SecretStore`, creates the `Connection` and appends `connection.created`. Provider `error` parameter, a state mismatch, replay, expiry, scope shortfall or exchange failure creates no connection, destroys nothing else, appends `access.denied` where identity mismatched, and redirects to the Connections area with a generic message. The code, state and tokens are never logged or echoed.
+- Refresh and revocation are broker behavior as above.
+
+### WorkAuthorization (owner E11-2)
+
+The single dispatch gate. It is the only path that can start inference, compute, provider use or network use, so `BudgetPort`, `authorize_destination`, confirmation consumption and the broker all have this production caller. `WorkRequest {instance_id, work_id, capability, payload, estimate, destination_url}`: `work_id` is a client-generated idempotency key (16 to 64 characters `[A-Za-z0-9_-]`), unique per tenant; `payload` is a JSON object of at most 16 KB; `estimate` is the BudgetPort `Estimate`; `destination_url` is required only for `network.fetch`.
+
+`authorize_and_dispatch(auth, request) -> WorkResult {work_id, outcome, denial_reason, pending_action_id, usage, hold_state}` with `outcome` of `succeeded | failed | unknown | denied`. A repeated `work_id` after a dispatch returns the stored result (a different request digest is `conflict`); denials are not stored under the `work_id`, so it can be retried after the owner fixes the cause. Fail-closed check order (first failure denies, later checks do not run, and any exception or unavailable dependency denies as `check_unavailable`):
+
+1. Identity: `auth` is current. 2. Instance exists in `auth.tenant_id` (otherwise `not_found`). 3. `lifecycle == active` (`instance_not_active`; no gated reason is persisted). 4. Capability grant enabled (`capability_disabled`; sets `gated_reason`). 5. Estimate present and bounded (`estimate_missing`). 6. For `gmail.send` and `reddit.post`, a valid unused unexpired `ActionConfirmation` for the computed digest exists, otherwise `confirmation_required` (creating or reusing a `PendingAction`), `confirmation_expired`, `confirmation_used` or `confirmation_mismatch`. 7. For provider capabilities, an active attachment on an `active` connection (`connection_unavailable`; sets `gated_reason`). 8. Network: for provider capabilities the capability's fixed endpoint, for `network.fetch` the `destination_url` against the instance's owner domains, through `authorize_destination` (`network_denied`; sets `gated_reason`). 9. In one transaction: `BudgetPort.reserve` (daily and monthly, both categories) and consume the confirmation with the conditional update. A denial rolls both back (`budget_exhausted`, `budget_unavailable`, `price_unavailable`, `reconciliation_pending`; the budget reasons set `gated_reason`). 10. Dispatch through `WorkExecutorPort.execute` (with `connection_handle` being the opaque attachment id only). Every denial appends `work.denied` with `denial_reason`; a dispatch appends `work.dispatched` and the budget events.
+
+Outcome handling: `succeeded` or `failed` with measured usage calls `settle`; `not_started` calls `release`; `unknown`, an executor exception or a timeout (`AICL_EXECUTOR_TIMEOUT_SECONDS`) calls `mark_unknown` and the result is `unknown`. A background reconciler (`reconcile_unknown_holds`, at startup and every `AICL_RECONCILE_INTERVAL_SECONDS`) calls `WorkExecutorPort.lookup(work_id)` for every `unknown` hold and for every `held` hold older than `AICL_HOLD_STALE_SECONDS` (a crash between reserve and result): a definite outcome calls `reconcile`; `still_unknown` leaves the hold. The instance stays denied (`reconciliation_pending`) until all its holds are reconciled.
+
+Routes (owned by E11-2, rendered by E11-5): `POST /instances/{id}/work-requests` (owner session and CSRF; the page is labelled simulated work) and `POST /pending-actions/{id}/confirm` (owner session and CSRF; calls `create_confirmation`). Chat and `/app-tools/*` have no route to either.
+
+### WorkExecutorPort and the deterministic simulator (owner E11-2)
+
+`WorkExecutorPort`: `execute(AuthorizedWork {work_id, instance_id, capability, payload, hold_id, connection_handle, destination}) -> ExecutorOutcome {status: succeeded | failed | not_started | unknown, measured_usage}` and `lookup(work_id) -> ExecutorOutcome | still_unknown`. For provider capabilities an executor calls `CredentialBroker.call` and never receives a credential. `FakeWorkExecutor` is the only enabled implementation (`AICL_EXECUTOR_MODE=fake`): it makes no network or model call and derives its result deterministically from `payload.sim = {input_tokens, output_tokens, compute_minutes, outcome}` (defaults 0, 0, 0 and `succeeded`; usage above the estimate is allowed so over-measured settlement can be exercised), exercises the fake provider through the broker for provider capabilities, stores every outcome by `work_id` for `lookup`, and can return `unknown`. A real inference or compute adapter is provider enablement and is not specified here.
+
+### Safe disabled mode and startup rejection (enablement safeguard)
+
+The only composition that starts is fake: `AICL_PROVIDER_MODE=fake`, `AICL_EXECUTOR_MODE=fake`, `AICL_CHAT_MODEL_MODE=fake`. Any other value (including `real`) fails startup with the message `provider enablement is not recorded`, because no real adapter exists in the code base and a separate human-approved enablement change must add one together with the recorded approval. No provider credential, client id or secret appears in the repository, CI, fixtures or `.env.example`; tests make no live calls.
 
 ## Process topology
 
-Connections UI and creation tools call the connection policy service with authenticated owner context. The execution boundary requests a short-lived provider credential or network authorization from that service; it never reads stored OAuth material directly.
+One in-process service layer behind the single FastAPI application described in the control-plane document. Calls: connection pages and OAuth callback (E11-5 pages, E11-2 routes) → connection service → `SecretStore`, `ProviderOAuthPort`; work requests → `WorkAuthorization` → `authorize_destination`, `BudgetPort`, confirmation store → `WorkExecutorPort` → `CredentialBroker` → `ProviderOAuthPort`. The secret store, broker and revocation path are the only holders of credentials; the web layer, chat and the executor interface never import them. The OAuth callback is a browser redirect into the same process; there is no other channel. Transactions: state changes and their audit event commit together; the provider revoke call and the executor call are made outside a database transaction and their results recorded in a following transaction.
 
 ## Configuration
 
-Provider scopes and fixed endpoints are allow-listed configuration. Unknown provider, scope, endpoint, wildcard pattern, or unavailable secret backend denies startup or use.
+Authoritative table: [architecture.md](../architecture.md#consolidated-configuration). Rows owned here: `AICL_SECRET_ENCRYPTION_KEY` (required, startup fails when absent or not 32 base64 bytes), `AICL_PUBLIC_BASE_URL` (required, `https` outside test mode), `AICL_PROVIDER_MODE`, `AICL_EXECUTOR_MODE`, `AICL_EXECUTOR_TIMEOUT_SECONDS`, `AICL_HOLD_STALE_SECONDS`. The fixed endpoint table and scope table are code constants, so an unknown provider, scope, endpoint, wildcard or unavailable secret backend can only appear at use, where it denies. A missing secret key fails startup; an unavailable or corrupt secret at use denies and never falls back to a plaintext or default value.
+
+## Verification pointers
+
+E11-2 proves F2-S1 to F2-S11 with unit tests (host normalization and SSRF rules, scope table, digest binding, state/PKCE, redaction), integration tests with real SQLite and the fake provider and executor (attach rules, revoke including provider failure and crash sweep, gate order, confirmation single use and mismatch, over-measured settlement, unknown outcome, no credential in any result), and HTTP tests through the real application for the callback, work request and confirm routes. E11-5 reuses the gate through the production-wired browser journeys rather than re-testing its rules.

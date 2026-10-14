@@ -19,7 +19,7 @@ Default instances begin with a name, free-form instructions, and enabled AICL ca
 - owner-authorized Gmail and Reddit OAuth connections, stored outside agent context and injected only by the relevant AICL component; and
 - outbound network policy with an allow-list as the baseline. Wildcard deny rules are not a substitute for an allow-list and are deferred unless a concrete use case requires them.
 
-Detailed limit units, connection scopes, consent/revocation behavior, network-policy schema, and capability-to-domain mapping are Design pending.
+Limit units (integer micro-USD), connection scopes, consent/revocation behavior, the network-policy schema and the capability-to-domain mapping are specified in the feature technical documents under `docs/design/` (design specified, independent review pending).
 
 ## Exclusions
 
@@ -29,11 +29,11 @@ No PayPal, funding/billing capture, ads, external action execution, BYOA sandbox
 
 | Ticket | Issue | Dependencies | State |
 |---|---|---|---|
-| E11-1 AICL domain and control foundation | #12 | — | design pending |
-| E11-2 Canonical creation service and web-app tools | #13 | E11-1 | design pending |
-| E11-3 Authenticated workspace and agent-creation wizard | #14 | E11-1, E11-2 | design pending |
-| E11-4 Built-in chat agent creation surface | #15 | E11-2 | design pending |
-| E11-5 AICL web pages, instance management, and cross-surface proof | #16 | E11-3, E11-4 | design pending |
+| E11-1 AICL domain and control foundation | #12 | — | design specified; review pending |
+| E11-2 Canonical creation service and web-app tools | #13 | E11-1 | design specified; review pending |
+| E11-3 Authenticated workspace and agent-creation wizard | #14 | E11-1, E11-2 | design specified; review pending |
+| E11-4 Built-in chat agent creation surface | #15 | E11-2 | design specified; review pending |
+| E11-5 AICL web pages, instance management, and cross-surface proof | #16 | E11-3, E11-4 | design specified; review pending |
 
 ## Waves
 
@@ -50,6 +50,10 @@ No PayPal, funding/billing capture, ads, external action execution, BYOA sandbox
 - The previous E2/PayPal direction is historical and remains unclosed for traceability.
 
 ## Design progress
+
+Status: design specified (a review candidate, not Design complete). Repair cycle 1 of 3 (mode=design-repair) addressed independent review findings DR-1 to DR-12 and DR-15 from issue #11 note 4008793549; DR-13 (verify/browser command adapters) and DR-14 (provider enablement) remain later gates and are not actioned here. Execution status in `state.json` is unchanged (all tickets pending, `design_status` pending).
+
+Ownership after repair (dependencies and waves unchanged): E11-1 owns `AuthContext`, instances, `BudgetPort`, `PriceTable`, `AuditEvent` and `ActionConfirmation`; E11-2 owns the canonical creation service, `CreateInstanceRequest`/`CreateInstanceResult`, the first-party web-app tool schemas, instance operations, connections, OAuth, credential broker, network policy and the `WorkAuthorization` dispatch gate; E11-3 owns sign-in, workspace and the wizard; E11-4 owns chat; E11-5 owns read projections, the management UIs, the production wiring and the cross-surface proof. Features: aicl-control-plane, connection-network-policy, aicl-experience under `docs/design/`. History: the earlier [Habitat foundation design](../../design/habitat-foundation/spec.md) is not the MVP source of truth.
 
 Planning published. Confirmed: Default is the initial generic template; users set name, free-form instructions and enabled AICL capabilities. Control-policy delta confirmed: per-instance inference/compute limits, owner-authorized Gmail/Reddit connections and outbound allow-list policy.
 
@@ -79,4 +83,4 @@ Planning published. Confirmed: Default is the initial generic template; users se
 
 **D11-13 — Connection sharing (user, chat, 2026-10-13):** One owner-controlled Gmail or Reddit connection may be explicitly attached to multiple Default instances of that owner. Attachment is per instance/capability; revocation detaches every attachment. Affected tickets: E11-1, E11-2, E11-3, E11-4 and E11-5.
 
-Design specified: scenarios, contracts, ticket mappings and acceptance manifest are saved. Independent semantic review is pending before implementation.
+Design specified: scenarios, contracts, ticket mappings and acceptance manifest are saved and were repaired once after independent review. A fresh independent same-SHA semantic review is pending before implementation; the later access (commands) and enablement (real providers) gates stay open.
