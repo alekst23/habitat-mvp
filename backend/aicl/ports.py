@@ -6,7 +6,7 @@ from typing import Callable
 
 from pydantic import BaseModel, ConfigDict
 
-from aicl.clock import Clock
+from aicl.clock import Clock, SystemClock
 from aicl.settings import Settings
 
 # E11-1 requires only the clock; each owning ticket appends its own port names.
@@ -26,4 +26,8 @@ class Ports(BaseModel):
 
 def build_ports(settings: Settings) -> Ports:
     """Validate exactly REQUIRED_PORTS (an unregistered later-ticket port never fails startup)."""
-    raise NotImplementedError("build_ports is not implemented (E11-1)")
+    built = {}
+    for name in REQUIRED_PORTS:
+        factory = PORT_REGISTRY.get(name)
+        built[name] = factory(settings) if factory is not None else SystemClock()
+    return Ports(**built)

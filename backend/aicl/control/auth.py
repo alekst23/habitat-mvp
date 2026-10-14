@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Mapping, Protocol
 
 
@@ -24,14 +24,17 @@ class AuthProvider(Protocol):
 
 
 class FixedAuthProvider:
-    """Test double: returns configured contexts for fixture cookie values (to be implemented).
+    """Test double: returns configured contexts for fixture cookie values.
 
     `contexts` maps an `aicl_session` cookie value to the AuthContext it resolves to.
-    An unknown or missing cookie, or an expired context, must resolve to None.
+    An unknown or missing cookie, or an expired context, resolves to None.
     """
 
     def __init__(self, contexts: Mapping[str, AuthContext]) -> None:
         self.contexts = dict(contexts)
 
     def resolve(self, headers_and_cookies: Mapping[str, str]) -> AuthContext | None:
-        raise NotImplementedError("FixedAuthProvider.resolve is not implemented (E11-1)")
+        context = self.contexts.get(headers_and_cookies.get("aicl_session", ""))
+        if context is None or context.expires_at <= datetime.now(timezone.utc):
+            return None
+        return context

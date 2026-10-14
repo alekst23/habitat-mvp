@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import hmac
 from typing import Callable, Protocol
 
 from aicl.control.auth import AuthContext
+from aicl.control.errors import AiclError
 
 
 class CsrfVerifier(Protocol):
@@ -24,15 +26,27 @@ class FixedCsrfVerifier:
         self.public_base_url = public_base_url
 
     def token_for(self, session_id: str) -> str:
-        raise NotImplementedError("FixedCsrfVerifier.token_for is not implemented (E11-1)")
+        return self.token
 
     def verify(self, auth: AuthContext, submitted_token: str | None, origin: str | None) -> bool:
-        raise NotImplementedError("FixedCsrfVerifier.verify is not implemented (E11-1)")
+        if auth.session_id not in self.fixture_session_ids or not submitted_token:
+            return False
+        if origin is not None and origin.rstrip("/") != self.public_base_url.rstrip("/"):
+            return False
+        return hmac.compare_digest(submitted_token.encode(), self.token.encode())
 
 
-def require_csrf(*args: object, **kwargs: object) -> Callable[..., object]:
-    """Shared FastAPI dependency used by every non-GET route; rejects with the taxonomy's error.
+def require_csrf(ctx: object) -> Callable[..., object]:
+    """Shared FastAPI dependency factory for every non-GET route. `ctx` is the AppContext; the
+    dependency authenticates the session cookie, then checks `X-CSRF-Token` and `Origin`."""
+    from fastapi import Request
 
-    Stub: the real dependency resolves AppContext.auth_provider/csrf_verifier from the request.
-    """
-    raise NotImplementedError("require_csrf is not implemented (E11-1)")
+    def dependency(request: Request) -> AuthContext:
+        auth = ctx.auth_provider.resolve(dict(request.cookies))
+        if auth is None:
+            raise AiclError("unauthenticated", "sign in required")
+        if not ctx.csrf_verifier.verify(auth, request.headers.get("x-csrf-token"), request.headers.get("origin")):
+            raise AiclError("denied", "invalid CSRF token", reason="csrf_failed")
+        return auth
+
+    return dependency

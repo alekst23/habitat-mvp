@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
+import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlite3 import Connection
 from typing import Protocol
 
+from aicl.clock import Clock, SystemClock
 from aicl.control.auth import AuthContext
+from aicl.control.errors import AiclError
+from aicl.db import from_iso, to_iso
 
 CONFIRMED_CAPABILITIES: tuple[str, ...] = ("gmail.send", "reddit.post")
 
@@ -39,7 +45,9 @@ class ActionConfirmation:
 
 def payload_digest(instance_id: str, capability: str, payload: object) -> str:
     """sha256 of canonical JSON {instance_id, capability, payload}: sorted keys, no whitespace, UTF-8."""
-    raise NotImplementedError("payload_digest is not implemented (E11-1)")
+    canonical = json.dumps({"instance_id": instance_id, "capability": capability, "payload": payload},
+                           sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 class ConfirmationStore(Protocol):
@@ -53,14 +61,40 @@ class ConfirmationStore(Protocol):
         ...
 
 
-class SqliteConfirmationStore:
-    """Stub: raises NotImplementedError; consumption never returns True."""
+def _to_confirmation(row) -> ActionConfirmation:
+    return ActionConfirmation(
+        id=row["id"], pending_action_id=row["pending_action_id"], instance_id=row["instance_id"],
+        capability=row["capability"], payload_digest=row["payload_digest"], owner_id=row["owner_id"],
+        tenant_id=row["tenant_id"], created_at=from_iso(row["created_at"]), expires_at=from_iso(row["expires_at"]),
+        used_at=None if row["used_at"] is None else from_iso(row["used_at"]))
 
-    def __init__(self, ttl_seconds: int) -> None:
+
+class SqliteConfirmationStore:
+    def __init__(self, ttl_seconds: int, clock: Clock | None = None) -> None:
         self.ttl_seconds = ttl_seconds
+        self.clock = clock or SystemClock()
 
     def create_confirmation(self, conn, auth, pending_action_id):
-        raise NotImplementedError("create_confirmation is not implemented (E11-1)")
+        pending = conn.execute("SELECT * FROM pending_action WHERE id = ? AND tenant_id = ?",
+                               (pending_action_id, auth.tenant_id)).fetchone()
+        if pending is None:
+            raise AiclError("not_found", "pending action not found")
+        existing = conn.execute("SELECT * FROM action_confirmation WHERE pending_action_id = ?",
+                                (pending_action_id,)).fetchone()
+        if existing is None:
+            now = self.clock.now()
+            conn.execute(
+                "INSERT INTO action_confirmation (id, pending_action_id, instance_id, capability, payload_digest, "
+                "owner_id, tenant_id, created_at, expires_at) VALUES (?,?,?,?,?,?,?,?,?)",
+                (str(uuid.uuid4()), pending_action_id, pending["instance_id"], pending["capability"],
+                 pending["payload_digest"], auth.owner_id, auth.tenant_id, to_iso(now),
+                 to_iso(now + timedelta(seconds=self.ttl_seconds))))
+            existing = conn.execute("SELECT * FROM action_confirmation WHERE pending_action_id = ?",
+                                    (pending_action_id,)).fetchone()
+        return _to_confirmation(existing)
 
     def consume_confirmation(self, conn, confirmation_id, computed_digest, now):
-        raise NotImplementedError("consume_confirmation is not implemented (E11-1)")
+        cursor = conn.execute(
+            "UPDATE action_confirmation SET used_at = ? WHERE id = ? AND used_at IS NULL AND expires_at > ? "
+            "AND payload_digest = ?", (to_iso(now), confirmation_id, to_iso(now), computed_digest))
+        return cursor.rowcount == 1

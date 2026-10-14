@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import json
+import uuid
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from sqlite3 import Connection
 from typing import Literal, Protocol
 
+from aicl.clock import Clock, SystemClock
 from aicl.control.auth import AuthContext
+from aicl.control.errors import AiclError
+from aicl.db import Database, from_iso, to_iso
 
 ActorKind = Literal["owner", "chat", "system", "gate"]
 Outcome = Literal["committed", "denied"]
@@ -65,14 +70,44 @@ class AuditLog(Protocol):
                        limit: int = MAX_PAGE) -> list[AuditEvent]: ...
 
 
+def _to_event(row) -> AuditEvent:
+    return AuditEvent(
+        event_type=row["event_type"], actor_kind=row["actor_kind"], outcome=row["outcome"],
+        tenant_id=row["tenant_id"], owner_id=row["owner_id"], instance_id=row["instance_id"],
+        connection_id=row["connection_id"], reason=row["reason"], details=json.loads(row["details"]),
+        seq=row["seq"], id=row["id"], occurred_at=from_iso(row["occurred_at"]))
+
+
 class SqliteAuditLog:
-    """Stub: raises NotImplementedError until implemented (E11-1)."""
+    def __init__(self, clock: Clock | None = None) -> None:
+        self.clock = clock or SystemClock()
 
     def append(self, conn, event):
-        raise NotImplementedError("AuditLog.append is not implemented (E11-1)")
+        if event.event_type not in EVENT_TYPES:
+            raise AiclError("validation_failed", "unknown audit event type")
+        if (event.tenant_id is None or event.owner_id is None) and event.event_type not in NULL_IDENTITY_EVENT_TYPES:
+            raise AiclError("validation_failed", "audit event requires tenant and owner")
+        details = {k: v for k, v in event.details.items() if k in DETAILS_ALLOW_LIST}
+        event_id, now = str(uuid.uuid4()), self.clock.now()
+        cursor = conn.execute(
+            "INSERT INTO audit_event (id, event_type, actor_kind, outcome, tenant_id, owner_id, instance_id, "
+            "connection_id, reason, details, occurred_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (event_id, event.event_type, event.actor_kind, event.outcome, event.tenant_id, event.owner_id,
+             event.instance_id, event.connection_id, event.reason, json.dumps(details, sort_keys=True), to_iso(now)))
+        return replace(event, details=details, seq=cursor.lastrowid, id=event_id, occurred_at=from_iso(to_iso(now)))
+
+    def _list(self, where: str, args: tuple, after_seq, limit) -> list[AuditEvent]:
+        clause, params = where, list(args)
+        if after_seq is not None:
+            clause += " AND seq > ?"
+            params.append(after_seq)
+        params.append(max(1, min(int(limit), MAX_PAGE)))
+        with Database.current().reader() as conn:
+            rows = conn.execute(f"SELECT * FROM audit_event WHERE {clause} ORDER BY seq DESC LIMIT ?", params)
+            return [_to_event(r) for r in rows]
 
     def list_for_instance(self, auth, instance_id, after_seq=None, limit=MAX_PAGE):
-        raise NotImplementedError("AuditLog.list_for_instance is not implemented (E11-1)")
+        return self._list("tenant_id = ? AND instance_id = ?", (auth.tenant_id, instance_id), after_seq, limit)
 
     def list_for_owner(self, auth, after_seq=None, limit=MAX_PAGE):
-        raise NotImplementedError("AuditLog.list_for_owner is not implemented (E11-1)")
+        return self._list("tenant_id = ? AND owner_id = ?", (auth.tenant_id, auth.owner_id), after_seq, limit)
