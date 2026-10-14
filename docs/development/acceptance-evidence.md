@@ -43,7 +43,17 @@ compare scope with the MR and independently check the manifest against the spec.
 
 ## Verify adapter output
 
-The application foundation supplies the real `verify` command in `commands.yml`.
+Status: `commands.yml` runs the reviewed `scripts/ctx_verify_backend.py` (pytest over
+`backend/tests` with `PYTHONPATH=backend`). It writes `CTX_OUTPUT` only when the JUnit
+XML counts at least one test and none failed, errored or were skipped, the checkout
+is clean at `CTX_SOURCE_SHA` and `CI_JOB_URL` is an HTTPS URL; otherwise it exits 2
+and leaves no evidence. `ctx:verify` installs `backend/requirements.txt` when it
+exists (E11-1 supplies it). The adapter does NOT yet write `.ctx/acceptance.json`,
+so `ctx:acceptance` cannot pass. The lane stays opt-in: a maintainer sets
+`CTX_APPLICATION_CHECKS=1` (and `CTX_BROWSER_CHECKS=1` for browser scope) with the
+manifest variables below.
+
+The application foundation supplies the remaining `verify` behavior in `commands.yml`.
 It runs the minimal applicable tests and writes ordinary step evidence to
 `CTX_OUTPUT` (see [workflow guide](gitlab-workflow.md)). It ALSO writes
 `.ctx/acceptance.json` for the selected scope, including browser-only criteria:
