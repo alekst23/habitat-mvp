@@ -4,7 +4,7 @@ version: 1
 # Each command must write its evidence to CTX_OUTPUT (see the implementation guide).
 commands:
   verify:
-    argv: null
+    argv: ["python", "scripts/ctx_verify_backend.py"]
     timeout_seconds: 900
   acceptance:
     argv: ["python", "scripts/ctx_acceptance.py"]

@@ -14,9 +14,15 @@ include:
       - .ctx/reports/
       - .ctx/acceptance.json
 
+# Backend dependencies come from E11-1's pinned backend/requirements.txt. Install them
+# when present (a failed install fails the job); without them the adapter still
+# fails closed because no backend/tests exist. No database service: E11 uses SQLite.
 ctx:verify:
   extends: .ctx-check
   stage: verify
+  before_script:
+    - python -m pip install --disable-pip-version-check -r requirements-workflow.txt
+    - if [ -f backend/requirements.txt ]; then python -m pip install --disable-pip-version-check -r backend/requirements.txt; fi
   script:
     - python scripts/ctx_workflow.py run verify
 
