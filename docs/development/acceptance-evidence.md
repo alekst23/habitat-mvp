@@ -48,15 +48,49 @@ Status: `commands.yml` runs the reviewed `scripts/ctx_verify_backend.py` (pytest
 XML counts at least one test and none failed, errored or were skipped, the checkout
 is clean at `CTX_SOURCE_SHA` and `CI_JOB_URL` is an HTTPS URL; otherwise it exits 2
 and leaves no evidence. `ctx:verify` installs `backend/requirements.txt` when it
-exists (E11-1 supplies it). The adapter does NOT yet write `.ctx/acceptance.json`,
-so `ctx:acceptance` cannot pass. The lane stays opt-in: a maintainer sets
+exists (E11-1 supplies it). The lane stays opt-in: a maintainer sets
 `CTX_APPLICATION_CHECKS=1` (and `CTX_BROWSER_CHECKS=1` for browser scope) with the
-manifest variables below.
+manifest variables below. Neither job has run on GitLab yet.
 
-The application foundation supplies the remaining `verify` behavior in `commands.yml`.
-It runs the minimal applicable tests and writes ordinary step evidence to
-`CTX_OUTPUT` (see [workflow guide](gitlab-workflow.md)). It ALSO writes
-`.ctx/acceptance.json` for the selected scope, including browser-only criteria:
+### Acceptance report writer and test-to-AC mapping
+
+The same adapter run now also writes `.ctx/acceptance.json` (already a `.ctx-check`
+artifact) for the scope in `CTX_AC_SCOPE`, using the committed manifest named by
+`CTX_AC_MANIFEST` and `CI_PROJECT_ID`, `CI_PIPELINE_ID`, `CTX_SOURCE_SHA` and the real
+`CI_JOB_URL`. It is written only after the passing pytest run, in the clean candidate.
+
+Tests declare what they prove with the reviewed marker in `scripts/ctx_pytest_ac.py`
+(loaded by the adapter; no `conftest.py` or `pytest.ini` is needed):
+
+```python
+@pytest.mark.ac("E11-1.AC1", "E11-1.AC2", code="backend/aicl/budget.py:reserve")
+def test_reservation_blocks_over_budget(): ...
+```
+
+- One test may name several ACs; several tests may name one AC. `code` is required,
+  has no whitespace, and must be a tracked repository file with an optional `:symbol`.
+  A missing or malformed marker aborts collection and the verify job fails.
+- The mapping is read back from the executed run's JUnit XML (marker values are copied
+  into test properties). Test IDs are the executed, passing cases (`file::Class::test[param]`),
+  never hand-written. The row `code` is the sorted union of the `code` values.
+- An AC with a `test` method needs at least one passing mapped test, or the writer fails.
+  A UI AC with `browser` stays `pending-browser`; browser-only ACs get no test evidence,
+  only the code reference, and the independent `ctx:browser` report must supply the rest.
+  Methods other than `test` and `browser` (inspection) cannot be produced here and fail
+  closed: use a scope without such ACs, or a separate reviewed inspection writer.
+- Fail closed (exit 2, `CTX_OUTPUT` and `.ctx/acceptance.json` removed): missing
+  `CTX_AC_SCOPE`/`CTX_AC_MANIFEST`/`CI_PROJECT_ID`/`CI_PIPELINE_ID`, an untracked or
+  invalid manifest or out-of-manifest scope, a marker naming an AC not in the manifest,
+  any failing, erroring or skipped test, an in-scope AC without a passing mapped test,
+  dirty checkout or HEAD different from `CTX_SOURCE_SHA`. Tests for ACs in other
+  tickets may still be mapped; only the requested scope is reported.
+- The adapter exposes `scripts/` on `PYTHONPATH` for the marker plugin, so backend tests
+  could import those helpers; do not depend on that.
+
+The reviewed `verify` adapter runs the minimal applicable tests and writes ordinary step
+evidence to `CTX_OUTPUT` (see [workflow guide](gitlab-workflow.md)). It ALSO writes
+`.ctx/acceptance.json` for the selected scope, including browser-only criteria
+(schema below; the example identities are illustrative):
 
 ```json
 {
