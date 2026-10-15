@@ -15,8 +15,10 @@ use them to retry uncertain dispatch. No changes to Design's tool set or autonom
 
 ## Help the user move, not interpret the workflow
 
-**Project v1.6.0 candidate, not published:** tighten the Project reply contract to
-one direct instruction. The current v1.5.0 tools and authority remain unchanged.
+**Project v1.6.0 published/read back on 2026-10-15 UTC:** the Project reply contract
+requires one direct instruction. The v1.5.0 tools and authority remain unchanged.
+See [publication evidence](checkpoint-publication.md#publication-evidence); live
+conversational acceptance remains pending.
 Every task-related response ends with **Do this now:** and one smallest executable
 step, with an imperative verb, exact destination and exact reply/click/action.
 Do authorized work first; do not turn agent-owned technical recovery into user chores.

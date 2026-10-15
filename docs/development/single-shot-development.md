@@ -1,13 +1,16 @@
 # CTX single-shot Development
 
-**Local v1.10.0 candidate, not published:** read
+**v1.10.0 published/read back on 2026-10-15 UTC:** read
 [checkpoint-publication.md](checkpoint-publication.md). The new file-based
 read/assemble/publish path supersedes manual note transcription for native owner
 checkpoints. It preserves exact readback and all history/budgets, and excludes only
-the seven reviewed corrupt E11 notes without deleting them. Live remains v1.9.0;
-merge/helper synchronization/catalog publication and live verification are pending.
+the seven reviewed corrupt E11 notes without deleting them. Source !49 and E11
+helper sync !50 are merged; full saved catalog YAML matches reviewed source 9522bf6c.
+Workflow checks/reviews passed; separate application verification failed and the
+user explicitly approved workflow-only merging. No CI controls changed. Project is
+v1.6.0. No application run started; live verification remains pending.
 
-**Published v1.9.0: transport-safe native handoffs.** Session 9303064 reported
+**Historical v1.9.0: transport-safe native handoffs.** Session 9303064 reported
 HTML-comment delimiter loss. The new codec emits visible markers, retains intact
 legacy reads and supports explicit verified-note migration. Source !35 at 25649246
 passed pipeline 2936852177 and independent Duo review note 3994970235, merging to
