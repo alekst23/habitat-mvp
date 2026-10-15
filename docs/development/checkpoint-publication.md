@@ -110,6 +110,17 @@ and logs at a real stop. If the runtime dies and loses local files, reconcile th
 actual source notes and previous session evidence before any new mutation. The
 receipt is not a distributed lock or an exactly-once guarantee across machines.
 
+A definite POST rejection (HTTP 4xx except 408/429) is different: the helper records
+`rejected`, the status and attempt history in the same receipt. After resolving the
+cause within existing authority, re-enter with the same files and receipt. It repeats
+authentication, note selection and parent checks, then permits at most one additional
+POST (two attempts total). An exclusive retained `.attempt-2` reservation prevents
+two local retry callers posting together. Rejections remain in the final receipt;
+never delete a receipt/reservation, reset its counters, switch credentials or trim
+state to obtain a retry. Timeouts, 408/429, 5xx, malformed responses and interrupted
+reservations remain uncertain and cannot take this path. Permanent rejection or an
+exhausted transport allowance is a precise stop, not permission to widen access.
+
 `.gitlab/ctx/checkpoint-exclusions.json` contains only these known-invalid notes on
 Showcase **#11 / E11 / execute-e11-1**, written by **43132375**:
 
@@ -152,8 +163,9 @@ session, note and source SHA evidence. Fake-API/unit tests and catalog readback 
 not live acceptance. Do not restart an unchanged failing version or call a local
 candidate published.
 
-Local verification on 2026-10-15: workflow contract validator passed; all 201 workflow
-tests passed, including 11 checkpoint tests with a file-based CLI round trip, >54 KB
+Local verification on 2026-10-15: workflow contract validator passed; all 202 workflow
+tests passed, including 12 checkpoint tests with a file-based CLI round trip, >54 KB
 payloads, altered/truncated readback, uncertain POST reconciliation, stale parents,
-credential/endpoint restrictions, pagination and the seven exact exclusions.
+credential/endpoint restrictions, pagination, the seven exact exclusions and a
+bounded definite-rejection retry (with a behavioral red baseline before the fix).
 No live publication or application continuation was performed by these tests.

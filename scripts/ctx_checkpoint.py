@@ -24,6 +24,7 @@ BASE = "https://gitlab.com/" + owner.closure.PROJECT
 WRITER_ID = 43132375  # Verified CTX Development service account, not the human user.
 MAX_RESPONSE_BYTES = 32 * 1024 * 1024
 MAX_BODY_BYTES = 512 * 1024
+MAX_POST_ATTEMPTS = 2  # One retry only after a definite rejection, never uncertainty.
 
 
 class CheckpointError(ValueError):
@@ -36,8 +37,13 @@ def require(condition, message):
 
 
 class TransportError(CheckpointError):
-    def __init__(self, code):
+    def __init__(self, code, *, http_status=None):
+        self.http_status = http_status
         super().__init__(f"checkpoint transport {code}; reconcile before another write")
+
+
+def definite_rejection(status):
+    return type(status) is int and 400 <= status < 500 and status not in {408, 429}
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -91,7 +97,7 @@ class GitLabNotes:
                 require(len(raw) <= MAX_RESPONSE_BYTES, "response too large")
                 return json.loads(raw, object_pairs_hook=dev.unique_object), response.headers
         except HTTPError as exc:
-            raise TransportError(f"HTTP {exc.code}") from None
+            raise TransportError(f"HTTP {exc.code}", http_status=exc.code) from None
         except (URLError, TimeoutError, OSError):
             raise TransportError("unknown outcome") from None
         except (ValueError, UnicodeError):
@@ -207,6 +213,10 @@ def publish(api, value, summary, *, previous_note_id, receipt_path, initial=Fals
     prior_receipt = dev.read_json(receipt_path) if receipt_path.exists() else None
     require(prior_receipt is None or prior_receipt.get("intent") == intent,
             "receipt belongs to another publication; retain it")
+    attempts = prior_receipt.get("post_attempts", 0) if prior_receipt else 0
+    rejections = deepcopy(prior_receipt.get("rejections", [])) if prior_receipt else []
+    require(type(attempts) is int and 0 <= attempts <= MAX_POST_ATTEMPTS and isinstance(rejections, list),
+            "invalid publication attempt history")
     notes, selected = select(api, source, epic, legacy_note_ids)
     matches = [n for n in notes if n["author_id"] == WRITER_ID and n["body"] == body]
     require(len(matches) <= 1, "duplicate checkpoint publications; reconcile ownership")
@@ -216,9 +226,14 @@ def publish(api, value, summary, *, previous_note_id, receipt_path, initial=Fals
         require(selected["action"] == "resume" and note_id(selected["source_url"]) == published["id"],
                 "checkpoint is no longer current; read the successor before acting")
     else:
-        # Any durable local intent means the previous POST may have happened. No
-        # automatic retry, including when the API cannot yet find the saved note.
-        require(prior_receipt is None, "publication unverified; reconcile the existing attempt without reposting")
+        # Only an explicitly recorded, definite rejection permits a bounded
+        # retry. Missing notes alone never establish that a POST did not happen.
+        if prior_receipt is not None:
+            require(prior_receipt.get("state") == "rejected" and rejections and
+                    rejections[-1].get("attempt") == attempts and
+                    definite_rejection(rejections[-1].get("http_status")),
+                    "publication unverified; reconcile the existing attempt without reposting")
+            require(attempts < MAX_POST_ATTEMPTS, "definite rejection retry budget exhausted; retain receipt")
         if initial:
             require(selected["action"] == "reconcile_legacy", "initial publication cannot replace a checkpoint")
         else:
@@ -228,12 +243,27 @@ def publish(api, value, summary, *, previous_note_id, receipt_path, initial=Fals
         receipt_path.parent.mkdir(parents=True, exist_ok=True)
         # Exclusive creation closes the local double-POST window. This does not
         # establish exclusive remote coordination or a cross-session lease.
-        with receipt_path.open("x", encoding="utf-8") as handle:
-            json.dump({"intent": intent, "state": "publication_unknown"}, handle)
+        attempts += 1
+        pending = {"intent": intent, "state": "publication_unknown",
+                   "post_attempts": attempts, "rejections": rejections}
+        # Retain an exclusive retry reservation too: concurrent callers must not
+        # both re-POST using the same rejected receipt. Never delete this marker.
+        reservation = receipt_path if prior_receipt is None else receipt_path.with_name(
+            receipt_path.name + f".attempt-{attempts}")
+        with reservation.open("x", encoding="utf-8") as handle:
+            json.dump(pending, handle)
             handle.flush()
             os.fsync(handle.fileno())
-        published = api.create(source, body)  # Exactly one POST; no network retry.
-        dev.save_json(receipt_path, {"intent": intent, "state": "readback_pending", "note_id": published["id"]})
+        if prior_receipt is not None:
+            dev.save_json(receipt_path, pending)
+        try:
+            published = api.create(source, body)  # One POST per invocation; no network retry loop.
+        except TransportError as exc:
+            if definite_rejection(exc.http_status):
+                rejections.append({"attempt": attempts, "http_status": exc.http_status})
+                dev.save_json(receipt_path, pending | {"state": "rejected", "rejections": rejections})
+            raise
+        dev.save_json(receipt_path, pending | {"state": "readback_pending", "note_id": published["id"]})
 
     saved = api.get(source, published["id"])
     require(saved["id"] == published["id"] and saved["url"] == BASE + f"/-/issues/{source}#note_{saved['id']}"
@@ -246,6 +276,7 @@ def publish(api, value, summary, *, previous_note_id, receipt_path, initial=Fals
     require(current["action"] == "resume" and current["source_url"] == saved["url"] and
             current["handoff"] == value, "checkpoint superseded or inconsistent; reconcile before dispatch")
     receipt = {"intent": intent, "state": "verified", "verified": True,
+               "post_attempts": attempts, "rejections": rejections,
                "note_id": saved["id"], "note_url": saved["url"], "body_sha256": digest(saved["body"]),
                "excluded_notes": current["excluded_notes"]}
     dev.save_json(receipt_path, receipt)
