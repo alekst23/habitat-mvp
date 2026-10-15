@@ -4,6 +4,7 @@ import hashlib
 from copy import deepcopy
 import json
 from pathlib import Path
+import re
 import sys
 import unittest
 
@@ -144,7 +145,7 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         prompt = (AGENTS / "ctx-project.md").read_text()
         guide = (ROOT / "docs/development/project-discovery.md").read_text()
         for term in ("docs/development/project-discovery.md", "status_group", "statuses",
-                     "Do not retry the contradictory schema", "can_start_session=false",
+                     "Rejecting a malformed request", "can_start_session=false",
                      "development_consumer_binding", "12316920", "runtime_version=not_exposed",
                      "No GraphQL", "Known-ID reads", "trusted default-branch SHA"):
             self.assertIn(term, prompt)
@@ -158,6 +159,28 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         for name in ("project-sessions", "project-flows"):
             self.assertFalse((ROOT / ".gitlab/ctx/queries" / f"{name}.graphql").exists())
 
+    def test_project_discovery_request_and_bounded_recovery(self):
+        # Guard the actual publication inputs, not an unused local API adapter.
+        # Model compliance still requires the transcript acceptance in the guide.
+        for path in (AGENTS / "ctx-project.md", ROOT / "docs/development/project-discovery.md"):
+            with self.subTest(path=path.name):
+                text = path.read_text()
+                examples = [json.loads(body) for body in re.findall(r"```json\n(.*?)\n```", text, re.S)]
+                self.assertEqual(examples, [{"project_id": "87329027", "first": 100}],
+                                 "publish one exact filter-free session request, not empty/null placeholders")
+                normalized = " ".join(text.split())
+                for requirement in (
+                    "At most one corrected read-only attempt per user turn",
+                    "Never repeat the rejected payload",
+                    "Rejecting a malformed request is not proof of a contradictory schema",
+                    "Do not retry Start Duo Session or Send Duo Session Input under this rule",
+                    "No new permission or maintainer lookup is needed to correct your own read-only arguments",
+                    "do not reset the cursor",
+                    "access denial",
+                ):
+                    self.assertIn(requirement, normalized)
+                self.assertNotIn("Do not retry the contradictory schema if it reappears", text)
+
     def test_project_publication_record_preserves_specialists_and_pending_live_proof(self):
         catalog = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())
         entry = catalog["entrypoints"]["project"]
@@ -169,14 +192,15 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertTrue(project["catalog_url"].endswith("/agents/1016538"))
         self.assertEqual(project["catalog_version"], "1.7.0")
         prompt = (AGENTS / project["system_prompt_file"]).read_bytes()
-        self.assertNotIn("pending_catalog_version", project)
+        self.assertEqual(project["pending_catalog_version"], "1.8.0")
         self.assertEqual(project["published_source_commit"], "b30114cb31e5baa0fc8272c6fb7fcedcf88c57c3")
         self.assertEqual(project["published_system_prompt_sha256"],
                          "cb55d49826871686118dc4f5a5fc10507045f7a0b8d2062dcfcdf4395abb4fcb")
-        self.assertNotIn("candidate_status", project)
+        self.assertEqual(project["candidate_status"], "unpublished")
         self.assertTrue(project["verification"]["resumable_owner_live"].startswith("pending"))
-        self.assertEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertNotEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
         self.assertTrue(project["verification"]["discovery_fallback_live"].startswith("passed discovery-only"))
+        self.assertTrue(project["verification"]["discovery_recovery_live"].startswith("pending"))
         self.assertTrue(project["verification"]["session_handoff_live"].startswith("pending"))
         self.assertTrue(project["verification"]["next_action_live"].startswith("pending"))
         self.assertEqual(project["next_entrypoint"], "development-native-session-handoff")
