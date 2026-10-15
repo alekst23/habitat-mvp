@@ -1,9 +1,10 @@
 # Project-owned session handoff
 
-Current candidate: **Project v1.7.0 native discovery repair**, not yet published
-or live-verified. Read [project-discovery.md](project-discovery.md).
-The latest verified publication is v1.6.0 (24 tools); the candidate retains that
-same tool set. No additional credentials, permissions or Development changes.
+Current publication: **Project v1.7.0 native discovery repair**, published and
+read back on 2026-10-15 UTC with the unchanged 24 tools. Fresh discovery-only
+acceptance passed; read [project-discovery.md](project-discovery.md) for evidence
+and visibility limits. Launch/input/re-entry acceptance remains pending.
+No additional credentials, permissions or Development changes.
 
 Original handoff release: **Project v1.5.0 published and enabled on 2026-10-13 UTC**. After explicit
 user confirmation, the full prompt, description, exact 24 tools, private visibility,

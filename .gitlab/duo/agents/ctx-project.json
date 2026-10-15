@@ -9,13 +9,11 @@
   "system_prompt_file": "ctx-project.md",
   "system_prompt_sha256": "e023c40c8f02aa6fe204886bf133c4c5a5ca9039dec542d9ad63939b98e56d19",
   "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016538",
-  "catalog_version": "1.6.0",
-  "pending_catalog_version": "1.7.0",
-  "candidate_status": "unpublished; supported native discovery and reviewed consumer binding; independent review, publication and complete live acceptance pending",
+  "catalog_version": "1.7.0",
   "enabled_in_project": true,
-  "published_system_prompt_sha256": "cc4dcc0bbea23c0c717546710849ea6a58dfebc7dc3509fc50a574e0b033a7b7",
-  "published_source_commit": "9522bf6c39e6564047a5ea9d775f69de90828f41",
-  "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/49",
+  "published_system_prompt_sha256": "cb55d49826871686118dc4f5a5fc10507045f7a0b8d2062dcfcdf4395abb4fcb",
+  "published_source_commit": "b30114cb31e5baa0fc8272c6fb7fcedcf88c57c3",
+  "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/52",
   "publication_history": [
     {
       "catalog_version": "1.0.0",
@@ -58,6 +56,13 @@
       "published_source_commit": "5982f64e4db2a55ef6f6dfebc3e65fdfadeffe35",
       "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/42",
       "verification": "passed 2026-10-13 UTC: full 27683-byte saved prompt matched source after final-newline normalization; v1.5.0, enabled/private, exact 24 tools, description and no MCP read back. MR !42 passed pipeline 2940520638 and independent review 4001358891, merging main ec89eb3. No application session was initiated by publication; live launch/input/re-entry acceptance remained pending."
+    },
+    {
+      "catalog_version": "1.6.0",
+      "published_system_prompt_sha256": "cc4dcc0bbea23c0c717546710849ea6a58dfebc7dc3509fc50a574e0b033a7b7",
+      "published_source_commit": "9522bf6c39e6564047a5ea9d775f69de90828f41",
+      "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/49",
+      "verification": "passed 2026-10-15 UTC: full 30633-byte saved prompt matched source after final-newline normalization; v1.6.0, enabled/private, exact 24 tools, description and no MCP read back. MR !49 review 4021263981 had no remaining findings; three workflow jobs passed in pipeline 2951370940. User approved workflow-only merge despite unconfigured application verify; main merge 75442835. E11 helper sync !50 merged 71016e8b after review 4021234416 and passing workflow jobs. No application run or checkpoint change. See docs/development/checkpoint-publication.md."
     }
   ],
   "trigger": "Duo Chat Add new chat > CTX Project; refresh after enablement; no mention/assignment/flow trigger",
@@ -141,11 +146,11 @@
     "Create Merge Request"
   ],
   "external_mcp_servers": [],
-  "publication_status": "Published and enabled v1.6.0 on 2026-10-15 UTC. Full 30633-byte saved prompt equals reviewed source after final-newline normalization. Exact 24 tools, description, private visibility and no external MCP read back. Immediate next instructions and checkpoint-recovery guidance updated without changing authority. No application run started; live conversational/recovery acceptance remains pending.",
+  "publication_status": "Published and enabled v1.7.0 on 2026-10-15 UTC. Full 32928-byte saved prompt equals reviewed source after final-newline normalization. Exact unchanged 24 tools, description, private visibility and no external MCP read back. Fresh discovery-only chat exercised native project-filtered lists and terminal-session retrieval. No application run started; live launch/input/re-entry and checkpoint-recovery acceptance remain pending.",
   "verification": {
-    "discovery_fallback_live": "pending; v1.7.0 native-discovery candidate. Prepublication diagnostic verified project 87329027 flow consumer 12316920, can_start_session=true and optional session filters; full session pagination and post-publication behavior still pending. Runtime version is not exposed. No E11 continuation or checkpoint/issue writes.",
+    "discovery_fallback_live": "passed discovery-only 2026-10-15 UTC in a fresh CTX Project chat after v1.7.0 publication. Read merged guide/binding/catalog at eca186413bfd25f87f5aea7baa92bc6b71d888d4. Project-filtered flow listing returned seven entries, hasNextPage=false, and exactly one non-foundational CTX Development consumer 12316920 with can_start_session=true. Session call omitted both status filters; chat reported 67 records with first=100 and hasNextPage=false (UI response display truncated at 4096 characters). Terminal Get Duo Session 9546670 succeeded and its review history was treated as historical, not a new write. Release-time Development version 1.10.0; runtime_version=not_exposed. Current-user visibility only, not launch clearance. No Start/Input, E11 continuation or issue/checkpoint writes. See docs/development/project-discovery.md for evidence limits.",
     "session_handoff_live": "pending; discovery/start/input tools published and read back, but no direct launch/input/re-entry smoke performed. See docs/development/project-session-handoff.md; local policy/prompt checks are not runtime enforcement or integration proof.",
-    "catalog_readback": "passed 2026-10-15 UTC: full 30633-byte saved prompt matches source 9522bf6c after final-newline normalization, SHA-256 cc4dcc0bbea23c0c717546710849ea6a58dfebc7dc3509fc50a574e0b033a7b7. v1.6.0, enabled/private, exact 24 tools, description and no MCP read back. MR !49 independent follow-up review 4021263981 had no remaining findings; all three workflow jobs passed in pipeline 2951370940, while application verify failed for the unconfigured adapter. User explicitly approved workflow-only merging despite that failure; main merge 75442835. E11 helper sync !50 merged 71016e8b after review 4021234416 and passing workflow jobs; application verification still failed for absent backend/tests. No app MR, issue checkpoint or CI protection changed; no application run started. See docs/development/checkpoint-publication.md.",
+    "catalog_readback": "passed 2026-10-15 UTC: full 32928-byte saved prompt matches source b30114cb after final-newline normalization, SHA-256 cb55d49826871686118dc4f5a5fc10507045f7a0b8d2062dcfcdf4395abb4fcb. v1.7.0, enabled/private, exact unchanged 24 tools, description and no MCP read back. MR !52 independent review session 9546670 / note 4022174114 identified only a 25-tool to 24-tool documentation typo; applied in b30114cb and thread 4022174165 resolved. Three workflow jobs passed in pipeline 2951847496; ctx:verify failed because its application command is unconfigured. User explicitly approved workflow-only merging despite that failure; main merge eca186413bfd25f87f5aea7baa92bc6b71d888d4. No Development release, app MR, checkpoint, permissions or CI protection changed; no application run started.",
     "chat_picker": "passed 2026-10-10 after page refresh; CTX Project appears alongside Planning and Design; no prompt submitted",
     "chat_interview_save_smoke": "pending",
     "fresh_chat_status_reconciliation": "pending",
