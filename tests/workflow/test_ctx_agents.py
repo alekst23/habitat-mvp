@@ -115,13 +115,13 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertTrue(project["catalog_url"].endswith("/agents/1016538"))
         self.assertEqual(project["catalog_version"], "1.5.0")
         prompt = (AGENTS / project["system_prompt_file"]).read_bytes()
-        self.assertNotIn("pending_catalog_version", project)
+        self.assertEqual(project["pending_catalog_version"], "1.6.0")
         self.assertEqual(project["published_source_commit"], "5982f64e4db2a55ef6f6dfebc3e65fdfadeffe35")
         self.assertEqual(project["published_system_prompt_sha256"],
                          "bf0fb4828094dcd8859b5b1bfb7b607da25fdfb35a73d17492a1ee7ed6c72853")
-        self.assertNotIn("candidate_status", project)
+        self.assertTrue(project["candidate_status"].startswith("Unpublished"))
         self.assertTrue(project["verification"]["resumable_owner_live"].startswith("pending"))
-        self.assertEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertNotEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
         self.assertTrue(project["verification"]["session_handoff_live"].startswith("pending"))
         self.assertTrue(project["verification"]["next_action_live"].startswith("pending"))
         self.assertEqual(project["next_entrypoint"], "development-native-session-handoff")
@@ -188,6 +188,13 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         guide_path = ROOT / "docs/development/next-action.md"
         self.assertTrue(guide_path.is_file(), "missing next-action contract")
         guide = guide_path.read_text()
+        project_prompt = (AGENTS / "ctx-project.md").read_text()
+        for phrase in ("**Do this now:**", "one immediate instruction, not guidance",
+                       "imperative verb, exact destination", "exact words/action",
+                       "Do authorized technical work yourself first", "read-only",
+                       "checkpoint-exclusions.json", "chat does not retype the full owner JSON"):
+            self.assertIn(phrase, project_prompt)
+        self.assertIn("Never offer deletion of invalid notes", guide)
         for scenario in (
             "Status only", "Repair saved", "Review returned findings",
             "Budget exhausted", "Active or uncertain writer", "Design complete",

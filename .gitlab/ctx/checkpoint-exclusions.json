@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "project_id": 87329027,
+  "source_issue_iid": 11,
+  "epic": "E11",
+  "run_id": "execute-e11-1",
+  "author_id": 43132375,
+  "evidence_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4020469403",
+  "reason": "Known-invalid model-transcribed payloads identified by the source stop report; exclude only from checkpoint selection, retain all notes as evidence.",
+  "note_ids": [4019842621, 4019862442, 4019930708, 4020048348, 4020406044, 4020434941, 4020464828]
+}

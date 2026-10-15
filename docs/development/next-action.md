@@ -15,6 +15,29 @@ use them to retry uncertain dispatch. No changes to Design's tool set or autonom
 
 ## Help the user move, not interpret the workflow
 
+**Project v1.6.0 candidate, not published:** tighten the Project reply contract to
+one direct instruction. The current v1.5.0 tools and authority remain unchanged.
+Every task-related response ends with **Do this now:** and one smallest executable
+step, with an imperative verb, exact destination and exact reply/click/action.
+Do authorized work first; do not turn agent-owned technical recovery into user chores.
+Status-only still makes no changes: explicitly label any proposed new work not
+started, then give the exact reply that would authorize it.
+
+| Observed situation | Immediate instruction (fill only from verified evidence) |
+| --- | --- |
+| Selected flow started/running | Leave [actual session] running. When you return, reply `check progress` here. |
+| A product choice is required | Reply A or B here, after the focused question/options and recommendation. |
+| Native tool/plan approval | Open [existing session] and approve/reject the named current pending action. No generic go or new run. |
+| Only design authorized, design closure verified | Reply `Implement the approved E11 scope; keep merge and deployment off` here. Use the actual epic and exclusions. |
+| Workflow repair is outside this chat | Send the short copy-ready repair request to the verified workflow-maintenance destination. If that destination is unknown, ask specifically for it; do not invent a URL/person. |
+| Work complete or explicitly paused | No action required; the named scope is complete/paused. |
+
+Do not end with guidance such as "consider", "you could", "the next step is a
+policy change", "review needed", or an engineering checklist. A blocker explanation
+is not an instruction. Never offer deletion of invalid notes, JSON editing, credential
+copying, logs collection, worker selection or unchanged Continue retries as recovery.
+Preserve explicit approval, read-only requests and all scope/budget/review controls.
+
 Use **Result -> Next -> Your action** in ordinary prose; labels are optional.
 The first 120 words explain the outcome, the immediate next useful action and who
 can take it. Put a necessary copy-ready command directly below that opening.
