@@ -412,7 +412,20 @@ def validate_chat_agent(name, record, prompt, catalog):
     allowed = CHAT_TOOLS | ({"Create Issue"} if name != "ctx-design" else set())
     if name == "ctx-project":
         allowed |= {"List Duo Sessions", "Get Duo Session", "List Duo Agents And Flows",
-                    "Start Duo Session", "Send Duo Session Input", "GitLab GraphQL"}
+                    "Start Duo Session", "Send Duo Session Input"}
+        binding = record.get("development_consumer_binding")
+        expected_binding = {
+            "project_id": 87329027,
+            "catalog_item_id": 1016234,
+            "consumer_id": 12316920,
+            "name": "CTX Development",
+            "catalog_version_at_verification": "1.10.0",
+            "verified_on": "2026-10-15",
+            "runtime_version_policy": "gitlab_configured_consumer",
+        }
+        require(isinstance(binding, dict) and binding == expected_binding and
+                all(type(binding[key]) is type(value) for key, value in expected_binding.items()),
+                "reviewed Development consumer binding changed")
         handoff = record.get("session_handoff")
         expected_handoff = {
             "allowed_entrypoint": "development",
@@ -431,6 +444,8 @@ def validate_chat_agent(name, record, prompt, catalog):
         expected_url = f"https://gitlab.com/{record['project_path']}/-/automate/flows/{handoff['flow_catalog_item_id']}"
         require(target.get("kind") == "flow" and flow_record.get("catalog_url") == expected_url,
                 "project handoff flow identity changed")
+        require(flow_record.get("catalog_version") == binding["catalog_version_at_verification"],
+                "Development publication changed; reverify consumer binding")
     else:
         require("session_handoff" not in record, "specialist cannot gain session dispatch")
     require(isinstance(tools, list) and all(isinstance(t, str) for t in tools) and

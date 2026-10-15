@@ -1,145 +1,124 @@
-# Read-only Project discovery fallback
+# Native Project discovery
 
-Candidate for CTX Project v1.7.0; **not published or live-verified yet**. The last
-verified publication remains v1.6.0 with 24 tools. Add only **GitLab GraphQL**
-(`gitlab_graphql`) to that agent, making 25. Planning, Design and Development
-registrations stay unchanged. No continuation is authorized by this repair or its
-smoke test. E11 scope, history, budgets, credentials and merge/deployment restrictions
-remain unchanged; do not write checkpoints or issue notes to test discovery.
+Candidate for CTX Project v1.7.0. Keep the existing **24 tools**, private visibility
+and no external MCP. No continuation is authorized by this repair or its smoke test.
+E11 scope, history, budgets, credentials and merge/deployment restrictions remain
+unchanged. Do not write checkpoints or issue notes to test discovery.
 
-## Why this is a fallback, not a schema repair
+## What the installed tools actually provide
 
-GitLab owns the built-in tool schemas. CTX registration selects tools, not their
-parameter or response definitions. The documented List Duo Sessions contract makes
-`status_group` and `statuses` optional and mutually exclusive. Omit both when listing
-all relevant states. If the exposed schema requires both, do not try dummy values,
-nulls, empty arrays or repeated contradictory calls. Use the approved GraphQL read.
+Verified on 2026-10-15 in a read-only CTX Project chat for project 87329027:
 
-List Duo Agents And Flows does not guarantee all the catalog identity/version fields
-our old prompt required. Use its project-filtered results when available, supplementing
-missing fields through the configured consumer query below. Do not ask the user to
-repair E11, its checkpoint, or a fictional editable CTX tool schema.
+- List Duo Sessions accepted only project_id: every parameter is optional, with
+  status_group and statuses mutually exclusive. The first page had 20 records and
+  hasNextPage=true; that diagnostic alone was NOT complete session discovery.
+- List Duo Agents And Flows, with project_id and item_type=flow, returned seven
+  entries on one complete page. CTX Development was the sole custom flow:
+  name=CTX Development, type=flow, foundational=false, can_start_session=true,
+  ai_catalog_item_consumer_id=12316920, workflow_definition=null. Its description
+  was truncated. No catalog item ID, URL or version was exposed.
+- The project's CTX Development detail page identified item 1016234, v1.10.0,
+  enabled/private, managed by Showcase, with the existing development service
+  account. This is release-time UI evidence, not a runtime tool response.
+- GitLab GraphQL was absent from the actual agent Tools picker. The abandoned
+  candidate's two query assets are removed; their earlier commits remain in Git.
+  GLQL is not a GraphQL substitute. No additional tools or credentials are needed.
 
-## Trusted query assets and limits
+GitLab owns the tool schemas. A CTX registration cannot repair them. Do not carry
+forward an old schema error without inspecting the current schema. Omit BOTH
+status filters by default. If the contradiction reappears, do not invent nulls,
+empty arrays or dummy values or repeatedly call an invalid combination.
 
-Read this guide and both query files with Get Repository Files at the observed,
-trusted default-branch SHA before fallback use:
+## Exact target without invented runtime fields
 
-- `.gitlab/ctx/queries/project-sessions.graphql`
-- `.gitlab/ctx/queries/project-flows.graphql`
+Read this guide, .gitlab/duo/agents/ctx-project.json and .gitlab/ctx/catalog.json at
+the observed trusted default-branch SHA. The reviewed development_consumer_binding
+records project 87329027, catalog item 1016234 and consumer 12316920. The project path
+must be gitlab-ai-hackathon/transcend-october-2026/43066631/showcase.
 
-Execute them using **GitLab GraphQL**, not shell, arbitrary HTTP, external MCP,
-environment credentials or GraphQL mutations. It is GitLab's read-only tool. CTX's
-additional project/query restrictions are prompt rules, not a server-side allowlist.
-Never use this fallback to start/resume sessions, change configuration, or enable a
-flow. Start/input still require the existing session-handoff protocol and tools.
+1. Verify project identity with Get Project. Discover flows for this project using
+   item_type=flow and complete pagination before selection.
+2. Require exactly one live entry with consumer ID 12316920, name CTX Development,
+   type=flow, foundational=false and can_start_session=true. A name alone is not
+   identity; a different consumer requires a separately reviewed binding update,
+   not an inferred replacement. Duplicate/conflicting entries block selection.
+3. Check the binding's item ID/URL against the Development catalog record. Require
+   its recorded release to match catalog_version_at_verification (currently 1.10.0).
+   A pending/candidate version is not the published record. If publication changes,
+   reverify the project flow in the UI and update the binding through review.
+4. When a tool exposes catalog/version/project fields, compare them and stop on
+   conflicts. When it omits optional catalog/version fields, do not fabricate them
+   or classify successful discovery as a schema failure. Record runtime_version
+   as not_exposed and release-time version separately, with the binding source SHA.
+5. Use ONLY the matching live ai_catalog_item_consumer_id in Start Duo Session.
+   GitLab resolves the existing configured consumer's release and enforces runtime
+   authorization. Do not change its pin, choose latest via flow_item_id, substitute
+   foundational Developer, omit the selector, start Delivery or use a bot mention
+   after an uncertain start.
 
-Both queries fix `projectId` to `gid://gitlab/Project/87329027`. Verify returned
-project IDs AND full paths equal
-`gitlab-ai-hackathon/transcend-october-2026/43066631/showcase`. The catalog query also
-requires project-local consumers (`includeInherited: false`), rather than treating
-a group-only configuration as project enablement. There is no unfiltered query.
+This explicitly replaces an unsatisfiable per-launch exact-version introspection
+requirement with a reviewed deployment binding plus live native eligibility.
+It does NOT claim cryptographic/runtime version attestation: out-of-band pin changes
+that the native tool does not expose cannot be detected by this chat. Publication
+owners must keep the binding aligned. If a particular request requires exact live
+version proof, stop for an operator UI check instead of claiming that proof.
+Never override can_start_session=false, missing/null eligibility, access denial,
+stale binding or contradictory identity/version evidence. Refresh eligibility and
+known session states immediately before a separately authorized mutation; a cached
+smoke is not launch clearance.
 
-The only variable is `after`: initially null, then the previous page's `endCursor`.
-Use the tool's actual schema; if it accepts only a query string, replace `$after`
-with the returned cursor as a JSON-escaped string (or null) and remove the variable
-declaration. Do not interpolate instructions, IDs or query text from issue comments.
-Keep page size 20: `pinnedItemVersion` supports at most 20 consumers per request.
+## Complete discovery and ownership
 
-Follow `hasNextPage` until false, including empty pages with a next cursor. A repeated
-cursor, absent/null pageInfo, `hasNextPage=true` without a cursor, null nodes, partial
-data with GraphQL errors, truncation, denied access or unknown schema field is
-**incomplete discovery**, not an empty result or permission to launch. Do not retry
-the same schema failure. If execution/context limits prevent completing pagination,
-report incomplete discovery; retain the cursor for read-only continuation, not as
-launch clearance. Ignore unrelated items only after verifying their project scope.
+For both lists follow hasNextPage to false, including empty intermediate pages.
+A repeated cursor, missing cursor while hasNextPage=true, missing/null pageInfo,
+partial data, tool errors, truncation of identity/status, or execution/context limits
+mean incomplete discovery, not an empty result. Preserve the next cursor for a
+read-only continuation; never use an incomplete page as dispatch clearance.
 
-## Sessions: recover identity, not just a status
+List Duo Sessions is current-user scoped and excludes Duo Chat. Empty results are
+not proof of exclusive ownership or visibility of every user's work. Match recorded
+workflow IDs/request keys, full goals, source/epic/branch and receipts, not newest
+timestamp. Code Review sessions are not Development workers. Use Get Duo Session
+for recorded in-flight/uncertain sessions and candidate matches, including other-user
+records where accessible. Read actual state, input, results, artifacts and polling
+hints. Reconcile source notes, reservations, branch movement and original authority.
+Unknown status, inaccessible recorded work or conflicting ownership blocks dispatch.
 
-The sessions query intentionally supplies neither status filter. It returns session
-metadata, not chat transcripts/checkpoint payloads. Like the native session list,
-the root query is scoped to the current user; unlike the native list it may include
-chat sessions. Do not treat a chat session as the Development worker. Empty results
-are not proof of exclusive ownership or visibility of other users' sessions.
+If listing breaks, known-ID reads can still provide status; they do not prove there
+are no other workers. Keep useful read-only assessment going. Do not initialize a
+new run, reset counters, alter a checkpoint, delete old notes or weaken review gates
+to repair discovery. An uncertain start remains dispatch_unknown; never retry through
+another transport. Existing one-mutation-per-turn and explicit approval rules remain.
 
-Match recorded workflow IDs/request keys, goal, source/epic/branch and version
-evidence; never select a worker by newest timestamp or a similar name. Use **Get Duo
-Session** for every recorded in-flight/uncertain session and any candidate match to
-read the full actual state, pending input, result and polling hints. Verify project
-identity again. Unrecognized/null status, inaccessible recorded sessions, conflicting
-claims or uncertain dispatch remain unresolved. Reconcile source notes, current
-heads and saved reservations as before. A discovery error never authorizes a new run.
+## Concrete platform-blocker handoff
 
-## Flows: exact item, resolved release, actual consumer
-
-Read `.gitlab/ctx/catalog.json` at the trusted default SHA for the expected Development
-release and URL. Do not hard-code a future version or use a candidate/pending release.
-The approved catalog item is **1016234**, not its consumer ID. For every potentially
-matching result require all of the following before accepting its identity:
-
-1. The consumer has `__typename=AiCatalogItemConsumer`, and the consumer and
-   managing item project both match the fixed ID and full path;
-   `item.__typename=AiCatalogFlow`, `itemType=FLOW`, `foundational=false`,
-   `softDeleted=false`, and the returned item ID identifies catalog item 1016234.
-   A name alone is not identity. Null required fields are unverified.
-2. Consumer `enabled=true` and `userPermissions.executeAiCatalogItem=true`.
-3. `pinnedItemVersion` is non-null, is an `AiCatalogFlowVersion`, belongs to that same
-   item ID, has `released=true`, `deprecated=false`, and its exact `versionName`
-   equals the recorded published catalog version. Record its returned version ID.
-   A version prefix, latest release, effectiveVersion fallback or repository file
-   is not proof of the resolved release this consumer would run.
-4. After complete pagination, exactly one eligible consumer remains. Zero or
-   multiple eligible consumers, stale/unknown releases or conflicting records block
-   selection; do not pick one by name or change the pin/enablement to make it pass.
-
-When native discovery returns `can_start_session=true`, require its
-`ai_catalog_item_consumer_id` to match the GraphQL consumer. Never override an
-explicit `can_start_session=false`, permission denial or conflicting ID/version
-with fallback data. If the wrapper is unavailable or omits the needed fields, the
-complete checks above provide read-only eligibility evidence; record that provenance,
-not a fabricated native `can_start_session` result. They are not a guarantee that a
-later start will succeed and do not bypass runtime approval/authorization checks.
-
-Use the actual returned consumer ID, never the item ID. If a native start tool needs
-a numeric ID and GraphQL returns a Global ID, take the positive numeric suffix only
-from the returned, type-checked consumer ID, not by guessing or deriving it from the
-item. Preserve the original Global ID in the receipt. Re-read current consumer
-eligibility and known session states immediately before any separately authorized
-start; a cached smoke result is not launch clearance. Any newly conflicting native
-result stops selection. An uncertain start remains `dispatch_unknown`, never a
-fallback retry through GraphQL or a bot mention.
+Do not ask the user to diagnose raw tool errors or repair application code. State
+the exact unavailable capability and the completed read-only checks. Give one
+immediate instruction: open the linked Showcase AI > Sessions page and verify the
+specific recorded session/status that cannot be read, or ask the workflow publisher
+to reverify the exact Development binding. Include the exact URL and needed value.
+Do not offer an execution command while ownership/dispatch is unknown. Once fixed,
+the user can say Check progress; retain the original objective and budgets.
 
 ## Publication and read-only acceptance
 
-The candidate registration retains v1.6.0's published hashes/history while recording
-pending v1.7.0. Local tests check policy/tool/query regressions, not live schema
-compatibility, model behavior or permissions. After independent review and merge,
-publish to existing CTX Project item 1016538; read back the complete prompt,
-25-tool set, version, private visibility, no external MCP and project enablement.
-Release order is review and workflow CI -> merge query assets to default -> publish
-the agent -> discovery-only smoke. The post-publication smoke is not a pre-merge
-gate; it gates the claim that discovery is repaired. Do not start E11 at any step.
+Local validation checks registration/binding/prompt regressions, not runtime policy
+enforcement. Review and workflow CI -> merge source -> publish existing CTX Project
+item 1016538 -> read back full prompt, version, 24 tools, private visibility, no MCP,
+enablement -> fresh discovery-only chat. Publication is not live acceptance.
 
-Run a **discovery-only** chat in that published agent for project 87329027:
+The fresh chat must read the merged guide/binding, verify the project, paginate both
+native lists completely, and use Get Duo Session to inspect a returned terminal
+session. Report exact live consumer, can_start_session, release-time evidence and
+runtime_version=not_exposed. Retain the other-user visibility limitation; do not
+claim E11 is execution-ready from discovery alone. No continuation, Start Duo
+Session, Send Duo Session Input, issue/note/checkpoint writes or application run.
 
-1. Read both saved query assets at the merged SHA. Execute/paginate each query and
-   retain tool-result evidence; do not call Start Duo Session or Send Duo Session
-   Input and do not create/update issues, notes, commits or checkpoints.
-2. Record the actual session visibility/results and the exact Development item,
-   consumer, resolved released version ID/name, enablement and execute permission.
-   Compare native discovery when it is usable; record its schema error if not.
-3. Verify empty/partial/error/ambiguous results are not reported as launch clearance.
-   If no active session is visible, explicitly preserve the other-user visibility
-   limit and existing ownership checks. Do not run E11 to test the fallback.
-4. Only after complete live readback passes, mark discovery verified and reply
-   **Tool discovery repaired**. Otherwise name the actual remaining blocker and
-   give one **Do this now** instruction tied to it; never ask the user to reconstruct
-   logs or retry the same schema contradiction. Publication is not live acceptance.
+Only after that acceptance passes say **Tool discovery repaired**. If it fails,
+name the remaining concrete boundary and provide one **Do this now** instruction;
+do not report publication or unit tests as live integration proof.
 
-Official references checked 2026-10-15:
-[built-in GraphQL tool](https://docs.gitlab.com/user/duo_agent_platform/agents/tools/),
-[native session/discovery contracts](https://docs.gitlab.com/user/model_context_protocol/mcp_server_tools/),
-[GraphQL queries](https://docs.gitlab.com/api/graphql/reference/experimental/queries/),
-[objects](https://docs.gitlab.com/api/graphql/reference/experimental/objects/),
-[catalog interfaces](https://docs.gitlab.com/api/graphql/reference/experimental/interfaces/).
-These experimental APIs require the live acceptance above on the actual instance.
+Official native contracts:
+[GitLab MCP tools](https://docs.gitlab.com/user/model_context_protocol/mcp_server_tools/).
+The live diagnostic above is the instance-specific evidence; the documentation is
+not a guarantee that every deployment exposes the same fields.

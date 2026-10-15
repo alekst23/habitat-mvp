@@ -15,6 +15,37 @@ import ctx_workflow as workflow
 
 
 class ChatAgentRegistrationTests(unittest.TestCase):
+    def test_project_consumer_binding_is_reviewed_not_a_name_guess(self):
+        catalog = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())
+        record = json.loads((AGENTS / "ctx-project.json").read_text())
+        prompt = (AGENTS / "ctx-project.md").read_bytes()
+        self.assertEqual(record.get("development_consumer_binding"), {
+            "project_id": 87329027,
+            "catalog_item_id": 1016234,
+            "consumer_id": 12316920,
+            "name": "CTX Development",
+            "catalog_version_at_verification": "1.10.0",
+            "verified_on": "2026-10-15",
+            "runtime_version_policy": "gitlab_configured_consumer",
+        })
+        for key, value in (("project_id", 1), ("catalog_item_id", 1),
+                           ("consumer_id", 1016234), ("consumer_id", True),
+                           ("name", "Developer"),
+                           ("runtime_version_policy", "latest_catalog_release")):
+            changed = deepcopy(record)
+            changed["development_consumer_binding"][key] = value
+            with self.subTest(field=key), self.assertRaises(workflow.Invalid):
+                workflow.validate_chat_agent("ctx-project", changed, prompt, catalog)
+        changed = deepcopy(record)
+        del changed["development_consumer_binding"]
+        with self.assertRaises(workflow.Invalid):
+            workflow.validate_chat_agent("ctx-project", changed, prompt, catalog)
+
+        changed_catalog = deepcopy(catalog)
+        changed_catalog["flows"][".gitlab/duo/flows/ctx-development.yml"]["catalog_version"] = "1.11.0"
+        with self.assertRaises(workflow.Invalid):
+            workflow.validate_chat_agent("ctx-project", record, prompt, changed_catalog)
+
     def test_chat_records_match_their_prompts_and_scope(self):
         shared = {
             "Get Project", "Get Commit", "Get Repository Files", "List Repository Tree",
@@ -43,7 +74,7 @@ class ChatAgentRegistrationTests(unittest.TestCase):
                 expected = shared | publishing | ({"Create Issue"} if name != "ctx-design" else set())
                 if name == "ctx-project":
                     expected |= {"List Duo Sessions", "Get Duo Session", "List Duo Agents And Flows",
-                                 "Start Duo Session", "Send Duo Session Input", "GitLab GraphQL"}
+                                 "Start Duo Session", "Send Duo Session Input"}
                 self.assertEqual(set(tools), expected)
 
     def test_project_session_handoff_is_bounded_and_restartable(self):
@@ -93,7 +124,7 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         )
         with self.assertRaises(workflow.Invalid):
             workflow.validate_chat_agent("ctx-project", record, prompt, changed_catalog)
-        for tool in ("List Duo Agents And Flows", "Start Duo Session", "Send Duo Session Input", "GitLab GraphQL"):
+        for tool in ("List Duo Agents And Flows", "Start Duo Session", "Send Duo Session Input"):
             changed = deepcopy(record)
             changed["tools_ui_labels"].remove(tool)
             with self.subTest(missing_tool=tool), self.assertRaises(workflow.Invalid):
@@ -108,49 +139,24 @@ class ChatAgentRegistrationTests(unittest.TestCase):
             with self.subTest(graphql_specialist=name), self.assertRaises(workflow.Invalid):
                 workflow.validate_chat_agent(name, specialist, (AGENTS / f"{name}.md").read_bytes(), catalog)
 
-    def test_project_discovery_fallback_contract(self):
-        # Reviewed query/prompt regressions, not a GraphQL parser, authorization
-        # sandbox, live schema validation or proof that the model obeys policy.
+    def test_project_native_discovery_contract(self):
+        # Prompt/registration regression checks, not runtime enforcement.
         prompt = (AGENTS / "ctx-project.md").read_text()
         guide = (ROOT / "docs/development/project-discovery.md").read_text()
-        normalized_guide = " ".join(guide.split())
-        for term in ("GitLab GraphQL", "docs/development/project-discovery.md",
-                     "status_group", "statuses", "Do not retry the contradictory schema",
-                     "never override an explicit can_start_session=false",
-                     "No GraphQL mutations"):
+        for term in ("docs/development/project-discovery.md", "status_group", "statuses",
+                     "Do not retry the contradictory schema", "can_start_session=false",
+                     "development_consumer_binding", "12316920", "runtime_version=not_exposed",
+                     "No GraphQL", "Known-ID reads", "trusted default-branch SHA"):
             self.assertIn(term, prompt)
-        for term in ("project-sessions.graphql", "project-flows.graphql", "87329027",
-                     "1016234", "pinnedItemVersion", "executeAiCatalogItem",
-                     "partial data", "repeated cursor", "multiple eligible consumers",
-                     "not proof of exclusive ownership", "No continuation",
-                     "Tool discovery repaired", "Do this now"):
-            self.assertIn(term, normalized_guide)
-        queries = ROOT / ".gitlab/ctx/queries"
+        normalized = " ".join(guide.split())
+        for term in ("87329027", "1016234", "12316920", "release-time",
+                     "runtime version attestation", "out-of-band pin changes",
+                     "repeated cursor", "partial data", "not proof of exclusive ownership",
+                     "No continuation", "Tool discovery repaired", "Do this now",
+                     "stale binding", "explicit approval"):
+            self.assertIn(term, normalized)
         for name in ("project-sessions", "project-flows"):
-            query = (queries / f"{name}.graphql").read_text()
-            self.assertTrue(query.startswith("query CTX"))
-            self.assertEqual(query.count("query "), 1)
-            self.assertNotIn("mutation", query)
-            self.assertNotIn("subscription", query)
-            self.assertIn('projectId: "gid://gitlab/Project/87329027"', query)
-            self.assertIn("first: 20", query)
-            self.assertIn("after: $after", query)
-            for field in ("pageInfo", "hasNextPage", "endCursor", "project { id fullPath }"):
-                self.assertIn(field, query)
-        sessions = (queries / "project-sessions.graphql").read_text()
-        self.assertIn("duoWorkflowWorkflows(", sessions)
-        self.assertNotIn("statusGroup:", sessions)
-        self.assertNotIn("statuses:", sessions)
-        for field in ("statusName", "goal", "aiCatalogItemVersionId", "webUrl"):
-            self.assertIn(field, sessions)
-        flows = (queries / "project-flows.graphql").read_text()
-        for field in ("aiCatalogConfiguredItems(", "itemType: FLOW", "includeInherited: false",
-                      "enabled", "executeAiCatalogItem", "pinnedItemVersion",
-                      "versionName", "released", "deprecated", "item { id }"):
-            self.assertIn(field, flows)
-        self.assertIn("nodes {\n      __typename\n      id", flows)
-        self.assertNotIn("latestVersion", flows)
-        self.assertNotIn("effectiveVersion", flows)
+            self.assertFalse((ROOT / ".gitlab/ctx/queries" / f"{name}.graphql").exists())
 
     def test_project_publication_record_preserves_specialists_and_pending_live_proof(self):
         catalog = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())

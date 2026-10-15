@@ -1,10 +1,9 @@
 # Project-owned session handoff
 
-Current candidate: **Project v1.7.0 read-only discovery fallback**, not yet published
-or live-verified. Read [project-discovery.md](project-discovery.md) before using it.
-The latest verified publication is v1.6.0 (24 tools); see
-[checkpoint-publication.md](checkpoint-publication.md). The candidate adds only
-GitLab GraphQL (25 tools), not session authority or a Development change.
+Current candidate: **Project v1.7.0 native discovery repair**, not yet published
+or live-verified. Read [project-discovery.md](project-discovery.md).
+The latest verified publication is v1.6.0 (24 tools); the candidate retains that
+same tool set. No additional credentials, permissions or Development changes.
 
 Original handoff release: **Project v1.5.0 published and enabled on 2026-10-13 UTC**. After explicit
 user confirmation, the full prompt, description, exact 24 tools, private visibility,
@@ -49,19 +48,18 @@ Project v1.5.0 added these three tools to its previous 21: **List Duo Agents And
 **Start Duo Session**, **Send Duo Session Input**. Planning and Design keep their
 current registrations. No shell, arbitrary HTTP, external MCP server or credentials.
 
-Discover enabled flows for project `87329027` using `item_type=flow`; paginate even
-across empty pages while hasNextPage is true. Match catalog item `1016234` to the
-Development entry in `.gitlab/ctx/catalog.json`, its actual published version and
-project enablement. When native discovery returns `can_start_session`, require true.
-Missing identity/version fields or contradictory session-filter schemas use the
-approved [read-only GraphQL fallback](project-discovery.md), not guessed fields or
-repeated invalid calls. Omit both session status filters by default. The fallback
-must verify the exact configured consumer, execute permission and resolved released
-version, and never override a native false/denial/conflict. Use the verified
-`ai_catalog_item_consumer_id`, never the catalog item ID in that field. Never omit
-the selector (which defaults to the foundational Developer Flow), substitute another
-flow, start Delivery or call a specialist chat agent. If discovery/version/access
-cannot be established, report that exact boundary without a guessed launch.
+Discover enabled flows for project `87329027` using `item_type=flow`; paginate fully,
+including empty pages with hasNextPage=true. Follow the reviewed binding in
+[project-discovery.md](project-discovery.md): catalog item `1016234`, live consumer
+`12316920`, name CTX Development, type flow, non-foundational, can_start_session=true.
+Use the matching live `ai_catalog_item_consumer_id`, never the item ID. Missing
+catalog/version fields are not a native-tool failure: distinguish the binding's
+release-time UI evidence from runtime version, which is not exposed. GitLab resolves
+the configured consumer's version; never substitute latest, another flow or the
+foundational Developer default. Conflicting identity/permission/version evidence
+still blocks. Omit both optional session filters. A contradictory schema blocks
+new dispatch, not known-session read-only assessment; no invented alternate API.
+Do not start Delivery or call a specialist chat agent.
 
 References checked 2026-10-12: GitLab's
 [discovery/start/status/input contracts](https://docs.gitlab.com/user/model_context_protocol/mcp_server_tools/#list_duo_agents_and_flows).
@@ -83,7 +81,8 @@ Before a mutation, create/read back a request with:
   objective/mode/ticket scope/exclusions and original native `run_id` if it exists.
 - Authorization provenance: exact user request, known principal/source when
   available, original authorization note URL and latest full checkpoint URL.
-- Actual selected catalog item, consumer ID/version, parent session (on continuation)
+- Selected catalog item/consumer, binding source SHA and release-time version;
+  runtime version only if exposed (otherwise `not_exposed`), parent session (on continuation)
   and, for input, the existing session and exact pending question/approval identity.
 - Known remaining cumulative limits and evidence references, never invented zeros.
 
