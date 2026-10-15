@@ -9,14 +9,11 @@
   "system_prompt_file": "ctx-project.md",
   "system_prompt_sha256": "e523623c2539ddc804810933bafd6541e576a3881bb54c8b1dd76296e4b4cdf4",
   "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016538",
-  "catalog_version": "1.7.0",
-  "pending_catalog_version": "1.8.0",
-  "candidate_status": "unpublished",
-  "candidate_summary": "Exact filter-free native session request and one bounded read-only argument correction before escalation. Ordinary continuation preflight and failure-recovery acceptance pending; no E11 run, checkpoint, budget, credential, tool or dispatch-policy change.",
+  "catalog_version": "1.8.0",
   "enabled_in_project": true,
-  "published_system_prompt_sha256": "cb55d49826871686118dc4f5a5fc10507045f7a0b8d2062dcfcdf4395abb4fcb",
-  "published_source_commit": "b30114cb31e5baa0fc8272c6fb7fcedcf88c57c3",
-  "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/52",
+  "published_system_prompt_sha256": "a2e33eb774a6ea74abb90175190a0c792b0213e5580ca3ff93d2fc09669a8b5a",
+  "published_source_commit": "e72534c164b2fbd17006148bb893d7b26e4f6291",
+  "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/54",
   "publication_history": [
     {
       "catalog_version": "1.0.0",
@@ -66,6 +63,13 @@
       "published_source_commit": "9522bf6c39e6564047a5ea9d775f69de90828f41",
       "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/49",
       "verification": "passed 2026-10-15 UTC: full 30633-byte saved prompt matched source after final-newline normalization; v1.6.0, enabled/private, exact 24 tools, description and no MCP read back. MR !49 review 4021263981 had no remaining findings; three workflow jobs passed in pipeline 2951370940. User approved workflow-only merge despite unconfigured application verify; main merge 75442835. E11 helper sync !50 merged 71016e8b after review 4021234416 and passing workflow jobs. No application run or checkpoint change. See docs/development/checkpoint-publication.md."
+    },
+    {
+      "catalog_version": "1.7.0",
+      "published_system_prompt_sha256": "cb55d49826871686118dc4f5a5fc10507045f7a0b8d2062dcfcdf4395abb4fcb",
+      "published_source_commit": "b30114cb31e5baa0fc8272c6fb7fcedcf88c57c3",
+      "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/52",
+      "verification": "Full 32928-byte saved prompt matched reviewed source after final-newline normalization; enabled/private, exact 24 tools, description and no MCP read back on 2026-10-15 UTC. Limited coached discovery smoke passed, but a subsequent ordinary Continue chat repeated malformed session filters three times. Both records and evidence limits are preserved in docs/development/project-discovery.md; no end-to-end continuation claim."
     }
   ],
   "trigger": "Duo Chat Add new chat > CTX Project; refresh after enablement; no mention/assignment/flow trigger",
@@ -149,12 +153,13 @@
     "Create Merge Request"
   ],
   "external_mcp_servers": [],
-  "publication_status": "v1.8.0 recovery candidate is unpublished; published and enabled v1.7.0 remains unchanged. Its full 32928-byte saved prompt matched reviewed source after final-newline normalization, with exact unchanged 24 tools, description, private visibility and no external MCP. The earlier fresh discovery-only chat passed, but a later ordinary Continue chat repeated malformed filter arguments three times and stopped. See project-discovery.md. No application run started by this repair; live continuation-preflight, recovery and launch/input/re-entry acceptance remain pending.",
+  "publication_status": "Published and enabled v1.8.0 on 2026-10-15 UTC. Full 35029-byte saved prompt matches reviewed source after final-newline normalization; exact unchanged 24 tools, description, private visibility and no external MCP read back. v1.7 publication and subsequent ordinary-Continue regression remain in history. No E11 continuation or application run started by publication. See project-discovery.md for live acceptance and its limits.",
   "verification": {
-    "discovery_recovery_live": "pending for unpublished v1.8.0. Inspect native requests from ordinary Continue with an explicit read-only preflight cap, without coaching filter arguments; controlled malformed-request recovery and canonical-failure/access/ownership cases need a non-mutating evaluation harness. Local request/prompt tests are not model behavior, native schema repair or launch clearance. Preserve the earlier v1.7.0 receipt and subsequent regression in docs/development/project-discovery.md.",
+    "ordinary_continuation_preflight_live": "partial 2026-10-15 UTC on published v1.8.0 / Claude Sonnet 5.5 - Default. Uncoached ordinary Continue with read-only cap made two successful filter-free session calls (first=50; then first=100, after=NTA), complete flow discovery and terminal Get Duo Session 9530877. No writes/Start/Input. Session totals/pageInfo are transcript-reported due UI truncation. Exact page-size/revision-pinning compliance and unprompted full authority/checkpoint reconciliation were not proven: the first answer deferred known-note reads after a truncated note list. A diagnostic follow-up is not first-turn acceptance. See project-discovery.md; do not claim end-to-end automation or ownership clearance.",
+    "discovery_recovery_live": "pending failure-injection acceptance for published v1.8.0. Controlled malformed-request recovery and canonical-failure/access/ownership cases need a non-mutating evaluation harness. Local request/prompt tests are not model behavior, native schema repair or launch clearance. Preserve the earlier v1.7.0 receipt and subsequent regression in docs/development/project-discovery.md.",
     "discovery_fallback_live": "passed discovery-only 2026-10-15 UTC in a fresh CTX Project chat after v1.7.0 publication. Read merged guide/binding/catalog at eca186413bfd25f87f5aea7baa92bc6b71d888d4. Project-filtered flow listing returned seven entries, hasNextPage=false, and exactly one non-foundational CTX Development consumer 12316920 with can_start_session=true. Session call omitted both status filters; chat reported 67 records with first=100 and hasNextPage=false (UI response display truncated at 4096 characters). Terminal Get Duo Session 9546670 succeeded and its review history was treated as historical, not a new write. Release-time Development version 1.10.0; runtime_version=not_exposed. Current-user visibility only, not launch clearance. No Start/Input, E11 continuation or issue/checkpoint writes. See docs/development/project-discovery.md for evidence limits.",
     "session_handoff_live": "pending; discovery/start/input tools published and read back, but no direct launch/input/re-entry smoke performed. See docs/development/project-session-handoff.md; local policy/prompt checks are not runtime enforcement or integration proof.",
-    "catalog_readback": "passed 2026-10-15 UTC: full 32928-byte saved prompt matches source b30114cb after final-newline normalization, SHA-256 cb55d49826871686118dc4f5a5fc10507045f7a0b8d2062dcfcdf4395abb4fcb. v1.7.0, enabled/private, exact unchanged 24 tools, description and no MCP read back. MR !52 independent review session 9546670 / note 4022174114 identified only a 25-tool to 24-tool documentation typo; applied in b30114cb and thread 4022174165 resolved. Three workflow jobs passed in pipeline 2951847496; ctx:verify failed because its application command is unconfigured. User explicitly approved workflow-only merging despite that failure; main merge eca186413bfd25f87f5aea7baa92bc6b71d888d4. No Development release, app MR, checkpoint, permissions or CI protection changed; no application run started.",
+    "catalog_readback": "passed 2026-10-15 UTC: full 35029-byte saved prompt equals source e72534c164b2fbd17006148bb893d7b26e4f6291 after final-newline normalization, SHA-256 a2e33eb774a6ea74abb90175190a0c792b0213e5580ca3ff93d2fc09669a8b5a. v1.8.0, enabled/private, exact unchanged 24 tools, description and no MCP read back. MR !54 independent review session 9557511 / note 4023256430 had no actionable findings. Three workflow jobs passed in pipeline 2952317439; ctx:verify 17212067235 failed because its application command is unconfigured. User's workflow-only merge exception applied without changing CI controls; main merge 33c6545ec83c5be146ee8fb87b15f573a9e7b990. No Development release, app MR, checkpoint, permissions or application run.",
     "chat_picker": "passed 2026-10-10 after page refresh; CTX Project appears alongside Planning and Design; no prompt submitted",
     "chat_interview_save_smoke": "pending",
     "fresh_chat_status_reconciliation": "pending",

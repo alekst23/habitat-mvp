@@ -10,15 +10,17 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
-Unpublished **Project v1.8.0 recovery candidate**: use the exact project-only
+Published/read back **Project v1.8.0** (2026-10-15 UTC): use the exact project-only
 session-discovery payload, correct malformed read-only arguments once without
 human intervention, and distinguish caller mistakes from proven platform failures.
-Read docs/development/project-discovery.md. v1.7.0 remains published; its later
-ordinary-Continue trace repeated an invalid request despite the earlier coached
-smoke passing. Native recovery/ordinary-preflight acceptance remains pending.
+Read docs/development/project-discovery.md. Source !54 merged at 33c6545e after
+independent review and passing workflow CI. A fresh ordinary-Continue read-only
+test omitted both filters and traversed two session pages; it did not reproduce
+the old failure. Exact page-size compliance and unprompted full preflight were not
+proven; failure-injection recovery and launch/input/re-entry remain pending.
 No E11 execution, checkpoint, budget, credential, tool or merge/deployment change.
 
-Published **Project v1.7.0** repairs discovery using the existing 24 native tools,
+Previous **Project v1.7.0** repaired discovery using the existing 24 native tools,
 not unavailable GraphQL. Read docs/development/project-discovery.md for the reviewed
 project/consumer binding and release-time versus live evidence distinction.
 Full catalog readback and a fresh discovery-only chat passed on 2026-10-15 UTC.
