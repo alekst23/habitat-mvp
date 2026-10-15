@@ -176,7 +176,7 @@ resuming the same CI session or claim the answer is applied before artifact read
 
 Repository validation checks exact tool and policy fields, including rejected
 scope/flow/bound/approval mutations. Prompt checks are not native integration tests.
-Publish the reviewed v1.7.0 prompt, description and **25-tool** set to the existing Project
+Publish the reviewed v1.7.0 prompt, description and **24-tool** set to the existing Project
 entry, then read back all of them, version, private visibility, no MCP and enablement.
 Preserve all previous published hashes and rollback history; no automatic wake-up
 or E2 completion claim. First run the discovery-only acceptance in
