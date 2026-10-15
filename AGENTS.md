@@ -10,15 +10,20 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
-Local candidates, not published: Project v1.6.0 requires one direct **Do this now**
+Published/read back 2026-10-15 UTC: Project v1.6.0 requires one direct **Do this now**
 instruction; Development v1.10.0 uses scripts/ctx_checkpoint.py read/assemble/publish
 for file-based checkpoint transfer with exact readback. Read
 docs/development/checkpoint-publication.md. Only seven reviewed E11 notes are
 excluded by .gitlab/ctx/checkpoint-exclusions.json, without deleting evidence or
 resetting history/budgets. Use the existing injected flow OAuth credential only
 inside the reviewed helper, never a human/controller token or model-transcribed
-payload. No new tools, scopes, controller or execution authority. Catalog rollout,
-helper compatibility/synchronization and live recovery acceptance remain pending.
+payload. No new tools, scopes, controller or execution authority. Source !49 merged
+main at 75442835; helper sync !50 merged E11 at 71016e8b without product/adapter
+changes. Independent reviews and workflow CI passed; separate application verify
+jobs failed. The user explicitly approved these workflow-only merges without
+changing CI controls. Full saved catalog definitions match reviewed source 9522bf6c.
+No application run started; live recovery acceptance remains pending. Older version
+references below are historical; use checkpoint-publication.md for this release.
 
 Published **Project v1.5.0** adds native session discovery/start/input and a
 durable conversational handoff; read docs/development/project-session-handoff.md.

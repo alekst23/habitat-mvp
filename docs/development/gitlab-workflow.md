@@ -1,5 +1,14 @@
 # CTX native GitLab workflow implementation
 
+**Current release, 2026-10-15 UTC: Project v1.6.0 / Development v1.10.0.**
+See [checkpoint publication evidence](checkpoint-publication.md#publication-evidence).
+Reviewed source !49 and E11 helper sync !50 are merged; full saved prompt/YAML,
+unchanged tools and enabled/private state read back. Workflow CI passed; separate
+application verification failed, with explicit user approval for these workflow-only
+merges and no CI control changes. No application run started; live acceptance remains
+pending. Start a new CTX Project chat with `Continue E11 using issue #11.` to resume
+the existing authorized objective. Older version references below are historical.
+
 **Project v1.5.0 published/read back on 2026-10-13 UTC:** [session handoff](project-session-handoff.md)
 adds native discovery/start/input to the existing Project agent only. It starts
 approved Development work, persists the real session and handles **check progress**

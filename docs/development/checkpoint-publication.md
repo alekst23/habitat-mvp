@@ -1,9 +1,45 @@
 # Exact native checkpoint publication
 
-Status: **local candidate, not published** (2026-10-15). Intended releases are
-Project v1.6.0 and Development v1.10.0. Live versions remain Project v1.5.0 and
-Development v1.9.0 until reviewed merge, helper synchronization where required,
-catalog publication and full readback. No product run is authorized by this change.
+Status: **Project v1.6.0 and Development v1.10.0 published and enabled**, with full
+saved-definition readback on 2026-10-15 UTC. Source and E11 helper synchronization
+are merged. Live checkpoint/recovery acceptance remains pending; publication did
+not start or authorize an application run.
+
+## Publication evidence
+
+- [Source !49](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/49)
+  at `9522bf6c39e6564047a5ea9d775f69de90828f41` merged main at
+  `75442835aaecff7fa0f9e0d5b96cd2f7620b7996`. Independent follow-up review
+  [4021263981](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/49#note_4021263981)
+  confirmed the definite-rejection retry repair and no remaining findings.
+- [E11 helper sync !50](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/50)
+  at `5fc20b08e101f6647c6214702193c49ead3cf4ef` merged `ctx/epic-i11` at
+  `71016e8be0c87217ff89f834a7156a017c5a8de7` after independent review
+  [4021234416](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/50#note_4021234416).
+  All 17 changed paths are workflow files. E11 design/plan and application
+  verification/acceptance adapters remain byte-identical to `7ad45df2`.
+- Workflow validation, design validation and workflow tests passed in pipelines
+  [2951370940](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2951370940)
+  and [2951372315](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2951372315).
+  **Overall pipelines failed:** main has no configured application verify adapter;
+  E11 has no `backend/tests/` yet. The user explicitly approved these workflow-only
+  merges despite those failures. No CI settings, job rules or protections changed;
+  these are not application acceptance passes.
+- [CTX Project v1.6.0](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016538):
+  all 30,633 saved prompt bytes equal reviewed source with the final newline
+  removed; SHA-256 `cc4dcc0bbea23c0c717546710849ea6a58dfebc7dc3509fc50a574e0b033a7b7`.
+  Enabled/private, unchanged description, exact 24 tools and no MCP read back.
+- [CTX Development v1.10.0](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234):
+  all 40,852 saved YAML bytes equal reviewed source with the final newline
+  removed; SHA-256 `dade03331949cede1e5089d75766be7a38b3adc4cdaf7485c65a4371b461791d`.
+  Enabled/private, unchanged description/tools, 64 delegations, same service account
+  and active Mention/Assign/Assign reviewer triggers read back.
+
+No application MR was merged, source checkpoint rewritten or note deleted. No
+application session was started. To resume the previously approved objective, open
+a **new CTX Project chat** and send **`Continue E11 using issue #11.`** Project must
+reconcile current sessions/state first and use the existing authority, not reset
+budgets or duplicate active work. The live acceptance checks below remain required.
 
 ## Failure and repair boundary
 
