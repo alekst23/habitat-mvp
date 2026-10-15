@@ -6,6 +6,11 @@ acceptance passed; read [project-discovery.md](project-discovery.md) for evidenc
 and visibility limits. Launch/input/re-entry acceptance remains pending.
 No additional credentials, permissions or Development changes.
 
+An unpublished v1.8.0 candidate corrects malformed discovery arguments once before
+escalating. The subsequent ordinary-Continue regression and required read-only
+acceptance are recorded in project-discovery.md. v1.7.0's coached discovery smoke
+did not prove continuation/recovery behavior; that remains pending.
+
 Original handoff release: **Project v1.5.0 published and enabled on 2026-10-13 UTC**. After explicit
 user confirmation, the full prompt, description, exact 24 tools, private visibility,
 no MCP and enablement were read back. Saved prompt SHA-256
@@ -58,8 +63,11 @@ catalog/version fields are not a native-tool failure: distinguish the binding's
 release-time UI evidence from runtime version, which is not exposed. GitLab resolves
 the configured consumer's version; never substitute latest, another flow or the
 foundational Developer default. Conflicting identity/permission/version evidence
-still blocks. Omit both optional session filters. A contradictory schema blocks
-new dispatch, not known-session read-only assessment; no invented alternate API.
+still blocks. Use project-discovery.md's exact filter-free request and at most one
+corrected read-only attempt after malformed arguments. A rejected malformed call
+alone does not prove a contradictory schema. A failed canonical call or a wrapper
+that demonstrably prevents omission blocks new dispatch, not known-session
+read-only assessment; no invented alternate API or retry of uncertain mutations.
 Do not start Delivery or call a specialist chat agent.
 
 References checked 2026-10-12: GitLab's
@@ -177,7 +185,7 @@ resuming the same CI session or claim the answer is applied before artifact read
 
 Repository validation checks exact tool and policy fields, including rejected
 scope/flow/bound/approval mutations. Prompt checks are not native integration tests.
-Publish the reviewed v1.7.0 prompt, description and **24-tool** set to the existing Project
+Publish the reviewed v1.8.0 candidate prompt, description and **24-tool** set to the existing Project
 entry, then read back all of them, version, private visibility, no MCP and enablement.
 Preserve all previous published hashes and rollback history; no automatic wake-up
 or E2 completion claim. First run the discovery-only acceptance in

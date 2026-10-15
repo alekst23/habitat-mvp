@@ -1,11 +1,13 @@
 # Native Project discovery
 
-Published CTX Project v1.7.0 on 2026-10-15 UTC. Keep the existing **24 tools**, private visibility
+CTX Project v1.8.0 is an **unpublished recovery candidate**; v1.7.0 remains published.
+The ordinary Continue path regressed after the limited v1.7.0 smoke below. Do not
+report the new recovery behavior as live-verified. Keep the existing **24 tools**, private visibility
 and no external MCP. No continuation is authorized by this repair or its smoke test.
 E11 scope, history, budgets, credentials and merge/deployment restrictions remain
 unchanged. Do not write checkpoints or issue notes to test discovery.
 
-## Publication receipt and fresh-chat acceptance
+## v1.7.0 publication receipt and limited fresh-chat acceptance
 
 Source [!52](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/52)
 merged at `eca186413bfd25f87f5aea7baa92bc6b71d888d4`. Independent review
@@ -49,6 +51,18 @@ or Input call, issue/note/checkpoint write or E11 continuation occurred. Full
 launch/input/re-entry, checkpoint recovery and product acceptance remain pending;
 refresh eligibility and reconcile ownership before separately authorized execution.
 
+### Subsequent ordinary-Continue regression (2026-10-15)
+
+The inspected chat "Continue E11 within the existing approved scope. Keep merge
+and deployment off." submitted the same session-list arguments three times:
+project_id=87329027, first=20, status_group=active, statuses=[], after="", url="".
+Each returned ToolException; the UI did not expose a more specific server reason.
+No attempt omitted both filters. The agent then called this a tool-interface
+blocker and asked the user for a maintainer. This trace proves invalid-request
+repetition, not that the server rejects a canonical unfiltered request. Whether
+the model or wrapper supplied the extra values is not established by the UI trace.
+Do not overwrite the earlier successful smoke or label it end-to-end acceptance.
+
 ## What the installed tools actually provide
 
 Verified on 2026-10-15 in a read-only CTX Project chat for project 87329027:
@@ -69,9 +83,51 @@ Verified on 2026-10-15 in a read-only CTX Project chat for project 87329027:
   GLQL is not a GraphQL substitute. No additional tools or credentials are needed.
 
 GitLab owns the tool schemas. A CTX registration cannot repair them. Do not carry
-forward an old schema error without inspecting the current schema. Omit BOTH
-status filters by default. If the contradiction reappears, do not invent nulls,
-empty arrays or dummy values or repeatedly call an invalid combination.
+forward an old schema error without inspecting the actual request and current
+schema. Apply the following bounded correction before declaring a platform blocker.
+
+## Session discovery request and recovery
+
+For ordinary Begin/Continue/check progress and status requests, the first native
+List Duo Sessions request is exactly:
+
+```json
+{"project_id":"87329027","first":100}
+```
+
+Omit status_group, statuses, url and after as keys, not just values. Empty strings,
+empty arrays and null are NOT omission. Do not filter to active: stopped/finished
+and approval-paused records matter too. A wrapper may add its required display-only
+project_name="Showcase". On later pages, add only after, copied verbatim from the
+last successful pageInfo.endCursor, with the same project/page size.
+
+At most one corrected read-only attempt per user turn:
+
+1. Inspect the actual failed request, not just the final diagnosis. If it contained
+   either status filter or empty optional fields, rebuild from the canonical
+   request; remove BOTH filters, including an empty array. Never repeat the rejected
+   payload. If already paginating valid unfiltered results, retain the last valid
+   after; do not reset the cursor or re-fetch completed pages. Discard results from
+   filtered enumeration; they cannot establish complete unfiltered discovery.
+2. No new permission or maintainer lookup is needed to correct your own read-only
+   arguments. Rejecting a malformed request is not proof of a contradictory schema.
+   ToolException alone does not identify which layer added invalid fields. If the
+   current wrapper demonstrably prevents omission, record that exact constraint;
+   do not invent dummy values or claim a corrected request was executed.
+3. If correction succeeds, finish pagination and continue the same authorized
+   preflight in this turn. Do not stop merely to announce recovery or ask for
+   Continue again. Discovery success is not dispatch clearance: all ownership,
+   authority, budget and approval checks still apply. Status/testing stays read-only.
+4. If a canonical request fails, access denial occurs, or the correction is
+   exhausted, stop discovery with its actual request/error and continue useful
+   known-ID reads. Never turn incomplete discovery into empty/safe ownership.
+   Do not change credentials, transports, schema or permissions to force success.
+
+Do not retry Start Duo Session or Send Duo Session Input under this rule. An
+uncertain mutation remains dispatch_unknown; reconcile it without an alternate
+transport or duplicate start. No request note, checkpoint change, start or input
+is part of a discovery correction or acceptance test. E11 scope/history/budgets
+and merge/deployment controls remain unchanged.
 
 ## Exact target without invented runtime fields
 
@@ -136,6 +192,11 @@ another transport. Existing one-mutation-per-turn and explicit approval rules re
 
 ## Concrete platform-blocker handoff
 
+Use this only after the canonical request fails or omission is demonstrably
+prevented, not after a malformed request that can still be corrected. Distinguish
+caller-argument recovery from an actual GitLab-owned schema/access boundary.
+Never ask the user for a maintenance issue/contact just to fix your own arguments.
+
 Do not ask the user to diagnose raw tool errors or repair application code. State
 the exact unavailable capability and the completed read-only checks. Give one
 immediate instruction: open the linked Showcase AI > Sessions page and verify the
@@ -157,6 +218,34 @@ session. Report exact live consumer, can_start_session, release-time evidence an
 runtime_version=not_exposed. Retain the other-user visibility limitation; do not
 claim E11 is execution-ready from discovery alone. No continuation, Start Duo
 Session, Send Duo Session Input, issue/note/checkpoint writes or application run.
+
+For the v1.8.0 candidate, also test ordinary continuation intent without coaching
+the tool arguments. In a fresh published-agent chat, submit:
+
+> Continue E11 within the existing approved scope. Keep merge and deployment off.
+> For this acceptance test, perform read-only preflight only; stop before all
+> writes, Start Duo Session and Send Duo Session Input.
+
+Inspect actual requests/results, not only the final answer. Require filter-free
+pagination and ownership reconciliation without asking the user for a maintainer
+on a correctable input error. This tests continuation preflight, not live dispatch.
+Record the actual model and agent version; a specially coached smoke alone is
+insufficient. A successful direct call does not prove error recovery either.
+
+Replay these cases in a non-mutating evaluation harness with controlled tool
+responses when available; synthetic responses are not live GitLab evidence:
+
+| Case | Required behavior |
+| --- | --- |
+| Observed malformed request / ToolException | Exactly one rebuilt filter-free read; no repeated invalid payload, new permission request or maintainer lookup. |
+| Corrected call succeeds with another page | Preserve successful-page cursor, finish pagination, continue read-only preflight; no repair-only final answer. |
+| Canonical call fails or wrapper requires conflicting fields | Stop discovery, retain exact evidence, no dummy/null arguments or inferred ownership. |
+| Access denial, repeated/missing cursor, incomplete data, or uncertain Start/Input | No correction-based dispatch, credential fallback, duplicate mutation or budget/checkpoint change. |
+
+Local tests validate the published request example and recovery instructions only.
+If no controlled native-tool test harness is available, mark failure-injection
+acceptance pending; do not start E11 or deliberately issue invalid production calls
+to manufacture a passing recovery transcript.
 
 Only after that acceptance passes say **Tool discovery repaired**. If it fails,
 name the remaining concrete boundary and provide one **Do this now** instruction;

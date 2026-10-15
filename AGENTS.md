@@ -10,6 +10,14 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Unpublished **Project v1.8.0 recovery candidate**: use the exact project-only
+session-discovery payload, correct malformed read-only arguments once without
+human intervention, and distinguish caller mistakes from proven platform failures.
+Read docs/development/project-discovery.md. v1.7.0 remains published; its later
+ordinary-Continue trace repeated an invalid request despite the earlier coached
+smoke passing. Native recovery/ordinary-preflight acceptance remains pending.
+No E11 execution, checkpoint, budget, credential, tool or merge/deployment change.
+
 Published **Project v1.7.0** repairs discovery using the existing 24 native tools,
 not unavailable GraphQL. Read docs/development/project-discovery.md for the reviewed
 project/consumer binding and release-time versus live evidence distinction.
