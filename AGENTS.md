@@ -10,6 +10,18 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Model compatibility update (2026-10-15 UTC): read the first section of
+docs/development/project-discovery.md before diagnosing recurring session filters.
+GitLab's upstream GPT/Responses optional-argument defect has a merged, feature-flagged
+gateway fix (!7436), but its companion rollout MR !261800 remained open. A bounded
+same-chat comparison found GPT-6.1 Sol reporting required optional fields without
+calling, while Claude Sonnet 5.5 - Default successfully sent the canonical request.
+Do not claim the historical failed chat's model is known or that the upstream fix
+is enabled here. Give the guide's exact model-switch/read-only-preflight instruction,
+not a request to find a maintainer. No schema/permission bypass or E11 execution.
+Project stays v1.8.0 with the same published prompt and tools; this is guide guidance,
+not a new catalog release or proof of full preflight/launch.
+
 Published/read back **Project v1.8.0** (2026-10-15 UTC): use the exact project-only
 session-discovery payload, correct malformed read-only arguments once without
 human intervention, and distinguish caller mistakes from proven platform failures.

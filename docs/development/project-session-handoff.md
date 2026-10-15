@@ -1,5 +1,12 @@
 # Project-owned session handoff
 
+Model compatibility: a later continuation still failed. The verified immediate
+workaround is **Claude Sonnet 5.5 - Default** for CTX Project; see
+[model compatibility](project-discovery.md#model-compatibility-and-the-immediate-workaround)
+for the upstream GPT schema defect, exact user instruction and read-only acceptance
+limits. Do not infer a historical chat's model or confuse this workaround with
+complete preflight or dispatch. No catalog prompt/tool/permission change is required.
+
 Current publication: **Project v1.8.0 native discovery recovery**, published and
 read back on 2026-10-15 UTC with the unchanged 24 tools. Fresh ordinary-Continue
 read-only discovery succeeded without conflicting filters; read
