@@ -1,11 +1,71 @@
 # Native Project discovery
 
-CTX Project v1.8.0 is an **unpublished recovery candidate**; v1.7.0 remains published.
-The ordinary Continue path regressed after the limited v1.7.0 smoke below. Do not
-report the new recovery behavior as live-verified. Keep the existing **24 tools**, private visibility
+CTX Project v1.8.0 is **published and enabled** (2026-10-15 UTC).
+Ordinary-Continue read-only discovery succeeded without the old conflicting filters;
+bounded error recovery and complete unprompted preflight are not yet live-proven.
+Keep the existing **24 tools**, private visibility
 and no external MCP. No continuation is authorized by this repair or its smoke test.
 E11 scope, history, budgets, credentials and merge/deployment restrictions remain
 unchanged. Do not write checkpoints or issue notes to test discovery.
+
+## v1.8.0 publication receipt and ordinary-Continue observation
+
+Source [!54](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/54)
+at `e72534c164b2fbd17006148bb893d7b26e4f6291` merged into main at
+`33c6545ec83c5be146ee8fb87b15f573a9e7b990`. Independent Duo review
+[9557511](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agent-sessions/9557511)
+/ [note 4023256430](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/54#note_4023256430)
+had no actionable findings. Pipeline 2952317439 passed workflow validation
+(17212067232), all 205 workflow tests (17212067233), and design validation
+(17212067234). Application verify 17212067235 failed with the known unconfigured
+command (exit 2). The user's workflow-only merge exception applied; no CI control
+was changed and this is not an application-verification pass.
+
+The existing Project catalog item 1016538 shows v1.8.0, enabled/private, the exact
+unchanged 24 tools, unchanged description and no MCP. The full saved prompt was
+read back from the editor: 35029 bytes, equal to reviewed source after removing
+its final newline, SHA-256
+`a2e33eb774a6ea74abb90175190a0c792b0213e5580ca3ff93d2fc09669a8b5a`.
+The source file's raw SHA-256 remains
+`e523623c2539ddc804810933bafd6541e576a3881bb54c8b1dd76296e4b4cdf4`.
+
+A fresh CTX Project chat using **Claude Sonnet 5.5 - Default** received the ordinary
+Continue prompt from the acceptance section below, with the read-only cap and no
+coaching about filters. Actual expanded UI requests/results showed:
+
+- Two successful session calls for project 87329027, both without status_group,
+  statuses or url: first=50 on the initial page; first=100, after=NTA on the second.
+  The wrapper supplied display-only project_name=Showcase. This is successful
+  filter-free discovery, but **not exact compliance with the prescribed first=100
+  and constant page-size instructions**. No malformed request or recovery retry
+  occurred, so this does not prove the correction branch.
+- The chat reported 50+19 records, final hasNextPage=false, all terminal. The UI
+  truncates each long tool-response display at 4096 characters; the count and final
+  pageInfo remain transcript-reported rather than independently parsed from the UI.
+- The project-filtered flow list returned seven entries and hasNextPage=false.
+  Exactly one CTX Development matched consumer 12316920, foundational=false and
+  can_start_session=true. Release-time binding remains 1.10.0; runtime version
+  is not exposed. Get Duo Session 9530877 returned its historical blocked report.
+- All 16 calls were read-only. The agent inspected the plan, branches, open MRs,
+  source notes and binding. It preserved the other-user/Duo-Chat visibility limit,
+  retained the original run/budgets, and did not send the user to find a maintainer.
+  It read HEAD before observing main at 33c6545e, rather than pinning every read up
+  front; this is not a fully revision-pinned preflight proof.
+- The note list was explicitly truncated. The first answer disclosed that it had
+  not reread checkpoint 4019881978 or original authorization notes 4008773456,
+  4015038188 and 4015631853, despite leading with "preflight ... complete". Treat
+  that completion wording as an overstatement: discovery worked, but full
+  unprompted authority/checkpoint reconciliation is **not accepted**. A separately
+  prompted read-only follow-up is diagnostic evidence, not first-turn acceptance.
+- Repository publication metadata still described the unpublished candidate during
+  this test; the agent correctly did not claim a catalog version from that stale
+  record. This receipt updates it using the independent UI readback above.
+
+No Start/Input, issue/note/checkpoint write or application run occurred. Application
+MRs !45/!48 and their heads were unchanged. Current-user discovery alone is not
+ownership clearance. Failure-injection recovery, fully automatic preflight, and
+launch/input/re-entry acceptance remain pending; do not promote this observation
+to end-to-end automation proof.
 
 ## v1.7.0 publication receipt and limited fresh-chat acceptance
 
@@ -219,7 +279,7 @@ runtime_version=not_exposed. Retain the other-user visibility limitation; do not
 claim E11 is execution-ready from discovery alone. No continuation, Start Duo
 Session, Send Duo Session Input, issue/note/checkpoint writes or application run.
 
-For the v1.8.0 candidate, also test ordinary continuation intent without coaching
+For v1.8.0, also test ordinary continuation intent without coaching
 the tool arguments. In a fresh published-agent chat, submit:
 
 > Continue E11 within the existing approved scope. Keep merge and deployment off.

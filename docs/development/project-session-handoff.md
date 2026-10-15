@@ -1,15 +1,16 @@
 # Project-owned session handoff
 
-Current publication: **Project v1.7.0 native discovery repair**, published and
-read back on 2026-10-15 UTC with the unchanged 24 tools. Fresh discovery-only
-acceptance passed; read [project-discovery.md](project-discovery.md) for evidence
-and visibility limits. Launch/input/re-entry acceptance remains pending.
+Current publication: **Project v1.8.0 native discovery recovery**, published and
+read back on 2026-10-15 UTC with the unchanged 24 tools. Fresh ordinary-Continue
+read-only discovery succeeded without conflicting filters; read
+[project-discovery.md](project-discovery.md) for deviations and evidence limits.
+Failure-injection recovery and launch/input/re-entry acceptance remain pending.
 No additional credentials, permissions or Development changes.
 
-An unpublished v1.8.0 candidate corrects malformed discovery arguments once before
-escalating. The subsequent ordinary-Continue regression and required read-only
-acceptance are recorded in project-discovery.md. v1.7.0's coached discovery smoke
-did not prove continuation/recovery behavior; that remains pending.
+The v1.8.0 contract corrects malformed discovery arguments once before escalating.
+The earlier v1.7.0 smoke and subsequent ordinary-Continue regression are preserved
+in project-discovery.md. A successful unfiltered call is not error-recovery proof
+or permission to dispatch. No E11 execution was started by publication/testing.
 
 Original handoff release: **Project v1.5.0 published and enabled on 2026-10-13 UTC**. After explicit
 user confirmation, the full prompt, description, exact 24 tools, private visibility,
@@ -185,8 +186,8 @@ resuming the same CI session or claim the answer is applied before artifact read
 
 Repository validation checks exact tool and policy fields, including rejected
 scope/flow/bound/approval mutations. Prompt checks are not native integration tests.
-Publish the reviewed v1.8.0 candidate prompt, description and **24-tool** set to the existing Project
-entry, then read back all of them, version, private visibility, no MCP and enablement.
+The reviewed v1.8.0 prompt, description and **24-tool** set were published to the existing Project
+entry and read back with version, private visibility, no MCP and enablement.
 Preserve all previous published hashes and rollback history; no automatic wake-up
 or E2 completion claim. First run the discovery-only acceptance in
 [project-discovery.md](project-discovery.md), with no session/issue/checkpoint writes.
