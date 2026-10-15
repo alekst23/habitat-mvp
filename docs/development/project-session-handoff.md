@@ -1,6 +1,12 @@
 # Project-owned session handoff
 
-Status: **Project v1.5.0 published and enabled on 2026-10-13 UTC**. After explicit
+Current candidate: **Project v1.7.0 read-only discovery fallback**, not yet published
+or live-verified. Read [project-discovery.md](project-discovery.md) before using it.
+The latest verified publication is v1.6.0 (24 tools); see
+[checkpoint-publication.md](checkpoint-publication.md). The candidate adds only
+GitLab GraphQL (25 tools), not session authority or a Development change.
+
+Original handoff release: **Project v1.5.0 published and enabled on 2026-10-13 UTC**. After explicit
 user confirmation, the full prompt, description, exact 24 tools, private visibility,
 no MCP and enablement were read back. Saved prompt SHA-256
 `bf0fb4828094dcd8859b5b1bfb7b607da25fdfb35a73d17492a1ee7ed6c72853` matches
@@ -39,14 +45,19 @@ The gate is a prompt rule, not a platform-enforced quota or dollar guarantee.
 
 ## Capabilities and exact target
 
-Project now has these three tools in addition to its previous 21: **List Duo Agents And Flows**,
+Project v1.5.0 added these three tools to its previous 21: **List Duo Agents And Flows**,
 **Start Duo Session**, **Send Duo Session Input**. Planning and Design keep their
 current registrations. No shell, arbitrary HTTP, external MCP server or credentials.
 
 Discover enabled flows for project `87329027` using `item_type=flow`; paginate even
 across empty pages while hasNextPage is true. Match catalog item `1016234` to the
 Development entry in `.gitlab/ctx/catalog.json`, its actual published version and
-project enablement. Require `can_start_session=true`. Use the returned
+project enablement. When native discovery returns `can_start_session`, require true.
+Missing identity/version fields or contradictory session-filter schemas use the
+approved [read-only GraphQL fallback](project-discovery.md), not guessed fields or
+repeated invalid calls. Omit both session status filters by default. The fallback
+must verify the exact configured consumer, execute permission and resolved released
+version, and never override a native false/denial/conflict. Use the verified
 `ai_catalog_item_consumer_id`, never the catalog item ID in that field. Never omit
 the selector (which defaults to the foundational Developer Flow), substitute another
 flow, start Delivery or call a specialist chat agent. If discovery/version/access
@@ -166,9 +177,12 @@ resuming the same CI session or claim the answer is applied before artifact read
 
 Repository validation checks exact tool and policy fields, including rejected
 scope/flow/bound/approval mutations. Prompt checks are not native integration tests.
-Publish the reviewed prompt, description and **24-tool** set to the existing Project
+Publish the reviewed v1.7.0 prompt, description and **25-tool** set to the existing Project
 entry, then read back all of them, version, private visibility, no MCP and enablement.
-Preserve v1.4.0 rollback metadata; no automatic wake-up or E2 completion claim.
+Preserve all previous published hashes and rollback history; no automatic wake-up
+or E2 completion claim. First run the discovery-only acceptance in
+[project-discovery.md](project-discovery.md), with no session/issue/checkpoint writes.
+Publication/readback alone does not establish that live discovery works.
 
 Use an explicitly authorized disposable scope, not an unsolicited E2 run, to test:
 

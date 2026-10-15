@@ -1,0 +1,35 @@
+query CTXProjectFlows($after: String) {
+  aiCatalogConfiguredItems(
+    projectId: "gid://gitlab/Project/87329027"
+    itemType: FLOW
+    includeInherited: false
+    first: 20
+    after: $after
+  ) {
+    nodes {
+      __typename
+      id
+      enabled
+      project { id fullPath }
+      userPermissions { executeAiCatalogItem }
+      item {
+        __typename
+        id
+        name
+        itemType
+        foundational
+        softDeleted
+        project { id fullPath }
+      }
+      pinnedItemVersion {
+        __typename
+        id
+        versionName
+        released
+        deprecated
+        item { id }
+      }
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}

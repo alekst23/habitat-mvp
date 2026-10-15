@@ -1,0 +1,20 @@
+query CTXProjectSessions($after: String) {
+  duoWorkflowWorkflows(
+    projectId: "gid://gitlab/Project/87329027"
+    first: 20
+    after: $after
+  ) {
+    nodes {
+      id
+      project { id fullPath }
+      statusName
+      goal
+      workflowDefinition
+      aiCatalogItemVersionId
+      createdAt
+      updatedAt
+      webUrl
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}

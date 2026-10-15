@@ -43,7 +43,7 @@ class ChatAgentRegistrationTests(unittest.TestCase):
                 expected = shared | publishing | ({"Create Issue"} if name != "ctx-design" else set())
                 if name == "ctx-project":
                     expected |= {"List Duo Sessions", "Get Duo Session", "List Duo Agents And Flows",
-                                 "Start Duo Session", "Send Duo Session Input"}
+                                 "Start Duo Session", "Send Duo Session Input", "GitLab GraphQL"}
                 self.assertEqual(set(tools), expected)
 
     def test_project_session_handoff_is_bounded_and_restartable(self):
@@ -93,7 +93,7 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         )
         with self.assertRaises(workflow.Invalid):
             workflow.validate_chat_agent("ctx-project", record, prompt, changed_catalog)
-        for tool in ("List Duo Agents And Flows", "Start Duo Session", "Send Duo Session Input"):
+        for tool in ("List Duo Agents And Flows", "Start Duo Session", "Send Duo Session Input", "GitLab GraphQL"):
             changed = deepcopy(record)
             changed["tools_ui_labels"].remove(tool)
             with self.subTest(missing_tool=tool), self.assertRaises(workflow.Invalid):
@@ -103,6 +103,54 @@ class ChatAgentRegistrationTests(unittest.TestCase):
             specialist["session_handoff"] = record["session_handoff"]
             with self.subTest(specialist=name), self.assertRaises(workflow.Invalid):
                 workflow.validate_chat_agent(name, specialist, (AGENTS / f"{name}.md").read_bytes(), catalog)
+            specialist = json.loads((AGENTS / f"{name}.json").read_text())
+            specialist["tools_ui_labels"].append("GitLab GraphQL")
+            with self.subTest(graphql_specialist=name), self.assertRaises(workflow.Invalid):
+                workflow.validate_chat_agent(name, specialist, (AGENTS / f"{name}.md").read_bytes(), catalog)
+
+    def test_project_discovery_fallback_contract(self):
+        # Reviewed query/prompt regressions, not a GraphQL parser, authorization
+        # sandbox, live schema validation or proof that the model obeys policy.
+        prompt = (AGENTS / "ctx-project.md").read_text()
+        guide = (ROOT / "docs/development/project-discovery.md").read_text()
+        normalized_guide = " ".join(guide.split())
+        for term in ("GitLab GraphQL", "docs/development/project-discovery.md",
+                     "status_group", "statuses", "Do not retry the contradictory schema",
+                     "never override an explicit can_start_session=false",
+                     "No GraphQL mutations"):
+            self.assertIn(term, prompt)
+        for term in ("project-sessions.graphql", "project-flows.graphql", "87329027",
+                     "1016234", "pinnedItemVersion", "executeAiCatalogItem",
+                     "partial data", "repeated cursor", "multiple eligible consumers",
+                     "not proof of exclusive ownership", "No continuation",
+                     "Tool discovery repaired", "Do this now"):
+            self.assertIn(term, normalized_guide)
+        queries = ROOT / ".gitlab/ctx/queries"
+        for name in ("project-sessions", "project-flows"):
+            query = (queries / f"{name}.graphql").read_text()
+            self.assertTrue(query.startswith("query CTX"))
+            self.assertEqual(query.count("query "), 1)
+            self.assertNotIn("mutation", query)
+            self.assertNotIn("subscription", query)
+            self.assertIn('projectId: "gid://gitlab/Project/87329027"', query)
+            self.assertIn("first: 20", query)
+            self.assertIn("after: $after", query)
+            for field in ("pageInfo", "hasNextPage", "endCursor", "project { id fullPath }"):
+                self.assertIn(field, query)
+        sessions = (queries / "project-sessions.graphql").read_text()
+        self.assertIn("duoWorkflowWorkflows(", sessions)
+        self.assertNotIn("statusGroup:", sessions)
+        self.assertNotIn("statuses:", sessions)
+        for field in ("statusName", "goal", "aiCatalogItemVersionId", "webUrl"):
+            self.assertIn(field, sessions)
+        flows = (queries / "project-flows.graphql").read_text()
+        for field in ("aiCatalogConfiguredItems(", "itemType: FLOW", "includeInherited: false",
+                      "enabled", "executeAiCatalogItem", "pinnedItemVersion",
+                      "versionName", "released", "deprecated", "item { id }"):
+            self.assertIn(field, flows)
+        self.assertIn("nodes {\n      __typename\n      id", flows)
+        self.assertNotIn("latestVersion", flows)
+        self.assertNotIn("effectiveVersion", flows)
 
     def test_project_publication_record_preserves_specialists_and_pending_live_proof(self):
         catalog = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())
@@ -115,13 +163,14 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertTrue(project["catalog_url"].endswith("/agents/1016538"))
         self.assertEqual(project["catalog_version"], "1.6.0")
         prompt = (AGENTS / project["system_prompt_file"]).read_bytes()
-        self.assertNotIn("pending_catalog_version", project)
+        self.assertEqual(project["pending_catalog_version"], "1.7.0")
         self.assertEqual(project["published_source_commit"], "9522bf6c39e6564047a5ea9d775f69de90828f41")
         self.assertEqual(project["published_system_prompt_sha256"],
                          "cc4dcc0bbea23c0c717546710849ea6a58dfebc7dc3509fc50a574e0b033a7b7")
-        self.assertNotIn("candidate_status", project)
+        self.assertTrue(project["candidate_status"].startswith("unpublished"))
         self.assertTrue(project["verification"]["resumable_owner_live"].startswith("pending"))
-        self.assertEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertNotEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertTrue(project["verification"]["discovery_fallback_live"].startswith("pending"))
         self.assertTrue(project["verification"]["session_handoff_live"].startswith("pending"))
         self.assertTrue(project["verification"]["next_action_live"].startswith("pending"))
         self.assertEqual(project["next_entrypoint"], "development-native-session-handoff")

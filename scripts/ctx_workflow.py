@@ -412,7 +412,7 @@ def validate_chat_agent(name, record, prompt, catalog):
     allowed = CHAT_TOOLS | ({"Create Issue"} if name != "ctx-design" else set())
     if name == "ctx-project":
         allowed |= {"List Duo Sessions", "Get Duo Session", "List Duo Agents And Flows",
-                    "Start Duo Session", "Send Duo Session Input"}
+                    "Start Duo Session", "Send Duo Session Input", "GitLab GraphQL"}
         handoff = record.get("session_handoff")
         expected_handoff = {
             "allowed_entrypoint": "development",

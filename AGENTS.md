@@ -10,6 +10,14 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Candidate **Project v1.7.0** adds only GitLab GraphQL for read-only, project-filtered
+session and catalog discovery when GitLab's built-in wrappers have missing fields
+or a contradictory filter schema. Read docs/development/project-discovery.md and
+its reviewed query assets. This is not published/live-verified yet; v1.6.0 remains
+the last verified publication. No E11 continuation, checkpoint/budget/credential
+change, merge/deployment authority or Development flow change. Preserve published
+metadata until complete catalog readback and keep discovery acceptance read-only.
+
 Published/read back 2026-10-15 UTC: Project v1.6.0 requires one direct **Do this now**
 instruction; Development v1.10.0 uses scripts/ctx_checkpoint.py read/assemble/publish
 for file-based checkpoint transfer with exact readback. Read
