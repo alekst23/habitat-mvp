@@ -1,5 +1,12 @@
 # CTX single-shot Development
 
+**Local v1.10.0 candidate, not published:** read
+[checkpoint-publication.md](checkpoint-publication.md). The new file-based
+read/assemble/publish path supersedes manual note transcription for native owner
+checkpoints. It preserves exact readback and all history/budgets, and excludes only
+the seven reviewed corrupt E11 notes without deleting them. Live remains v1.9.0;
+merge/helper synchronization/catalog publication and live verification are pending.
+
 **Published v1.9.0: transport-safe native handoffs.** Session 9303064 reported
 HTML-comment delimiter loss. The new codec emits visible markers, retains intact
 legacy reads and supports explicit verified-note migration. Source !35 at 25649246
@@ -81,7 +88,9 @@ provenance/start/input smoke; local prompt checks cannot prove API behavior.
 
 ### Reconstruct, act, verify, save, continue
 
-1. Read all relevant source notes with pagination, verified authors and server IDs,
+1. Use the reviewed `ctx_checkpoint.py read` file download described in
+   checkpoint-publication.md for full native source state; do not manually transcribe
+   note arrays. Read all relevant source notes with pagination, verified authors and server IDs,
    linked reviews, original authorization, actual branch/MR heads and session status.
    Serialize source notes as `[{id, url, body, author_id}]`, using server-returned
    authors, never IDs claimed inside a note. Resolve trusted checkpoint writer IDs
@@ -138,13 +147,16 @@ provenance/start/input smoke; local prompt checks cannot prove API behavior.
 
 ### Native payload (not a controller checkpoint)
 
-`ctx_owner.py render HANDOFF.json` validates and formats one JSON block between
+`ctx_checkpoint.py publish HANDOFF.json` transports the generated file directly,
+validates the latest parent and verifies exact saved body AND parsed payload equality;
+see checkpoint-publication.md. Never retype full state into a note/file tool or
+heredoc. `ctx_owner.py render HANDOFF.json` remains the underlying codec and formats one JSON block between
 standalone visible `CTX_OWNER_HANDOFF_V1_BEGIN` and `CTX_OWNER_HANDOFF_V1_END`
 lines, separated from the fence by blank lines. Never use HTML comments for new
 handoffs: the observed note-tool path drops them. This changes framing, not the
-version-1 payload. Intact old HTML-comment frames remain readable. Publish it below
-the <=120-word status/result/agent-next/user-action summary. Read the note back,
-`ctx_owner.py parse NOTE.md`, and compare the entire payload to the intended value.
+version-1 payload. Intact old HTML-comment frames remain readable. The publisher puts it below
+the <=120-word status/result/agent-next/user-action summary. Its direct GET readback
+and `ctx_owner.py parse` compare the entire payload to the intended generated value.
 Do this before dispatch and after each result, including final run boundaries.
 Do not truncate the journal or keep durable state solely in `.ctx`.
 
