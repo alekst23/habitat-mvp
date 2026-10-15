@@ -13,7 +13,24 @@ unchanged. Do not write checkpoints or issue notes to test discovery.
 
 ## Model compatibility and the immediate workaround
 
-On 2026-10-15 UTC, the ordinary continuation chat's follow-up again submitted
+These observations came from **three distinct chats**, distinguished in GitLab
+Chat History and inspected separately:
+
+- The earlier v1.8.0 acceptance chat began **Continue E11 within the existing
+  approved scope. Keep merge and deployment off. For this acceptance test, perform
+  read-only preflight only; stop before all writes, Start Duo Session and Send Duo
+  Session Input.** Claude was visibly selected for that test. Its later diagnostic
+  follow-up fetched the missing known notes; it is **not** the failing follow-up.
+- The user's later chat began **Continue E11 within the approved scope. Complete
+  the remaining preflight checks yourself, then resume development. Keep all merges
+  and deployment off.** Its second user turn was **Retry corrected read-only session
+  discovery and complete E11 preflight here.** This is the failing follow-up below.
+  Its original model and any intervening model changes could not be established.
+- The new bounded compatibility chat began **Read-only tool compatibility diagnostic
+  only, not E11 continuation or ownership clearance.** This is the GPT-to-Claude
+  comparison below; both model selections were directly observed by the operator.
+
+On 2026-10-15 UTC, the second chat's failing follow-up again submitted
 project_id=87329027, first=100, status_group=active, statuses=[], after="", url=""
 twice. Both returned generic ToolException. No canonical request executed. The
 historical chat's selected model could not be independently established; the model
@@ -51,7 +68,8 @@ issue proves which model the user's historical failed chat used.
 
 Only one read call occurred across this comparison. No other tools, pagination,
 Start/Input, issue/checkpoint writes or application work. This verifies a
-**model-specific discovery workaround**, not complete ownership, preflight,
+**model-specific discovery workaround that passed a bounded test**, not a guarantee
+of reliable model behavior or complete ownership, preflight,
 dispatch or end-to-end automation. The diagnostic chat was left on Claude.
 
 ### Agent response for this failure
