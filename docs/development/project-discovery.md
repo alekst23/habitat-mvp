@@ -116,6 +116,9 @@ pending v1.7.0. Local tests check policy/tool/query regressions, not live schema
 compatibility, model behavior or permissions. After independent review and merge,
 publish to existing CTX Project item 1016538; read back the complete prompt,
 25-tool set, version, private visibility, no external MCP and project enablement.
+Release order is review and workflow CI -> merge query assets to default -> publish
+the agent -> discovery-only smoke. The post-publication smoke is not a pre-merge
+gate; it gates the claim that discovery is repaired. Do not start E11 at any step.
 
 Run a **discovery-only** chat in that published agent for project 87329027:
 
