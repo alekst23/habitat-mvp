@@ -27,6 +27,12 @@ This does not grant runner workers recursive flow-start authority or turn receip
 notes into full owner state. Until activation, give one verified manual fallback.
 The handoff is for the NEXT AGENT RUN, not a checklist for the user.
 
+Native checkpoint recovery/publication uses the reviewed file-based transport in
+docs/development/checkpoint-publication.md, not model-transcribed JSON. Read source
+notes into files, preserve loaded history and splice actual helper outputs, then
+publish/read-verify exact bytes before delegation. The seven reviewed E11 exclusions
+do not delete comments or waive unknown corruption, active claims, budgets or gates.
+
 Use visible framing from ctx_owner.py, never HTML-comment delimiters. If a legacy
 note lost its markers, follow the guide's explicit --legacy-note-id migration after
 verifying its source/author and newer evidence. Republish/read-verify full state;

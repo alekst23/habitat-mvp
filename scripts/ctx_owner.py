@@ -14,12 +14,14 @@ import sys
 import ctx_development as dev
 import ctx_design_closure as closure
 from ctx_execution_budget import admission
+from ctx_workflow import validate_checkpoint_exclusions
 
 MARKER = "CTX_OWNER_HANDOFF_V1_BEGIN"
 END = "CTX_OWNER_HANDOFF_V1_END"
 LEGACY_MARKER = "<!-- ctx-owner-handoff:v1 -->"
 LEGACY_END = "<!-- /ctx-owner-handoff -->"
 PROJECT_ID = 87329027
+EXCLUSIONS = Path(__file__).resolve().parents[1] / ".gitlab/ctx/checkpoint-exclusions.json"
 require = closure.require
 
 
@@ -148,6 +150,9 @@ def select(notes, *, source_issue_iid, epic, trusted_author_ids, legacy_note_ids
     legacy_ids = [] if legacy_note_ids is None else legacy_note_ids
     require(isinstance(legacy_ids, list) and all(type(i) is int and i > 0 for i in legacy_ids) and
             len(legacy_ids) == len(set(legacy_ids)), "invalid/duplicate legacy note IDs")
+    policy = validate_checkpoint_exclusions(dev.read_json(EXCLUSIONS))
+    applicable = policy["source_issue_iid"] == source_issue_iid and policy["epic"] == epic
+    excluded = []
     migrated = set()
     candidates, ids = [], set()
     for note in notes:
@@ -157,6 +162,13 @@ def select(notes, *, source_issue_iid, epic, trusted_author_ids, legacy_note_ids
         closure.note_url(note.get("url"), source_issue_iid)
         require(note["url"].endswith(f"#note_{note['id']}"), "note URL/ID mismatch")
         require(type(note.get("author_id")) is int and note["author_id"] > 0, "server note author ID required")
+        if applicable and note["id"] in policy["note_ids"]:
+            require(note["author_id"] == policy["author_id"] and note["author_id"] in trusted_author_ids,
+                    "excluded checkpoint writer mismatch")
+            require(note["id"] not in legacy_ids, "excluded checkpoint cannot be migrated")
+            excluded.append({"note_id": note["id"], "url": note["url"],
+                             "reason": policy["reason"], "evidence_url": policy["evidence_url"]})
+            continue
         if note["author_id"] not in trusted_author_ids:
             require(note["id"] not in legacy_ids, "legacy note must have a verified trusted writer")
             continue
@@ -172,13 +184,16 @@ def select(notes, *, source_issue_iid, epic, trusted_author_ids, legacy_note_ids
         candidates.append((note["id"], note["url"], value))
     require(migrated == set(legacy_ids), "selected legacy note not found")
     if not candidates:
+        require(not excluded, "excluded checkpoints require the original valid run, never initialize over them")
         return {"action": "reconcile_legacy", "reason": "read existing notes/artifacts; preserve history, never initialize over it"}
     candidates.sort(key=lambda row: row[0])
     for prior, current in zip(candidates, candidates[1:]):
         validate_continuation(prior[2], current[2])
     _, url, value = candidates[-1]
+    require(not excluded or value["objective"]["run_id"] == policy["run_id"],
+            "checkpoint exclusion belongs to a different original run")
     return {"action": "resume", "source_url": url, "handoff": deepcopy(value),
-            "reconciliation_required": True, "next": next_action(value)}
+            "excluded_notes": excluded, "reconciliation_required": True, "next": next_action(value)}
 
 
 def validate_continuation(old, new):

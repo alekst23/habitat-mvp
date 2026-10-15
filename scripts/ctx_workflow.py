@@ -474,9 +474,34 @@ def validate_chat_registrations(root, catalog):
     require(actual == declared, "chat registrations and catalog differ")
 
 
+def validate_checkpoint_exclusions(policy):
+    """Only explicit, reviewed note identities can be excluded; no pattern rules."""
+    require(isinstance(policy, dict) and set(policy) == {
+        "version", "project_id", "source_issue_iid", "epic", "run_id", "author_id",
+        "evidence_url", "reason", "note_ids"}, "invalid checkpoint exclusion fields")
+    require(type(policy["version"]) is int and policy["version"] == 1 and
+            policy["project_id"] == 87329027, "invalid checkpoint exclusion version/project")
+    require(type(policy["source_issue_iid"]) is int and policy["source_issue_iid"] > 0 and
+            type(policy["author_id"]) is int and policy["author_id"] > 0,
+            "invalid checkpoint exclusion source/writer")
+    require(isinstance(policy["epic"], str) and EPIC_ID.fullmatch(policy["epic"]) and
+            isinstance(policy["run_id"], str) and re.fullmatch(r"[A-Za-z0-9_-]{1,64}", policy["run_id"]),
+            "invalid checkpoint exclusion epic/run")
+    require(isinstance(policy["reason"], str) and policy["reason"].strip(), "exclusion reason required")
+    base = "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase"
+    require(isinstance(policy["evidence_url"], str) and re.fullmatch(
+        re.escape(base + f"/-/issues/{policy['source_issue_iid']}#note_") + r"[1-9][0-9]*",
+        policy["evidence_url"]), "exclusion evidence must be a source-issue note")
+    ids = policy["note_ids"]
+    require(isinstance(ids, list) and ids and all(type(i) is int and i > 0 for i in ids) and
+            len(ids) == len(set(ids)), "invalid/duplicate excluded note IDs")
+    return policy
+
+
 def validate_repository(root=ROOT):
     catalog = json.loads((root / ".gitlab/ctx/catalog.json").read_text())
     require(catalog["version"] == 2, "unsupported catalog version")
+    validate_checkpoint_exclusions(read_yaml(root / ".gitlab/ctx/checkpoint-exclusions.json"))
     validate_chat_registrations(root, catalog)
     actual = {str(p.relative_to(root)) for p in (root / ".gitlab/duo/flows").glob("*.yml")}
     require(actual == set(catalog["flows"]), "flow catalog and files differ")

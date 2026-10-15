@@ -10,6 +10,16 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Local candidates, not published: Project v1.6.0 requires one direct **Do this now**
+instruction; Development v1.10.0 uses scripts/ctx_checkpoint.py read/assemble/publish
+for file-based checkpoint transfer with exact readback. Read
+docs/development/checkpoint-publication.md. Only seven reviewed E11 notes are
+excluded by .gitlab/ctx/checkpoint-exclusions.json, without deleting evidence or
+resetting history/budgets. Use the existing injected flow OAuth credential only
+inside the reviewed helper, never a human/controller token or model-transcribed
+payload. No new tools, scopes, controller or execution authority. Catalog rollout,
+helper compatibility/synchronization and live recovery acceptance remain pending.
+
 Published **Project v1.5.0** adds native session discovery/start/input and a
 durable conversational handoff; read docs/development/project-session-handoff.md.
 Full prompt/description, 24 tools, private visibility, no MCP and enablement were

@@ -21,11 +21,16 @@ documents on the authorized branch. The runner's .ctx directory is ephemeral, no
 a durable checkpoint. Read back the saved body/identity/links. In a healthy native
 session this is an intermediate save, NOT a final response: reassess and continue.
 
-For a single-epic native run use ctx_owner.py render/parse and the
+For a single-epic native run use the trusted ctx_checkpoint.py file-to-note publisher
+and docs/development/checkpoint-publication.md; ctx_owner.py remains the codec for the
 ctx-owner-handoff:v1 contract in single-shot-development.md. It wraps the full
 existing closure/journal, objective/authorization, session counter, answers and
 resource/receipt history; never substitute a prose summary. Read back and compare
-the complete parsed payload. The next run discovers this on the source issue from
+the complete parsed payload AND exact saved body. Do not retype generated JSON through
+the model, truncate history, delete invalid notes, use personal credentials or bypass
+the readback gate. The helper's fixed service-account OAuth transport never exposes
+credentials to the model and never dispatches work. Unknown writes are reconciled,
+not blindly retried. The next run discovers this on the source issue from
 "Continue E2". Keep machine references in the handoff, not a long user command.
 Legacy checkpoints require reconciliation and lossless migration, never reset.
 New notes use visible CTX_OWNER_HANDOFF_V1_BEGIN and CTX_OWNER_HANDOFF_V1_END
