@@ -10,10 +10,13 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
-Candidate **Project v1.7.0** repairs discovery using the existing 24 native tools,
+Published **Project v1.7.0** repairs discovery using the existing 24 native tools,
 not unavailable GraphQL. Read docs/development/project-discovery.md for the reviewed
 project/consumer binding and release-time versus live evidence distinction.
-This is not published/live-verified yet; v1.6.0 remains the last verified publication.
+Full catalog readback and a fresh discovery-only chat passed on 2026-10-15 UTC.
+Source !52 merged main at eca18641 after independent review and passing workflow
+checks; the unconfigured application verify failure remains a separate limitation.
+Live launch/input/re-entry and application recovery are still pending.
 No E11 continuation, checkpoint/budget/credential change, merge/deployment authority
 or Development flow change. Preserve publication history and keep acceptance read-only.
 

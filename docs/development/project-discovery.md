@@ -1,9 +1,53 @@
 # Native Project discovery
 
-Candidate for CTX Project v1.7.0. Keep the existing **24 tools**, private visibility
+Published CTX Project v1.7.0 on 2026-10-15 UTC. Keep the existing **24 tools**, private visibility
 and no external MCP. No continuation is authorized by this repair or its smoke test.
 E11 scope, history, budgets, credentials and merge/deployment restrictions remain
 unchanged. Do not write checkpoints or issue notes to test discovery.
+
+## Publication receipt and fresh-chat acceptance
+
+Source [!52](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/52)
+merged at `eca186413bfd25f87f5aea7baa92bc6b71d888d4`. Independent review
+session 9546670 / note 4022174114 found one tool-count typo, corrected in
+`b30114cb31e5baa0fc8272c6fb7fcedcf88c57c3`; its thread is resolved.
+Pipeline 2951847496 passed design validation, workflow validation and workflow
+tests. The application verify job failed because its command is not configured;
+the user explicitly approved this workflow-only merge without altering CI controls.
+
+The existing [Project item 1016538](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016538)
+shows v1.7.0, enabled/private, the exact unchanged 24-tool set, unchanged description
+and no MCP. Full saved prompt (32928 bytes) matches reviewed source after final-newline
+normalization: SHA-256 `cb55d49826871686118dc4f5a5fc10507045f7a0b8d2062dcfcdf4395abb4fcb`.
+
+A fresh CTX Project chat then performed the read-only acceptance against main
+`eca18641`. The operator inspected the displayed tool calls and final response:
+
+- Project identity/default branch and merged guide/registration were read. A typo
+  in the test request named `.gitlab/duo/catalog.json`; the agent recovered from its
+  404 by reading the guide's canonical `.gitlab/ctx/catalog.json` itself.
+- Flow call: project_id=87329027, item_type=flow, first=100. Seven entries and
+  hasNextPage=false; exactly one matching consumer 12316920, non-foundational,
+  can_start_session=true. Catalog ID/version remain absent from that response.
+- Session call: project_id=87329027, first=100; neither status filter supplied.
+  The chat reported 67 entries, hasNextPage=false, endCursor=Njc, with 52 finished,
+  14 failed and one stopped. The browser's tool-response display/copy truncates
+  this 23221-character response at 4096 characters, so these totals and final
+  pageInfo are transcript-reported, not independently parsed from the UI. Earlier
+  read-only diagnostics traversed four default-sized pages (20+20+20+7).
+- Get Duo Session workflow_id=9546670 succeeded; its response was historical review
+  text, without status/flow fields. The chat correctly used the listing for terminal
+  status and did not mistake historical comment receipts for new writes.
+- Binding/catalog release-time version was 1.10.0; runtime_version=not_exposed.
+  The chat retained current-user/Duo-Chat visibility limits and explicitly did not
+  declare E11 execution-ready. It identified the prepublication receipt metadata
+  as stale rather than inventing live publication evidence; this receipt closes
+  that bookkeeping gap using the independent catalog UI readback above.
+
+**Tool discovery repaired** is limited to that discovery-only acceptance. No Start
+or Input call, issue/note/checkpoint write or E11 continuation occurred. Full
+launch/input/re-entry, checkpoint recovery and product acceptance remain pending;
+refresh eligibility and reconcile ownership before separately authorized execution.
 
 ## What the installed tools actually provide
 
