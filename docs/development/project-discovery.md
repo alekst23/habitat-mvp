@@ -2,11 +2,93 @@
 
 CTX Project v1.8.0 is **published and enabled** (2026-10-15 UTC).
 Ordinary-Continue read-only discovery succeeded without the old conflicting filters;
-bounded error recovery and complete unprompted preflight are not yet live-proven.
+subsequent ordinary continuation failed again. **Discovery compatibility is
+model-dependent; do not describe v1.8.0 as a universal schema repair.** See the
+verified Claude workaround and upstream GPT defect below. Bounded error recovery
+and complete unprompted preflight are not yet live-proven.
 Keep the existing **24 tools**, private visibility
 and no external MCP. No continuation is authorized by this repair or its smoke test.
 E11 scope, history, budgets, credentials and merge/deployment restrictions remain
 unchanged. Do not write checkpoints or issue notes to test discovery.
+
+## Model compatibility and the immediate workaround
+
+On 2026-10-15 UTC, the ordinary continuation chat's follow-up again submitted
+project_id=87329027, first=100, status_group=active, statuses=[], after="", url=""
+twice. Both returned generic ToolException. No canonical request executed. The
+historical chat's selected model could not be independently established; the model
+selector displayed when reopening history is not proof of its past configuration.
+Keep this regression alongside the successful Claude observations, not in place
+of them. E11 preflight is still incomplete.
+
+GitLab has a matching upstream defect:
+
+- [AI Gateway #2766](https://gitlab.com/gitlab-org/modelops/applied-ml/code-suggestions/ai-assist/-/work_items/2766)
+  and [GitLab #621520](https://gitlab.com/gitlab-org/gitlab/-/work_items/621520)
+  track GPT tool calls populated with unwanted optional arguments.
+- [AI Gateway !7436](https://gitlab.com/gitlab-org/modelops/applied-ml/code-suggestions/ai-assist/-/merge_requests/7436)
+  was **merged**, verified in the authenticated UI. It explicitly binds OpenAI
+  tools with `strict: false` behind `dap_openai_non_strict_tools`: without that
+  setting, Responses can make optional fields required. Prompt instructions cannot
+  make an impossible tool schema satisfiable.
+- The companion [GitLab !261800](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/261800),
+  which defines the rollout flag, was still **open** when checked. A merged gateway
+  patch is not evidence that the fix is enabled for this project/account. CTX
+  cannot set GitLab.com feature flags or repair this adapter through registration.
+
+A bounded comparison used the existing Project v1.8.0, unchanged tools and one
+diagnostic chat. With **GPT-6.1 Sol - OpenAI** selected, the agent reported that all
+six session-tool fields were required and made **zero tool calls**, honoring the
+instruction not to invent filler values. That is a model-reported schema, not an
+export of the effective server/provider schema. After the operator selected
+**Claude Sonnet 5.5 - Default** in the same chat, the same read-only request executed
+successfully. The expanded tool trace confirmed exactly project_id="87329027",
+first=100 and the wrapper's project_name="Showcase", with no status_group, statuses,
+url or after. The response contained session records, not an error. The UI truncated
+the 23920-character response at 4096 characters; final pageInfo/counts are not
+independently verified by this observation. Neither this test nor the upstream
+issue proves which model the user's historical failed chat used.
+
+Only one read call occurred across this comparison. No other tools, pagination,
+Start/Input, issue/checkpoint writes or application work. This verifies a
+**model-specific discovery workaround**, not complete ownership, preflight,
+dispatch or end-to-end automation. The diagnostic chat was left on Claude.
+
+### Agent response for this failure
+
+Keep the bounded correction below for ordinary malformed calls. When the current
+exposed schema cannot omit optional fields, do not repeat the same incompatible
+call, invent filler values, or tell the user that another Continue will fix it.
+Use the verified compatibility path before asking for a support destination:
+
+1. Distinguish the native optional schema from a provider-transformed schema. A
+   generic error alone does not establish the cause. If the selected model is not
+   verifiable, ask one exact question: **Which model is shown below the CTX Project
+   chat input?** Do not blame GPT from a historical error message alone.
+2. For a GPT chat exhibiting this required-optional-field conflict, give this
+   immediate instruction: **Below the CTX Project chat input, select Claude Sonnet
+   5.5 - Default, then send `Check progress on E11; read-only preflight only.`**
+   Use the actual current epic if different. If the historical chat is unavailable,
+   use **Add new chat -> CTX Project**, then select that model and send the same
+   request. Opening a chat does not create a new execution objective.
+3. The next turn re-inspects the current schema and performs fresh, complete
+   filter-free discovery plus existing ownership/authority/checkpoint checks.
+   Model selection changes tool compatibility, not permissions, budgets or scope.
+   Do not auto-start from this read-only compatibility test. Retain the existing
+   objective and original approvals; resume only under a subsequent action request
+   after all normal gates pass. An uncertain prior Start/Input still requires
+   reconciliation; switching models never justifies a duplicate mutation.
+4. If Claude is unavailable or fails with a canonical request too, report that
+   exact limitation and link the upstream issue above. Do not request credentials,
+   add tools/transports, bypass access denial, or ask the user to locate a maintainer.
+   Do not post to upstream support without the user's authorization. Known-ID
+   reads can still provide useful status, but cannot establish exclusive ownership.
+
+This is shared guide/acceptance guidance consumed by the already-published agent;
+the catalog prompt, version, tool set and permissions are unchanged. To retire the
+workaround, verify the fixed native path with the exact selected GPT model, not
+only Claude or a source-code merge. Record live requests and results. The wider
+preflight and launch acceptance below remains required separately.
 
 ## v1.8.0 publication receipt and ordinary-Continue observation
 
@@ -256,6 +338,9 @@ Use this only after the canonical request fails or omission is demonstrably
 prevented, not after a malformed request that can still be corrected. Distinguish
 caller-argument recovery from an actual GitLab-owned schema/access boundary.
 Never ask the user for a maintenance issue/contact just to fix your own arguments.
+For the required-optional-field conflict, use the model compatibility procedure
+above first; it supplies a concrete next step and an already-verified upstream
+destination rather than an open-ended support lookup.
 
 Do not ask the user to diagnose raw tool errors or repair application code. State
 the exact unavailable capability and the completed read-only checks. Give one
