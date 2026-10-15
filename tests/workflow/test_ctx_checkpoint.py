@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+from urllib.error import HTTPError
 
 from test_ctx_owner import snapshot, note
 import ctx_owner as owner
@@ -131,6 +132,42 @@ class CheckpointTests(unittest.TestCase):
                 checkpoint.publish(api, new, "Saved claim.", previous_note_id=101, receipt_path=path)
             self.assertEqual(api.posts, 1)
 
+    def test_definite_rejection_can_retry_once_without_wedging_or_retrying_unknown_writes(self):
+        for status in (403, 422, 408, 429, 500):
+            api = Notes(snapshot())
+            original_create = api.create
+            error = checkpoint.TransportError(f"HTTP {status}")
+            error.http_status = status
+            def rejected(source, body):
+                api.posts += 1
+                raise error
+            api.create = rejected
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as folder:
+                path = Path(folder) / "receipt.json"
+                with self.assertRaises(checkpoint.TransportError):
+                    checkpoint.publish(api, snapshot(), "Saved claim.", previous_note_id=101, receipt_path=path)
+                definite = status in (403, 422)
+                self.assertEqual(json.loads(path.read_text())["state"], "rejected" if definite else "publication_unknown")
+                api.create = original_create
+                if definite:
+                    receipt = checkpoint.publish(api, snapshot(), "Saved claim.", previous_note_id=101, receipt_path=path)
+                    self.assertTrue(receipt["verified"])
+                    self.assertEqual(receipt["post_attempts"], 2)
+                    self.assertEqual(receipt["rejections"], [{"attempt": 1, "http_status": status}])
+                else:
+                    with self.assertRaises(ValueError):
+                        checkpoint.publish(api, snapshot(), "Saved claim.", previous_note_id=101, receipt_path=path)
+                self.assertEqual(api.posts, 2 if definite else 1)
+        api = Notes(snapshot())
+        api.create = rejected
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "receipt.json"
+            error.http_status = 403
+            for attempt in (1, 2, 3):
+                with self.assertRaises(ValueError):
+                    checkpoint.publish(api, snapshot(), "Saved claim.", previous_note_id=101, receipt_path=path)
+            self.assertEqual(api.posts, 2)
+
     def test_history_reset_stale_parent_and_unexpected_actor_cannot_post(self):
         old = snapshot()
         old["resources"].append({"note": "reserved work"})
@@ -214,6 +251,12 @@ class CheckpointTests(unittest.TestCase):
                 with self.subTest(method=method, path=path), self.assertRaises(ValueError):
                     api._request(method, path, data)
             self.assertEqual(opener.open.call_count, 1)
+            opener.open.side_effect = HTTPError(checkpoint.API + "/user", 403,
+                                               "fixture-oauth-token must not be logged", {}, None)
+            with self.assertRaises(checkpoint.TransportError) as rejected:
+                api.authenticate()
+            self.assertEqual(rejected.exception.http_status, 403)
+            self.assertNotIn("fixture-oauth-token", str(rejected.exception))
 
     def test_known_invalid_notes_are_quarantined_only_in_exact_source_and_new_damage_blocks(self):
         value = json.loads(json.dumps(snapshot()).replace('E2', 'E11').replace('epic-i2', 'epic-i11')
