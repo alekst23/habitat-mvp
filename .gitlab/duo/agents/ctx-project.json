@@ -7,9 +7,11 @@
   "project_id": 87329027,
   "project_path": "gitlab-ai-hackathon/transcend-october-2026/43066631/showcase",
   "system_prompt_file": "ctx-project.md",
-  "system_prompt_sha256": "e7b59823c753df68dcdff7e1357f34a50ea7d531f6c9ac157f0b293cc83d4293",
+  "system_prompt_sha256": "e023c40c8f02aa6fe204886bf133c4c5a5ca9039dec542d9ad63939b98e56d19",
   "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016538",
   "catalog_version": "1.6.0",
+  "pending_catalog_version": "1.7.0",
+  "candidate_status": "unpublished; supported native discovery and reviewed consumer binding; independent review, publication and complete live acceptance pending",
   "enabled_in_project": true,
   "published_system_prompt_sha256": "cc4dcc0bbea23c0c717546710849ea6a58dfebc7dc3509fc50a574e0b033a7b7",
   "published_source_commit": "9522bf6c39e6564047a5ea9d775f69de90828f41",
@@ -141,6 +143,7 @@
   "external_mcp_servers": [],
   "publication_status": "Published and enabled v1.6.0 on 2026-10-15 UTC. Full 30633-byte saved prompt equals reviewed source after final-newline normalization. Exact 24 tools, description, private visibility and no external MCP read back. Immediate next instructions and checkpoint-recovery guidance updated without changing authority. No application run started; live conversational/recovery acceptance remains pending.",
   "verification": {
+    "discovery_fallback_live": "pending; v1.7.0 native-discovery candidate. Prepublication diagnostic verified project 87329027 flow consumer 12316920, can_start_session=true and optional session filters; full session pagination and post-publication behavior still pending. Runtime version is not exposed. No E11 continuation or checkpoint/issue writes.",
     "session_handoff_live": "pending; discovery/start/input tools published and read back, but no direct launch/input/re-entry smoke performed. See docs/development/project-session-handoff.md; local policy/prompt checks are not runtime enforcement or integration proof.",
     "catalog_readback": "passed 2026-10-15 UTC: full 30633-byte saved prompt matches source 9522bf6c after final-newline normalization, SHA-256 cc4dcc0bbea23c0c717546710849ea6a58dfebc7dc3509fc50a574e0b033a7b7. v1.6.0, enabled/private, exact 24 tools, description and no MCP read back. MR !49 independent follow-up review 4021263981 had no remaining findings; all three workflow jobs passed in pipeline 2951370940, while application verify failed for the unconfigured adapter. User explicitly approved workflow-only merging despite that failure; main merge 75442835. E11 helper sync !50 merged 71016e8b after review 4021234416 and passing workflow jobs; application verification still failed for absent backend/tests. No app MR, issue checkpoint or CI protection changed; no application run started. See docs/development/checkpoint-publication.md.",
     "chat_picker": "passed 2026-10-10 after page refresh; CTX Project appears alongside Planning and Design; no prompt submitted",
@@ -152,5 +155,14 @@
     "user_e2_feedback": "v1.0.0 conversation exposed unsaved decisions, ambiguous execution handoff and stale failed-worker ownership; corrected candidate requires live acceptance",
     "resumable_owner_live": "pending; publication and local fixtures are not the two-run live acceptance",
     "next_action_live": "pending; replay docs/development/next-action.md transcript cases after publication; local prompt checks are not live conversation proof"
+  },
+  "development_consumer_binding": {
+    "project_id": 87329027,
+    "catalog_item_id": 1016234,
+    "consumer_id": 12316920,
+    "name": "CTX Development",
+    "catalog_version_at_verification": "1.10.0",
+    "verified_on": "2026-10-15",
+    "runtime_version_policy": "gitlab_configured_consumer"
   }
 }

@@ -1,6 +1,11 @@
 # Project-owned session handoff
 
-Status: **Project v1.5.0 published and enabled on 2026-10-13 UTC**. After explicit
+Current candidate: **Project v1.7.0 native discovery repair**, not yet published
+or live-verified. Read [project-discovery.md](project-discovery.md).
+The latest verified publication is v1.6.0 (24 tools); the candidate retains that
+same tool set. No additional credentials, permissions or Development changes.
+
+Original handoff release: **Project v1.5.0 published and enabled on 2026-10-13 UTC**. After explicit
 user confirmation, the full prompt, description, exact 24 tools, private visibility,
 no MCP and enablement were read back. Saved prompt SHA-256
 `bf0fb4828094dcd8859b5b1bfb7b607da25fdfb35a73d17492a1ee7ed6c72853` matches
@@ -39,18 +44,22 @@ The gate is a prompt rule, not a platform-enforced quota or dollar guarantee.
 
 ## Capabilities and exact target
 
-Project now has these three tools in addition to its previous 21: **List Duo Agents And Flows**,
+Project v1.5.0 added these three tools to its previous 21: **List Duo Agents And Flows**,
 **Start Duo Session**, **Send Duo Session Input**. Planning and Design keep their
 current registrations. No shell, arbitrary HTTP, external MCP server or credentials.
 
-Discover enabled flows for project `87329027` using `item_type=flow`; paginate even
-across empty pages while hasNextPage is true. Match catalog item `1016234` to the
-Development entry in `.gitlab/ctx/catalog.json`, its actual published version and
-project enablement. Require `can_start_session=true`. Use the returned
-`ai_catalog_item_consumer_id`, never the catalog item ID in that field. Never omit
-the selector (which defaults to the foundational Developer Flow), substitute another
-flow, start Delivery or call a specialist chat agent. If discovery/version/access
-cannot be established, report that exact boundary without a guessed launch.
+Discover enabled flows for project `87329027` using `item_type=flow`; paginate fully,
+including empty pages with hasNextPage=true. Follow the reviewed binding in
+[project-discovery.md](project-discovery.md): catalog item `1016234`, live consumer
+`12316920`, name CTX Development, type flow, non-foundational, can_start_session=true.
+Use the matching live `ai_catalog_item_consumer_id`, never the item ID. Missing
+catalog/version fields are not a native-tool failure: distinguish the binding's
+release-time UI evidence from runtime version, which is not exposed. GitLab resolves
+the configured consumer's version; never substitute latest, another flow or the
+foundational Developer default. Conflicting identity/permission/version evidence
+still blocks. Omit both optional session filters. A contradictory schema blocks
+new dispatch, not known-session read-only assessment; no invented alternate API.
+Do not start Delivery or call a specialist chat agent.
 
 References checked 2026-10-12: GitLab's
 [discovery/start/status/input contracts](https://docs.gitlab.com/user/model_context_protocol/mcp_server_tools/#list_duo_agents_and_flows).
@@ -72,7 +81,8 @@ Before a mutation, create/read back a request with:
   objective/mode/ticket scope/exclusions and original native `run_id` if it exists.
 - Authorization provenance: exact user request, known principal/source when
   available, original authorization note URL and latest full checkpoint URL.
-- Actual selected catalog item, consumer ID/version, parent session (on continuation)
+- Selected catalog item/consumer, binding source SHA and release-time version;
+  runtime version only if exposed (otherwise `not_exposed`), parent session (on continuation)
   and, for input, the existing session and exact pending question/approval identity.
 - Known remaining cumulative limits and evidence references, never invented zeros.
 
@@ -166,9 +176,12 @@ resuming the same CI session or claim the answer is applied before artifact read
 
 Repository validation checks exact tool and policy fields, including rejected
 scope/flow/bound/approval mutations. Prompt checks are not native integration tests.
-Publish the reviewed prompt, description and **24-tool** set to the existing Project
+Publish the reviewed v1.7.0 prompt, description and **24-tool** set to the existing Project
 entry, then read back all of them, version, private visibility, no MCP and enablement.
-Preserve v1.4.0 rollback metadata; no automatic wake-up or E2 completion claim.
+Preserve all previous published hashes and rollback history; no automatic wake-up
+or E2 completion claim. First run the discovery-only acceptance in
+[project-discovery.md](project-discovery.md), with no session/issue/checkpoint writes.
+Publication/readback alone does not establish that live discovery works.
 
 Use an explicitly authorized disposable scope, not an unsolicited E2 run, to test:
 

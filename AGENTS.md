@@ -10,6 +10,13 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Candidate **Project v1.7.0** repairs discovery using the existing 24 native tools,
+not unavailable GraphQL. Read docs/development/project-discovery.md for the reviewed
+project/consumer binding and release-time versus live evidence distinction.
+This is not published/live-verified yet; v1.6.0 remains the last verified publication.
+No E11 continuation, checkpoint/budget/credential change, merge/deployment authority
+or Development flow change. Preserve publication history and keep acceptance read-only.
+
 Published/read back 2026-10-15 UTC: Project v1.6.0 requires one direct **Do this now**
 instruction; Development v1.10.0 uses scripts/ctx_checkpoint.py read/assemble/publish
 for file-based checkpoint transfer with exact readback. Read
