@@ -66,13 +66,15 @@ class DeliveryCITests(unittest.TestCase):
         job = jobs["ctx:delivery-readiness"]
         self.assertEqual(set(job["needs"]), {f"ctx:{s}" for s in workflow.STEPS})
         self.assertEqual(job["when"], "always")
-        self.assertEqual(job["rules"], [{"if": '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'}])
-        self.assertEqual(job["script"], ["python scripts/ctx_delivery.py --phase candidate"])
+        self.assertEqual(job["rules"], [{"if": '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH',
+                                        "exists": ["docs/plan/E*/state.json"]}])
+        self.assertEqual(job["script"], ["python scripts/ctx_ci_context.py delivery-readiness"])
         self.assertNotIn("environment", job)
 
-    def test_opted_in_application_jobs_are_not_excluded_from_mr_pipelines(self):
+    def test_automatic_application_jobs_are_not_excluded_from_mr_pipelines(self):
         jobs = workflow.read_yaml(ROOT / ".gitlab/ci/delivery.yml")
-        self.assertIn({"if": '$CI_PIPELINE_SOURCE == "merge_request_event"'},
+        self.assertIn({"if": '$CI_PIPELINE_SOURCE == "merge_request_event"',
+                       "exists": ["docs/plan/E*/state.json"]},
                       jobs[".ctx-check"].get("rules", []))
 
 

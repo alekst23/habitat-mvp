@@ -10,15 +10,60 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
-Local candidates, not published: Project v1.6.0 requires one direct **Do this now**
+Checkpoint identity repair: read docs/development/checkpoint-publication.md.
+GitLab composite OAuth may resolve `/user` to the triggering human. The helper
+verifies the service-account OAuth owner and scoped-user binding using read-only
+introspection; it does NOT accept personal tokens or human-authored checkpoints.
+Use its safe `identity` diagnostic, never inspect/print tokens. No E11 continuation
+is authorized by this maintenance change; preserve checkpoint 4019881978, notes,
+budgets, exclusions and application MRs !45/!48. Catalog v1.10.0 is unchanged.
+
+Model compatibility update (2026-10-15 UTC): read the first section of
+docs/development/project-discovery.md before diagnosing recurring session filters.
+GitLab's upstream GPT/Responses optional-argument defect has a merged, feature-flagged
+gateway fix (!7436), but its companion rollout MR !261800 remained open. A bounded
+same-chat comparison found GPT-6.1 Sol reporting required optional fields without
+calling, while Claude Sonnet 5.5 - Default successfully sent the canonical request.
+Do not claim the historical failed chat's model is known or that the upstream fix
+is enabled here. Give the guide's exact model-switch/read-only-preflight instruction,
+not a request to find a maintainer. No schema/permission bypass or E11 execution.
+Project stays v1.8.0 with the same published prompt and tools; this is guide guidance,
+not a new catalog release or proof of full preflight/launch.
+
+Published/read back **Project v1.8.0** (2026-10-15 UTC): use the exact project-only
+session-discovery payload, correct malformed read-only arguments once without
+human intervention, and distinguish caller mistakes from proven platform failures.
+Read docs/development/project-discovery.md. Source !54 merged at 33c6545e after
+independent review and passing workflow CI. A fresh ordinary-Continue read-only
+test omitted both filters and traversed two session pages; it did not reproduce
+the old failure. Exact page-size compliance and unprompted full preflight were not
+proven; failure-injection recovery and launch/input/re-entry remain pending.
+No E11 execution, checkpoint, budget, credential, tool or merge/deployment change.
+
+Previous **Project v1.7.0** repaired discovery using the existing 24 native tools,
+not unavailable GraphQL. Read docs/development/project-discovery.md for the reviewed
+project/consumer binding and release-time versus live evidence distinction.
+Full catalog readback and a fresh discovery-only chat passed on 2026-10-15 UTC.
+Source !52 merged main at eca18641 after independent review and passing workflow
+checks; the unconfigured application verify failure remains a separate limitation.
+Live launch/input/re-entry and application recovery are still pending.
+No E11 continuation, checkpoint/budget/credential change, merge/deployment authority
+or Development flow change. Preserve publication history and keep acceptance read-only.
+
+Published/read back 2026-10-15 UTC: Project v1.6.0 requires one direct **Do this now**
 instruction; Development v1.10.0 uses scripts/ctx_checkpoint.py read/assemble/publish
 for file-based checkpoint transfer with exact readback. Read
 docs/development/checkpoint-publication.md. Only seven reviewed E11 notes are
 excluded by .gitlab/ctx/checkpoint-exclusions.json, without deleting evidence or
 resetting history/budgets. Use the existing injected flow OAuth credential only
 inside the reviewed helper, never a human/controller token or model-transcribed
-payload. No new tools, scopes, controller or execution authority. Catalog rollout,
-helper compatibility/synchronization and live recovery acceptance remain pending.
+payload. No new tools, scopes, controller or execution authority. Source !49 merged
+main at 75442835; helper sync !50 merged E11 at 71016e8b without product/adapter
+changes. Independent reviews and workflow CI passed; separate application verify
+jobs failed. The user explicitly approved these workflow-only merges without
+changing CI controls. Full saved catalog definitions match reviewed source 9522bf6c.
+No application run started; live recovery acceptance remains pending. Older version
+references below are historical; use checkpoint-publication.md for this release.
 
 Published **Project v1.5.0** adds native session discovery/start/input and a
 durable conversational handoff; read docs/development/project-session-handoff.md.
@@ -234,9 +279,15 @@ Establish reviewed argument arrays and evidence writers in `.gitlab/ctx/commands
 as part of the application foundation. `python scripts/ctx_workflow.py run verify`
 currently returns blocked (exit 2), correctly. Workflow self-tests are not application
 tests. Workflow self-checks run automatically on merge requests and the default
-branch; `CTX_WORKFLOW_CHECKS=1` also enables them on other branches. Set
-`CTX_APPLICATION_CHECKS=1` for the application CI lane; until configured,
-its first job fails closed. Make the lane mandatory before implementation MRs merge.
+branch; `CTX_WORKFLOW_CHECKS=1` also enables them on other branches. Application
+checks activate automatically wherever committed version-2 plans exist.
+Until adapters are configured, their jobs fail closed. Scope/manifest/browser needs
+come from committed plan/branch identity, not manually supplied pipeline variables.
+Read docs/development/acceptance-evidence.md. The candidate-data file
+`.gitlab/ctx/verification-context.json` is the narrow exception to workflow-policy
+write restrictions: ticket implementation runs `scripts/ctx_ci_context.py prepare`
+and commits it before verification/review; epic docs runs `prepare --whole-epic`
+before final verification. This does not authorize any other CI/policy changes.
 
 The application lane's `ctx:delivery-readiness` job collects prerequisite receipts
 and produces a nine-stage evidence summary, even for incomplete candidates. Read

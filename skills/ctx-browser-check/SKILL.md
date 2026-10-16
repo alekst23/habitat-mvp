@@ -24,6 +24,9 @@ not repeat an entire test matrix in the browser. Use isolated browser contexts.
 
 Agent-driven checks may use an installed Playwright CLI through the browser component's
 execution tools. Repeatable checks use .gitlab/ctx/playwright.config.ts in CI.
+CI derives browser applicability from the committed scope/manifest; no user flags.
+Read the exact report scope and SHA, not only a green job. A backend-only
+not-applicable diagnostic does not prove any UI criterion.
 Both need real browser/runtime setup; do not invent tool availability. If absent,
 record blocked. The read-only code reviewer consumes evidence and cannot run a browser.
 

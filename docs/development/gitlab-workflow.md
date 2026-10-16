@@ -1,5 +1,14 @@
 # CTX native GitLab workflow implementation
 
+**Current release, 2026-10-15 UTC: Project v1.6.0 / Development v1.10.0.**
+See [checkpoint publication evidence](checkpoint-publication.md#publication-evidence).
+Reviewed source !49 and E11 helper sync !50 are merged; full saved prompt/YAML,
+unchanged tools and enabled/private state read back. Workflow CI passed; separate
+application verification failed, with explicit user approval for these workflow-only
+merges and no CI control changes. No application run started; live acceptance remains
+pending. Start a new CTX Project chat with `Continue E11 using issue #11.` to resume
+the existing authorized objective. Older version references below are historical.
+
 **Project v1.5.0 published/read back on 2026-10-13 UTC:** [session handoff](project-session-handoff.md)
 adds native discovery/start/input to the existing Project agent only. It starts
 approved Development work, persists the real session and handles **check progress**
@@ -467,8 +476,8 @@ The old planning flow is retired; do not reactivate it for numbering changes.
 ## Application command and evidence contract
 
 Workflow validation/self-tests run automatically for MRs and the default branch;
-`CTX_WORKFLOW_CHECKS=1` also enables them on other branches. Set
-`CTX_APPLICATION_CHECKS=1` in a pipeline to include `.gitlab/ci/delivery.yml`:
+`CTX_WORKFLOW_CHECKS=1` also enables them on other branches. Committed version-2
+plans automatically enable `.gitlab/ci/delivery.yml` jobs, without manual switches:
 
 ```text
 verify + browser (when required) → acceptance → source-security → package → artifact-security → configure
@@ -480,8 +489,12 @@ The `acceptance` command is implemented. Application command entries in
 The browser harness needs app startup and actual tests. `run verify` currently exits 2
 with a retained blocked report. There are no success placeholders. Do not interpret
 a green workflow-only pipeline as a tested application. Once the foundation exists,
-make these checks unconditional/required through a reviewed CI change before
-allowing implementation merges; an optional variable is not a merge safety gate.
+these checks run automatically for planned work before implementation merges;
+an optional variable is not a merge safety gate. Unmapped plan-bearing branches
+must prove a complete workflow-only maintenance diff or fail closed, rather than
+selecting a ticket from a project default. Maintenance returns not-applicable,
+never application acceptance. Default-target epic MRs additionally require the
+blocking `ctx:epic-scope` gate before merge, not only after merging to default.
 
 Each command is a reviewed argument array, executed without shell interpolation
 and with a timeout. It must write fresh JSON to `CTX_OUTPUT`. The adapter also
@@ -510,9 +523,12 @@ The runner writes `.ctx/reports/<step>.json` with project ID, source SHA, pipeli
 ID and observed status. Each downstream job requires every preceding report from
 that same identity and checks artifact consistency. Job artifacts retain reports
 for 30 days. Commands returning zero without fresh valid evidence are blocked.
-`configure` validates only; it does not apply settings or migrations. Configure
-`CTX_AC_MANIFEST` and `CTX_AC_SCOPE` for the candidate. UI criteria additionally
-require `CTX_BROWSER_CHECKS=1`; skipping the browser job does not waive them.
+`configure` validates only; it does not apply settings or migrations. Candidate
+scope, canonical manifest and browser applicability are derived from committed
+state/branch/context by `ctx_ci_context.py`; old project overrides are not inputs.
+The implementation worker prepares/commits ticket context before review; epic docs
+prepares whole-epic context before final verification. These are agent operations,
+not manual user pipeline settings.
 See [the exact evidence schema](acceptance-evidence.md) and
 [browser setup](browser-checks.md). The verify adapter publishes `.ctx/acceptance.json`;
 the browser job independently publishes `.ctx/browser/acceptance.json`.

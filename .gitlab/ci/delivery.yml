@@ -3,9 +3,13 @@ include:
 
 .ctx-check:
   allow_failure: false
+  variables:
+    GIT_DEPTH: "0"
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      exists: ["docs/plan/E*/state.json"]
     - if: '$CI_COMMIT_BRANCH'
+      exists: ["docs/plan/E*/state.json"]
   timeout: 20 minutes
   artifacts:
     when: always
@@ -14,9 +18,6 @@ include:
       - .ctx/reports/
       - .ctx/acceptance.json
 
-# Backend dependencies come from E11-1's pinned backend/requirements.txt. Install them
-# when present (a failed install fails the job); without them the adapter still
-# fails closed because no backend/tests exist. No database service: E11 uses SQLite.
 ctx:verify:
   extends: .ctx-check
   stage: verify
@@ -42,6 +43,18 @@ ctx:source-security:
   needs: ["ctx:verify", "ctx:acceptance"]
   script:
     - python scripts/ctx_workflow.py run source-security
+
+# Keep ticket-scoped integration evidence available on an open draft epic MR,
+# but do not permit that MR into default until full-epic scope is selected/passed.
+ctx:epic-scope:
+  extends: .ctx-check
+  stage: acceptance
+  needs: ["ctx:verify"]
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH'
+      exists: ["docs/plan/E*/state.json"]
+  script:
+    - python scripts/ctx_ci_context.py require-whole-epic
 
 ctx:package:
   extends: .ctx-check
@@ -73,9 +86,10 @@ ctx:delivery-readiness:
   when: always
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      exists: ["docs/plan/E*/state.json"]
   needs: ["ctx:verify", "ctx:acceptance", "ctx:source-security", "ctx:package", "ctx:artifact-security", "ctx:configure"]
   script:
-    - python scripts/ctx_delivery.py --phase candidate
+    - python scripts/ctx_ci_context.py delivery-readiness
 
 # Readiness is release-branch-only: a feature MR cannot yet have a merged release
 # SHA. Do not make merged-candidate receipts a circular prerequisite of that MR.
