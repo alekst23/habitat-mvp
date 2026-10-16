@@ -127,7 +127,9 @@ provenance/start/input smoke; local prompt checks cannot prove API behavior.
 3. Use `ctx_owner.py next HANDOFF.json` and the journal's derived `owner_action`.
    Repair actionable defects before requesting another plan; continue ready work
    even if another target needs a decision. `reconcile_retry` means inspect fresh
-   evidence before spending the permitted retry. `reconcile_blocker` means inspect
+   evidence before spending the permitted retry. `reconcile_interruption` uses the
+   bounded read-only phase recovery below, even when that retry is spent.
+   `reconcile_blocker` means inspect
    and resolve evidence/dependency/technical gaps within authority, not ask the user
    which phase to run. If no safe transition exists, save the attempted remedy and
    precise access/approval/scope boundary; do not repeatedly inspect unchanged state.
@@ -564,6 +566,71 @@ prepare and before capture, so the new adapter removes output-format dependence
 without claiming the old runtime's exact wrapping was observed.
 
 ## Version-2 verification and repair
+
+### Recovering a platform-interrupted read-only phase
+
+The old one-per-target transient `retry` remains unchanged. It is not the recovery
+budget for every review in a multi-session objective. An idle v2 journal whose
+latest receipt is `blocked/transient` at `verify`, `review`, `epic_review` or
+`design_review` exposes `owner_action.action=reconcile_interruption`. This does
+not establish eligibility by itself. The coordinator must first reconcile the
+actual failed/canceled session, its terminal runner job, current head/manifest,
+ownership, reports and artifacts. Adopt a valid saved final result rather than
+duplicating it. Unknown/running/paused work, permissions, auth failures, deliberate
+human cancellation, findings and missing required evidence are not platform-retry
+authority. Writing, integration and close phases are excluded.
+
+After verifying the platform interruption and absence of a final phase result,
+publish/read back a fresh source report binding the exact blocked claim to the
+session/job and its termination evidence. Use the trusted helper:
+
+```sh
+python scripts/ctx_development.py resume-interrupted .ctx/development/RUN.json TARGET --receipt RECOVERY.json
+```
+
+The exact receipt fields are `run_id`, `target`, `phase`, `blocked_attempt`,
+`blocked_report_url`, `candidate_sha`, `acceptance_manifest_sha256`, `report_url`,
+`report_readback: true`, `remote_readback: true`, `ownership_verified: true`, and
+`interruption`. The last object contains string `project_id`, `session_id`,
+`session_url`, `status` (failed/canceled), `job_url`, `job_status`, `cause`,
+`terminal_reason`, `evidence_url` (that job's `#L<number>` log line), nonempty
+`detail`, `result_absent: true`, and `claim`. The claim is the blocked receipt's
+exact run_id/target/phase/attempt/candidate_sha/report_url. Cause is
+`execution_limit`, `runner_failure` or `stream_lost`; terminal_reason matches
+cause except stream_lost uses `delegation_result_missing`. Job status is
+failed/canceled, or success ONLY for evidenced stream_lost. Bind project/session
+and job through actual remote readback, not their URL syntax alone. Read the
+report and log; never fabricate attestations. A passed wrapper job is not session
+success: session 9621826 failed while job 17244915866 exited zero, reporting a
+lost stream and an unfinished review delegation. Record `stream_lost` for that
+case; do not infer a hard execution limit merely from elapsed time.
+
+Recovery appends an `interruption_resume` event and reopens the SAME phase; it
+never advances it or grants a passing verdict. There are TWO recoveries per
+target/phase, cumulative across SHAs and sessions, separate from the unchanged
+old retry counter. No fallback to the old retry after this recovery cap is spent.
+Do not refund actions, repairs or reservations. Every following claim consumes
+the normal cumulative action/session allowances; checkpoint when either is spent.
+Review/epic-review requires the saved current-SHA passing verification; design
+review requires the saved current design revision. Reverify remote evidence and
+independent-review provenance before delegating. A changed candidate is not
+eligible for this same-SHA transition.
+
+Persist/read back the entire updated owner handoff before dispatch. Pass the
+reviewer's saved partial checks and exact remaining work, candidate SHA and
+`save_by`; follow ctx-ticket-review's bounded retrieval and partial-save rules.
+The independent reviewer still owes a complete AC matrix/verdict. All security,
+merge and deployment controls remain in force, including source-security.
+If the next attempt is interrupted, reconcile it anew; never reuse the same
+session/job evidence to buy repeated recoveries. Exhaustion needs a precise
+maintenance/access handoff, not a recommendation to bypass independent review.
+
+For the E11 repair, sync the coordinator helper/guides from reviewed workflow
+maintenance into `ctx/epic-i11`, not the unchanged `ctx/ticket-i13` application
+candidate. The flow reads trusted default-revision coordination code. Preserve
+candidate `1e86671774206eb0cb7eb4c97867fc91a8c6a401`, its evidence and existing
+checkpoint notes; only the next authorized native continuation creates a new
+receipt/checkpoint. Publishing maintenance does not itself resume E11.
 
 ### Automatic CI scope and evidence recovery
 

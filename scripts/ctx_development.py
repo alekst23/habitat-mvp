@@ -30,6 +30,8 @@ V2_TICKET_PHASES = ("design", "tests", "implementation", "verify", "review", "in
 V2_EPIC_PHASES = ("implementation", "docs", "verify", "epic_review", "close")
 MAX_REPAIRS = 3
 REPAIR_PHASES = {"implementation", "verify", "review", "epic_review"}
+INTERRUPTION_PHASES = {"verify", "review", "epic_review", "design_review"}
+MAX_INTERRUPTION_RESUMES = 2  # Per target/phase, cumulative across candidates and sessions.
 MAINTENANCE_CONTEXT_PATH = ".gitlab/ctx/verification-context.json"
 # Exact runtime/guide/test files for the automatic-acceptance maintenance sync.
 # Not a generic workflow-edit grant: no commands, checkpoint identity, exclusions,
@@ -300,10 +302,23 @@ def owner_action(run, frontier):
         if evidence_blocker(run, target) is not None:
             return {"action": "reconcile_evidence", "target": target,
                     "reason": node["reason"]}
+    exhausted_interruptions = []
     for target, node in blocked:
-        if node.get("blocker_kind") in {"transient", "ci_pending"} and node["retries"] < 1:
+        if interruption_blocker(run, target) is not None:
+            if interruption_resumes(run, target, phase(node)) < MAX_INTERRUPTION_RESUMES:
+                return {"action": "reconcile_interruption", "target": target, "phase": phase(node),
+                        "reason": "verify terminal session/job, ownership and absence of a saved valid result; "
+                                  "adopt a published result instead of duplicating work"}
+            exhausted_interruptions.append(target)
+    for target, node in blocked:
+        if (node.get("blocker_kind") in {"transient", "ci_pending"} and node["retries"] < 1
+                and not interruption_resumes(run, target, phase(node))):
             return {"action": "reconcile_retry", "target": target,
                     "reason": node["reason"]}
+    if exhausted_interruptions:
+        return {"action": "checkpoint", "targets": exhausted_interruptions,
+                "reason": "interrupted-phase recovery budget exhausted (2 per target/phase); "
+                          "retain history and do not fall back to the old retry"}
     questions = []
     for target, node in blocked:
         if node.get("blocker_kind") == "decision":
@@ -544,6 +559,129 @@ def evidence_blocker(run, target):
     return None
 
 
+def interruption_resumes(run, target, operation):
+    """Derive the budget from history, never a resettable node/session/SHA counter."""
+    return sum(e.get("interruption_resume") == target and e["receipt"].get("phase") == operation
+               for e in run["events"] if "interruption_resume" in e)
+
+
+def interruption_blocker(run, target):
+    """An eligible local reconciliation candidate, NOT proof of a runtime failure."""
+    if run["version"] != 2 or run["active"] is not None or target not in run["required_targets"]:
+        return None
+    node = run["nodes"][target]
+    if (node["status"] != "blocked" or node.get("blocker_kind") != "transient"
+            or phase(node) not in INTERRUPTION_PHASES):
+        return None
+    event = next((e for e in reversed(run["events"]) if e.get("target") == target), None)
+    if (event and event.get("run_id") == run["request"]["run_id"] and event.get("phase") == phase(node)
+            and event.get("blocker_kind") == "transient" and event.get("candidate_sha") == node["candidate_sha"]
+            and event.get("report_readback") is True
+            and normalize_response(event.get("response", ""), {"ready", "blocked"})["routing_token"] == "blocked"):
+        return event
+    return None
+
+
+def resume_interrupted(run, target, receipt):
+    """Reopen one interrupted read-only phase; all remote facts need independent readback.
+
+    The interruption claim binds the observed failed session/job to the exact saved
+    failure report. Legacy reports may lack a structured interruption: the supervisor
+    must read their contents and establish that binding before producing this receipt.
+    These checks attest JSON consistency only, not ownership, failure cause or absence
+    of an unrecorded result. Adopt a valid published result instead of dispatching again.
+    """
+    next_actions(run)
+    require(run["version"] == 2 and run["active"] is None and run["actions"] < MAX_ACTIONS,
+            "interruption resume needs an idle version-2 journal with remaining actions")
+    blocked = interruption_blocker(run, target)
+    require(blocked is not None, "resume requires an in-scope transient-blocked unfinished read-only phase")
+    operation = blocked["phase"]
+    require(interruption_resumes(run, target, operation) < MAX_INTERRUPTION_RESUMES,
+            "interrupted-phase recovery budget exhausted; persist checkpoint")
+    require(isinstance(receipt, dict) and set(receipt) == {
+        "run_id", "target", "phase", "blocked_attempt", "blocked_report_url", "candidate_sha",
+        "acceptance_manifest_sha256", "report_url", "report_readback", "remote_readback",
+        "ownership_verified", "interruption"}, "invalid interruption resume receipt fields")
+    node = run["nodes"][target]
+    for key, expected in (("run_id", run["request"]["run_id"]), ("target", target), ("phase", operation),
+                          ("blocked_report_url", blocked["report_url"]), ("candidate_sha", node["candidate_sha"]),
+                          ("acceptance_manifest_sha256", scoped_manifest(run, target)[1])):
+        require(receipt[key] == expected, f"interruption resume identity mismatch: {key}")
+    require(type(receipt["blocked_attempt"]) is int and receipt["blocked_attempt"] == blocked["attempt"],
+            "interruption resume must bind the current blocked attempt")
+    source_report(run, receipt["report_url"])
+    require(all(receipt[k] is True for k in ("report_readback", "remote_readback", "ownership_verified")),
+            "actual report, terminal worker and exclusive ownership readback required")
+    observation = receipt["interruption"]
+    require(isinstance(observation, dict) and set(observation) == {
+        "project_id", "session_id", "session_url", "status", "job_url", "job_status",
+        "cause", "terminal_reason", "evidence_url", "detail", "result_absent", "claim"},
+        "full interrupted session/job observation required")
+    base = f"https://gitlab.com/{run['request']['project_path']}/-/"
+    sid = observation["session_id"]
+    require(observation["project_id"] == str(run["request"]["project_id"])
+            and isinstance(sid, str) and re.fullmatch(r"[1-9][0-9]*", sid)
+            and observation["session_url"] == base + "automate/agent-sessions/" + sid,
+            "same-project positive session identity required")
+    require(isinstance(observation["job_url"], str)
+            and re.fullmatch(re.escape(base) + r"jobs/[1-9][0-9]*", observation["job_url"]),
+            "same-project terminal worker job required")
+    cause = observation["cause"]
+    require(cause in ("execution_limit", "runner_failure", "stream_lost") and observation["result_absent"] is True,
+            "verified platform interruption with no valid result required; adopt published results")
+    reason = "delegation_result_missing" if cause == "stream_lost" else cause
+    require(observation["terminal_reason"] == reason and isinstance(observation["detail"], str)
+            and observation["detail"].strip(), "explicit interruption detail and matching terminal reason required")
+    require(observation["status"] in ("failed", "canceled")
+            and observation["job_status"] in (("failed", "canceled", "success") if cause == "stream_lost"
+                                             else ("failed", "canceled")),
+            "failed/canceled session required; successful wrapper is eligible only for evidenced stream_lost")
+    require(isinstance(observation["evidence_url"], str)
+            and re.fullmatch(re.escape(observation["job_url"]) + r"#L[1-9][0-9]*", observation["evidence_url"]),
+            "interruption evidence must identify a log line in the observed worker job")
+    identity = {k: blocked[k] for k in ("run_id", "target", "phase", "attempt", "candidate_sha", "report_url")}
+    require(isinstance(observation["claim"], dict) and observation["claim"] == identity
+            and type(observation["claim"].get("attempt")) is int,
+            "interruption observation must bind the exact blocked claim and its report")
+    if "interruption" in blocked:
+        require(observation == blocked["interruption"], "observation conflicts with recorded session/job failure")
+    for event in run["events"]:
+        if "interruption_resume" in event:
+            previous = event["receipt"]["interruption"]
+            require(previous["session_id"] != sid and previous["job_url"] != observation["job_url"],
+                    "failed session or job already used for interruption recovery")
+        if (event.get("target") == target and event.get("phase") == operation
+                and event.get("candidate_sha") == node["candidate_sha"]
+                and normalize_response(event.get("response", ""), {"ready", "blocked"})["routing_token"] == "ready"):
+            require(False, "adopt the existing valid phase result instead of duplicating work")
+    if operation in {"review", "epic_review"}:
+        source_report(run, node.get("verification_url"))
+        validate_verification(run, target, node["candidate_sha"], node.get("verification"))
+        require(any(e.get("target") == target and e.get("phase") == "verify"
+                    and e.get("report_url") == node["verification_url"] and e.get("candidate_sha") == node["candidate_sha"]
+                    and e.get("verification") == node["verification"] and e.get("report_readback") is True
+                    and normalize_response(e.get("response", ""), {"ready", "blocked"})["routing_token"] == "ready"
+                    for e in run["events"]), "review recovery requires its saved current-SHA verification")
+    if operation == "design_review":
+        report_url = node["design_revision"].get("report_url")
+        source_report(run, report_url)
+        addenda = [e["receipt"] if e.get("decision_resume") == target else e for e in run["events"]
+                   if e.get("decision_resume") == target or (e.get("target") == target and e.get("phase") == "design_revision"
+                   and normalize_response(e.get("response", ""), {"ready", "blocked"})["routing_token"] == "ready")]
+        saved = next((e for e in reversed(addenda) if e.get("report_url") == report_url
+                      and e.get("candidate_sha") == node["candidate_sha"] and e.get("report_readback") is True), None)
+        require(saved is not None, "design review recovery requires its saved current-SHA design revision")
+        validate_design_addendum(run, target, saved)
+    require_fresh_recovery(run, target, receipt["report_url"])
+    result = deepcopy(run)
+    node = result["nodes"][target]
+    node.update(status="pending", reason="")
+    node.pop("blocker_kind", None)
+    result["events"].append({"interruption_resume": target, "receipt": deepcopy(receipt)})
+    return result
+
+
 def integration_blocker(run, target):
     """Only a ticket stopped at integration, with its saved current-SHA review."""
     if run["version"] != 2 or target not in run["required_targets"]:
@@ -652,12 +790,12 @@ def resume_evidence(run, target, receipt):
     return result
 
 
-def require_fresh_recovery(run, target, report_url, pipeline_id):
+def require_fresh_recovery(run, target, report_url, pipeline_id=None):
     """Reject reused note/pipeline identities, including issue/work-item aliases."""
     note_ids, pipeline_ids = [], []
     for event in run["events"]:
         prior = event["receipt"] if set(event) in ({"decision_resume", "receipt"}, {"evidence_resume", "receipt"},
-                                                  {"integration_resume", "receipt"}) else event
+                                                  {"integration_resume", "receipt"}, {"interruption_resume", "receipt"}) else event
         if "report_url" in prior:
             note_ids.append(int(prior["report_url"].rsplit("#note_", 1)[1]))
         if prior.get("target") != target:
@@ -667,10 +805,27 @@ def require_fresh_recovery(run, target, report_url, pipeline_id):
         for bundle in bundles:
             if isinstance(bundle, dict) and re.fullmatch(r"[1-9][0-9]*", str(bundle.get("pipeline_id", ""))):
                 pipeline_ids.append(int(bundle["pipeline_id"]))
+    if pipeline_id is None:
+        # New interruption receipts must postdate ALL source-note references, even
+        # nested recovery/answer/observation receipts. Historical pipeline recovery
+        # replay keeps its original freshness rules, while counting new events too.
+        source = re.escape(f"https://gitlab.com/{run['request']['project_path']}/-/")
+        source += rf"(?:issues|work_items)/{run['request']['source_issue_iid']}#note_([1-9][0-9]*)"
+        def source_notes(value):
+            if isinstance(value, dict):
+                for item in value.values():
+                    yield from source_notes(item)
+            elif isinstance(value, list):
+                for item in value:
+                    yield from source_notes(item)
+            elif isinstance(value, str) and (match := re.fullmatch(source, value)):
+                yield int(match[1])
+        note_ids.extend(source_notes(run["events"]))
     require(int(report_url.rsplit("#note_", 1)[1]) > max(note_ids, default=0),
             "fresh source report required; stale/replayed note refused")
-    require(int(pipeline_id) > max(pipeline_ids, default=0),
-            "fresh verification pipeline required; stale/replayed evidence refused")
+    if pipeline_id is not None:
+        require(int(pipeline_id) > max(pipeline_ids, default=0),
+                "fresh verification pipeline required; stale/replayed evidence refused")
 
 
 def resume_integration(run, target, receipt):
@@ -734,6 +889,8 @@ def retry(run, target, observation_url):
     node = run["nodes"][target]
     require(node["status"] == "blocked" and node.get("blocker_kind") in {"ci_pending", "transient"},
             "decision/evidence/conflict needs a human-reconciled resume")
+    require(not interruption_resumes(run, target, phase(node)),
+            "use bounded interrupted-phase recovery; old retry cannot bypass its budget")
     require(node["retries"] < 1, "retry budget exhausted")
     prefix = re.escape(f"https://gitlab.com/{run['request']['project_path']}/-/")
     require(re.fullmatch(prefix + r"(?:pipelines/[1-9][0-9]*|(?:issues|work_items)/[1-9][0-9]*#note_[1-9][0-9]*)",
@@ -763,6 +920,8 @@ def verify_journal(run):
             expected = resume_evidence(expected, event["evidence_resume"], event["receipt"])
         elif set(event) == {"integration_resume", "receipt"}:
             expected = resume_integration(expected, event["integration_resume"], event["receipt"])
+        elif set(event) == {"interruption_resume", "receipt"}:
+            expected = resume_interrupted(expected, event["interruption_resume"], event["receipt"])
         else:
             expected = record(claim(expected, event["target"]), event)
     if run["active"] is not None:
@@ -815,11 +974,11 @@ def save_json(path, value):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("init", "next", "claim", "record", "retry", "repair", "resume-decision", "resume-evidence", "resume-integration"))
+    parser.add_argument("action", choices=("init", "next", "claim", "record", "retry", "repair", "resume-decision", "resume-evidence", "resume-integration", "resume-interrupted"))
     parser.add_argument("journal", type=Path)
     parser.add_argument("input", nargs="?", help="request/receipt path, or target ID")
     parser.add_argument("--observation-url")
-    parser.add_argument("--receipt", type=Path, help="saved decision, evidence or integration recovery receipt")
+    parser.add_argument("--receipt", type=Path, help="saved decision, evidence, integration or interruption recovery receipt")
     args = parser.parse_args()
     try:
         with journal_lock(args.journal) as path:
@@ -846,6 +1005,9 @@ def main():
                 elif args.action == "resume-integration":
                     require(args.receipt is not None, "integration receipt path required")
                     run = resume_integration(run, args.input, read_json(args.receipt))
+                elif args.action == "resume-interrupted":
+                    require(args.receipt is not None, "interruption receipt path required")
+                    run = resume_interrupted(run, args.input, read_json(args.receipt))
             if args.action != "next":
                 save_json(path, run)
             print(json.dumps(next_actions(run), indent=2))

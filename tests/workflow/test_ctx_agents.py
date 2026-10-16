@@ -196,15 +196,16 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertEqual(project["published_source_commit"], "4f56e11fff5decb6bd43a16904f84f5210fad7f4")
         self.assertEqual(project["published_system_prompt_sha256"],
                          "303810d6b9cd60b84d1680ba6398d315720b1b11e8c04bd083cec2fcccb57702")
-        self.assertNotIn("candidate_status", project)
-        self.assertNotIn("candidate_catalog_version", project)
+        self.assertEqual(project["candidate_catalog_version"], "1.10.0")
+        self.assertIn("publication and live recovery pending", project["candidate_status"])
         self.assertTrue(project["verification"]["resumable_owner_live"].startswith("pending"))
-        self.assertEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt).hexdigest())
-        self.assertEqual(project["system_prompt_sha256"], project["published_system_prompt_sha256"])
+        self.assertEqual(project["system_prompt_sha256"], hashlib.sha256(prompt).hexdigest())
+        self.assertNotEqual(project["system_prompt_sha256"], project["published_system_prompt_sha256"])
         self.assertEqual(project["catalog_saved_system_prompt_sha256"],
                          "a8b44db7e05514b7f2c31d8bde7bceeca26c57c9f81f6a430660f7c50a1120ee")
-        self.assertEqual(project["catalog_saved_system_prompt_sha256"],
-                         hashlib.sha256(prompt.removesuffix(b"\n")).hexdigest())
+        self.assertLessEqual(len(prompt), 40960)
+        self.assertIn(b"resume-interrupted", prompt)
+        self.assertIn(b"Status-only requests remain read-only", prompt)
         self.assertTrue(project["verification"]["automatic_acceptance_recovery_live"].startswith("pending"))
         recovery = project["verification"]["automatic_acceptance_recovery_live"]
         self.assertIn("pipeline 2956291204 finished FAILED overall", recovery)

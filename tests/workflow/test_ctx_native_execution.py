@@ -14,6 +14,17 @@ from test_ctx_development import receipt
 
 
 class NativeAdmissionTests(unittest.TestCase):
+    def test_interrupted_review_guidance_keeps_complete_verdict_and_bounded_reads(self):
+        review = (ROOT / "skills/ctx-ticket-review/SKILL.md").read_text()
+        for text in ("exact candidate SHA", "once per path", "one corrected request",
+                     "save_by", "Partial notes are progress evidence, never approval",
+                     "complete independent review", "Terminal tokens: [ready, blocked]"):
+            self.assertIn(text, review)
+        guide = (ROOT / "docs/development/single-shot-development.md").read_text()
+        for text in ("resume-interrupted", "TWO recoveries per", "source-security",
+                     "not the unchanged `ctx/ticket-i13`", "stream_lost"):
+            self.assertIn(text, guide)
+
     def test_owner_continues_unrelated_work_before_questions_and_reconciles_retry(self):
         run = dev.claim(dev.new_run(repair_request()), "E2-1")
         run = dev.record(run, receipt(run, response="blocked", blocker_kind="decision",
@@ -150,17 +161,17 @@ class NativeAdmissionTests(unittest.TestCase):
             ".gitlab/duo/flows/ctx-development.yml"]
         self.assertNotIn("pending_catalog_version", catalog)
         self.assertEqual(catalog["catalog_version"], "1.11.0")
-        self.assertNotIn("candidate_status", catalog)
-        self.assertNotIn("candidate_catalog_version", catalog)
+        self.assertEqual(catalog["candidate_catalog_version"], "1.12.0")
+        self.assertIn("publication and live recovery pending", catalog["candidate_status"])
         self.assertIn("live two-run acceptance pending", catalog["publication_status"])
-        self.assertEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
+        self.assertNotEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
         self.assertEqual(catalog["published_definition_sha256"],
                          "edd61f87b3de0732683b7a47db4e16d77455d25a3d96449a252c9523145f4899")
         self.assertEqual(catalog["catalog_saved_definition_sha256"],
                          "54e4a3995002ce8f4659cf1b0e7ee7e98bbfe50f5c46ff6b8fc9ff2a8026e124")
-        self.assertEqual(catalog["published_definition_sha256"], hashlib.sha256(flow_path.read_bytes()).hexdigest())
-        self.assertEqual(catalog["catalog_saved_definition_sha256"],
-                         hashlib.sha256(flow_path.read_bytes().removesuffix(b"\n")).hexdigest())
+        self.assertEqual(catalog["definition_sha256"], hashlib.sha256(flow_path.read_bytes()).hexdigest())
+        self.assertLessEqual(len(flow_path.read_bytes()), 40960)
+        self.assertIn("resume-interrupted", flow_path.read_text())
         self.assertEqual(catalog["published_source_commit"], "4f56e11fff5decb6bd43a16904f84f5210fad7f4")
         self.assertEqual(catalog["publication_history"][-1]["catalog_version"], "1.10.0")
         self.assertEqual(catalog["publication_history"][-1]["published_definition_sha256"],
