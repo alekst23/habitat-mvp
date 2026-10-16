@@ -143,7 +143,9 @@
         }
       ],
       "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234",
-      "definition_sha256": "3442cb93da7b416a1d4b11fdd2c75bfee65cca2b752fa287d8c654475bd6d34e",
+      "definition_sha256": "0ec7b23541c187ff438d8379982c10834b5d4fb0702464891d365d93fe405f17",
+      "candidate_catalog_version": "1.13.0",
+      "candidate_status": "Pending publication: D-E11-REVIEW-RESUME-1 permits one metered verify/review recovery per target-phase. Published proof below remains v1.12.0.",
       "verification": "Full saved YAML SHA-256 349ba308ffbe9cb80a89fc6ffd6b6ee63e7490340025bd0ae926a2c1e1da85b3. Source !64 c7b38df4ff28d22db539feb1670c267952369b1a merged main d098e7e9b72584160880cba11aeffa710046eb68 after pipeline 2957074685 and independent local review note 4032621757. Coordinator-only sync !65 b8d3e2463e75a2a501415654eba812ddd92561c0 merged ctx/epic-i11 fd74129263fc3d614845200bc8941796aade69ca after pipeline 2957077377 and independent local review note 4032633740. Local source/sync suites passed 244/249 tests; independent reviewer passed 84 source and 22 sync tests. No application MR merge, E11 execution, checkpoint rewrite, budget reset, credentials or deployment changes. Ticket ctx/ticket-i13 stays 1e86671774206eb0cb7eb4c97867fc91a8c6a401. CI is maintenance evidence, not application acceptance. Live interrupted-review recovery remains pending. Prior E11-2 verify/AC remain valid at unchanged candidate; independent application review is still missing and source-security remains unconfigured and unwaived. These maintenance pipelines do not fix that separate gate.",
       "managed_terminal_tokens": {
         "design": [

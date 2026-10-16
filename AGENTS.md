@@ -10,6 +10,15 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Scoped maintenance D-E11-REVIEW-RESUME-1 supersedes the recovery policy below:
+read single-shot-development.md. New `resume-interrupted` transitions allow only
+verify/review, ONCE per target/phase, and consume one journal action before the
+normal subsequent claim. Preserve old events/counters; legacy recoveries replay
+unchanged but count toward this cap. No write-phase or defect recovery, changed
+candidate/manifest/verification, application merge, E11 start or CI waiver.
+Catalog instruction alignment is pending publication; old release proofs below
+remain historical facts, not the new transition's policy or runtime acceptance.
+
 Published/read back **Project v1.10.0 / Development v1.12.0** (2026-10-16 UTC):
 read single-shot-development.md's interrupted-phase recovery protocol. Source !64
 and coordinator-only E11 sync !65 passed CI and independent local review and merged.
