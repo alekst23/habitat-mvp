@@ -10,14 +10,18 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Published/read back **Project v1.11.0 / Development v1.13.0** (2026-10-16 UTC).
 Scoped maintenance D-E11-REVIEW-RESUME-1 supersedes the recovery policy below:
 read single-shot-development.md. New `resume-interrupted` transitions allow only
 verify/review, ONCE per target/phase, and consume one journal action before the
 normal subsequent claim. Preserve old events/counters; legacy recoveries replay
 unchanged but count toward this cap. No write-phase or defect recovery, changed
 candidate/manifest/verification, application merge, E11 start or CI waiver.
-Catalog instruction alignment is pending publication; old release proofs below
-remain historical facts, not the new transition's policy or runtime acceptance.
+Source !67 and coordinator-only E11 sync !68 merged with independent local review
+and passing pipelines 2957153072/2957153152. Full saved prompt/YAML matches source
+45d5719 after final-newline removal; tools/access/triggers unchanged. The ticket
+stays 1e866717; checkpoint 4032513487 is untouched. Live recovery remains pending;
+old release proofs below are historical, not the current transition policy.
 
 Published/read back **Project v1.10.0 / Development v1.12.0** (2026-10-16 UTC):
 read single-shot-development.md's interrupted-phase recovery protocol. Source !64
