@@ -10,6 +10,21 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Published/read back **Project v1.10.0 / Development v1.12.0** (2026-10-16 UTC):
+read single-shot-development.md's interrupted-phase recovery protocol. Source !64
+and coordinator-only E11 sync !65 passed CI and independent local review and merged.
+`resume-interrupted` reopens only an unfinished read-only phase at the unchanged
+candidate/manifest, after terminal session/job, ownership and missing-result
+verification. Two recoveries per target/phase accumulate across SHAs/sessions;
+old retries, repairs, actions and notes remain unchanged. A failed session can
+have a successful wrapper job with a lost delegation stream; elapsed time alone
+does not prove a hard limit. Reviewers use exact-SHA bounded retrieval and save
+partial progress without claiming approval. Ticket ctx/ticket-i13 stays 1e866717;
+no E11 continuation, checkpoint rewrite, application merge or deployment occurred.
+The source-security application gate remains unconfigured and unwaived. Live
+interrupted-review recovery remains pending. Earlier publication records below
+are historical, not current versions or fresh runtime evidence.
+
 Published/read back **Project v1.9.0 / Development v1.11.0** (2026-10-16 UTC):
 read docs/development/automatic-acceptance.md. Acceptance scope/browser requirements
 come from committed plan/branch/candidate context, not manual pipeline variables.
