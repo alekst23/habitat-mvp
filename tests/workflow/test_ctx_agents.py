@@ -25,7 +25,7 @@ class ChatAgentRegistrationTests(unittest.TestCase):
             "catalog_item_id": 1016234,
             "consumer_id": 12316920,
             "name": "CTX Development",
-            "catalog_version_at_verification": "1.12.0",
+            "catalog_version_at_verification": "1.13.0",
             "verified_on": "2026-10-16",
             "runtime_version_policy": "gitlab_configured_consumer",
         })
