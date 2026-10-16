@@ -303,7 +303,8 @@ must be gitlab-ai-hackathon/transcend-october-2026/43066631/showcase.
    identity; a different consumer requires a separately reviewed binding update,
    not an inferred replacement. Duplicate/conflicting entries block selection.
 3. Check the binding's item ID/URL against the Development catalog record. Require
-   its recorded release to match catalog_version_at_verification (currently 1.10.0).
+   its recorded release to match catalog_version_at_verification in that reviewed
+   default-branch binding; do not use historical release receipts as the current version.
    A pending/candidate version is not the published record. If publication changes,
    reverify the project flow in the UI and update the binding through review.
 4. When a tool exposes catalog/version/project fields, compare them and stop on
