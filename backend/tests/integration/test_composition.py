@@ -92,7 +92,7 @@ def test_build_ports_requires_exactly_the_clock_and_ignores_later_ticket_ports(b
 
 @pytest.mark.ac("E11-1.AC1", code="backend/aicl/app.py:create_app")
 def test_create_app_migrates_imports_prices_starts_with_empty_extension_points_and_gates_test_routes(base_env, tmp_path):
-    assert routes.ROUTE_FACTORIES == () and hooks.STARTUP_HOOKS == ()
+    assert len(routes.ROUTE_FACTORIES) == 1 and hooks.STARTUP_HOOKS == ()  # E11-2 slice 1: app-tools router registered
 
     dev = create_app(Settings.from_env(base_env))
     with TestClient(dev) as client:

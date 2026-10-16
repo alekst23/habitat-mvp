@@ -12,8 +12,8 @@ NOT_WIRED = "E11-2 seam is not wired: implementation phase must construct this s
 
 def instance_operations(env):
     """-> InstanceOperations (aicl.creation.operations) over env.db/clock/audit/budget."""
-    from aicl.creation.operations import UnimplementedInstanceOperations
-    return UnimplementedInstanceOperations()
+    from aicl.creation.operations import SqliteInstanceOperations
+    return SqliteInstanceOperations(env.db, env.clock, env.budget.hold_stale_seconds)
 
 
 def connection_service(env, oauth, secret_store, public_base_url="http://127.0.0.1:4173"):
