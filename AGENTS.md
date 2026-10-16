@@ -10,6 +10,14 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Checkpoint identity repair: read docs/development/checkpoint-publication.md.
+GitLab composite OAuth may resolve `/user` to the triggering human. The helper
+verifies the service-account OAuth owner and scoped-user binding using read-only
+introspection; it does NOT accept personal tokens or human-authored checkpoints.
+Use its safe `identity` diagnostic, never inspect/print tokens. No E11 continuation
+is authorized by this maintenance change; preserve checkpoint 4019881978, notes,
+budgets, exclusions and application MRs !45/!48. Catalog v1.10.0 is unchanged.
+
 Model compatibility update (2026-10-15 UTC): read the first section of
 docs/development/project-discovery.md before diagnosing recurring session filters.
 GitLab's upstream GPT/Responses optional-argument defect has a merged, feature-flagged

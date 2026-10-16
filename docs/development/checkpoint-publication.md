@@ -43,6 +43,40 @@ budgets or duplicate active work. The live acceptance checks below remain requir
 
 ## Failure and repair boundary
 
+### Composite-identity repair (candidate; live verification pending)
+
+Sessions **9576995** and **9577108** stopped before dispatch because the old helper
+equated `/api/v4/user.id` with the checkpoint author. The first
+[stop report](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4025119435)
+reports `administrator106` / **43066631**; the second
+[report](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4025138079)
+confirms the same rejection but does not expose the resolved ID. Neither report
+alone verifies the OAuth token owner. Changing the trigger path is not a remedy.
+
+GitLab's [composite identity](https://docs.gitlab.com/user/duo_agent_platform/composite_identity/)
+has a service-account OAuth owner and a human scoped user. Its
+[API authentication resolver](https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/auth/auth_finders.rb)
+returns the scoped user for composite authentication; its
+[scope parser](https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/authn/scoped_user_extractor.rb)
+uses exactly one `user:<id>` scope. A human `/user` result does not mean a personal
+token was injected. The new helper checks the actual OAuth owner through the
+documented [token information endpoint](https://docs.gitlab.com/api/oauth2/#retrieve-the-token-information),
+then binds `/user` to that verified composite identity. It still trusts only
+**43132375** as the checkpoint author, not arbitrary human-authored notes.
+
+The read-only diagnostic is `python scripts/ctx_checkpoint.py identity`. It returns
+only project, OAuth-owner, scoped-user, effective-user and checkpoint-author IDs
+plus a verification result. It never returns token values, raw introspection/user
+responses, application metadata or headers. Run it only in a separately authorized
+maintenance diagnostic using the existing injected credential; do not start E11 to
+test this repair. An introspection denial or identity mismatch fails closed without
+falling back to `/user` alone, a personal token, new scopes or a changed writer list.
+
+This is a helper/guide-only change: the existing v1.10.0 catalog prompt already
+loads this guide and helper, so no catalog version/tool/trigger change is required.
+Independent review and helper synchronization must precede E11 use. Retain the
+seven exclusions, checkpoint **4019881978**, all notes, budgets and app MRs !45/!48.
+
 E11's [session 9530877 stop report](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4020469403)
 identifies repeated transcription of an approximately 54 KB owner payload. Copies
 invented resource entries or omitted history; exact comparison and continuation
@@ -58,8 +92,12 @@ budgets, alters review gates, or edits/deletes notes. The controller is unaffect
 The official [custom-flow authentication contract](https://docs.gitlab.com/user/duo_agent_platform/flows/custom/#authenticate-to-the-gitlab-api)
 provides an injected OAuth credential as `GITLAB_TOKEN` / `GITLAB_OAUTH_TOKEN`;
 scripts must send `Authorization: Bearer`, not `PRIVATE-TOKEN`. Only this reviewed
-helper reads that credential in memory. It checks the CI project/origin and actual
-`/user` identity against CTX Development service account **43132375**, pins
+helper reads that credential in memory. It checks the CI project/origin, requires
+`/oauth/token/info.resource_owner_id` to equal **43132375**, a positive expiry,
+`ai_workflows`, exactly one `user:<id>` scope and optional `mcp` only. It verifies
+`/user.id` is that scoped user (or the same service account for compatible older
+API behavior). A different owner, absent/ambiguous binding or broader scope fails
+closed. Note selection and exact readback still require author **43132375**. It pins
 GitLab.com and Showcase **87329027**, refuses redirects/proxies, and exposes only
 identity reads plus issue-note list/get/create endpoints. No token flag, arbitrary
 URL, generic API verb, personal/controller credential, CLI credential store or new
