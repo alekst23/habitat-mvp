@@ -94,6 +94,15 @@ class Database:
             conn.close()
 
     @contextmanager
+    def snapshot_reader(self) -> Iterator[Connection]:
+        """A short-lived connection that always sees committed state only (never the open unit of work)."""
+        conn = self._connect()
+        try:
+            yield conn
+        finally:
+            conn.close()
+
+    @contextmanager
     def transaction(self) -> Iterator[Connection]:
         """One BEGIN IMMEDIATE transaction; commit on success, roll back on error; lock timeout is
         AiclError('unavailable'). An exception with `commit_on_error` True still commits (a durable

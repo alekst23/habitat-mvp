@@ -27,7 +27,7 @@ from aicl.creation.models import MutationResult
 from aicl.creation.service import (
     DEFAULT_HOLD_STALE_SECONDS, NOT_IMPLEMENTED, read_instance_snapshot_conn, validation_failed,
 )
-from aicl.db import Database, to_iso
+from aicl.db import Database, from_iso, to_iso
 from aicl.network.policy import MAX_OWNER_DOMAINS, normalize_owner_domain
 
 GateControlResult = Literal["permits", "still_denied"]
@@ -40,12 +40,16 @@ def host_hash12(host: str) -> str:
 
 
 def _budget_permits(conn: Connection, instance: AgentInstance, clock: Clock, hold_stale_seconds: int) -> bool:
+    """All four windows must have available > 0, measured in the windows that were current when the gate was
+    persisted (`gated_at`), so a window rollover alone never clears a gate (D11-8)."""
     try:
         now = clock.now()
         if effective_version(conn, now) is None:
             return False
-        view = SqliteBudgetPort(Database.current(), clock, hold_stale_seconds).read_budget(instance.id)
-        return all(w.available > 0 for windows in view.windows.values() for w in windows.values())
+        row = conn.execute("SELECT * FROM agent_instance WHERE id = ?", (instance.id,)).fetchone()
+        at = from_iso(row["gated_at"]) if row["gated_at"] else now
+        amounts = SqliteBudgetPort(Database.current(), clock, hold_stale_seconds)._amounts(conn, row, at)
+        return all(w.available > 0 for windows in amounts.values() for w in windows.values())
     except Exception:  # unreadable state never permits
         return False
 
@@ -168,7 +172,11 @@ class SqliteInstanceOperations:
         current = _fetch(conn, auth, instance_id)
         if current.gated_reason is not None and evaluate_gate_control(
                 conn, current, self.clock, self.hold_stale_seconds) == "permits":
-            self.instances.clear_gated(conn, auth, instance_id)
+            self._clear_gate(conn, auth, instance_id)
+
+    def _clear_gate(self, conn: Connection, auth: AuthContext, instance_id: str) -> None:
+        self.instances.clear_gated(conn, auth, instance_id)
+        conn.execute("UPDATE agent_instance SET gated_at = NULL WHERE id = ?", (instance_id,))
 
     def _result(self, conn: Connection, auth: AuthContext, instance_id: str, changed: bool,
                 event_seq: int | None) -> MutationResult:
@@ -260,7 +268,7 @@ class SqliteInstanceOperations:
             if instance.gated_reason is None:
                 return self._result(conn, auth, instance_id, False, None)
             if evaluate_gate_control(conn, instance, self.clock, self.hold_stale_seconds) == "permits":
-                self.instances.clear_gated(conn, auth, instance_id)
+                self._clear_gate(conn, auth, instance_id)
                 self._bump(conn, auth, instance_id)
                 event = self._event(conn, auth, instance_id, "instance.gate_resolved", {})
                 return self._result(conn, auth, instance_id, True, event.seq)

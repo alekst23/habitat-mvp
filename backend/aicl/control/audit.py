@@ -102,7 +102,7 @@ class SqliteAuditLog:
             clause += " AND seq > ?"
             params.append(after_seq)
         params.append(max(1, min(int(limit), MAX_PAGE)))
-        with Database.current().reader() as conn:
+        with Database.current().snapshot_reader() as conn:  # readers see committed events only
             rows = conn.execute(f"SELECT * FROM audit_event WHERE {clause} ORDER BY seq DESC LIMIT ?", params)
             return [_to_event(r) for r in rows]
 

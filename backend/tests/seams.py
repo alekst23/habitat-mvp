@@ -43,6 +43,7 @@ def credential_broker(env, oauth, secret_store, resolver):
 def work_gate(env, executor, resolver, oauth=None, secret_store=None):
     """-> WorkAuthorization wired to env.budget/confirmations/audit and the given fakes."""
     from aicl.work.gate import SqliteWorkGate
+    env.confirmations.clock = env.clock  # confirmation expiry follows the controllable test clock
     return SqliteWorkGate(env.db, env.clock, env.budget, env.confirmations, executor, resolver,
                           env.budget.hold_stale_seconds)
 

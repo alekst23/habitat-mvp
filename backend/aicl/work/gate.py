@@ -246,20 +246,19 @@ class SqliteWorkGate:
     def _check_confirmation(self, auth, instance, request, computed) -> str:
         now = self.clock.now()
         with self.db.reader() as conn:
-            latest = conn.execute(
+            rows = conn.execute(
                 "SELECT * FROM action_confirmation WHERE instance_id = ? AND capability = ? AND tenant_id = ? "
-                "ORDER BY created_at DESC, rowid DESC LIMIT 1", (instance.id, request.capability,
-                                                                 auth.tenant_id)).fetchone()
+                "ORDER BY created_at DESC, rowid DESC", (instance.id, request.capability, auth.tenant_id)).fetchall()
+        for row in rows:  # a usable confirmation for exactly this payload
+            if row["payload_digest"] == computed and row["used_at"] is None and from_iso(row["expires_at"]) > now:
+                return row["id"]
+        latest = rows[0] if rows else None  # otherwise the most recent confirmation decides the denial
         if latest is not None:
-            expired = from_iso(latest["expires_at"]) <= now
+            live = latest["used_at"] is None and from_iso(latest["expires_at"]) > now
             if latest["payload_digest"] == computed:
-                if latest["used_at"] is not None:
-                    raise Denied("confirmation_used")
-                if expired:
-                    raise Denied("confirmation_expired")
-                return latest["id"]
-            if latest["used_at"] is None and not expired:
-                raise Denied("confirmation_mismatch")
+                raise Denied("confirmation_used" if latest["used_at"] is not None else "confirmation_expired")
+            if live:
+                raise Denied("confirmation_mismatch")  # a live confirmation exists for a different payload
         raise Denied("confirmation_required", pending_action_id=self._pending_action(auth, instance, request, computed))
 
     def _pending_action(self, auth, instance, request, computed) -> str:
@@ -342,7 +341,12 @@ class SqliteWorkGate:
 
     # -- dispatch and outcome handling ---------------------------------------------------------
     def _dispatch(self, auth, request, hold: Hold, attachment_id, destination) -> WorkResult:
-        work = AuthorizedWork(request.work_id, request.instance_id, request.capability, dict(request.payload),
+        payload = dict(request.payload)
+        if "sim" not in payload and request.estimate is not None:  # simulated work without a script uses its bound
+            payload["sim"] = {"input_tokens": request.estimate.inference_input_tokens,
+                              "output_tokens": request.estimate.inference_output_tokens,
+                              "compute_minutes": request.estimate.compute_minutes}
+        work = AuthorizedWork(request.work_id, request.instance_id, request.capability, payload,
                               hold.id, attachment_id, destination)
         pool = ThreadPoolExecutor(max_workers=1)
         try:
@@ -387,6 +391,8 @@ class SqliteWorkGate:
                 current = self.instances.get(auth, request.instance_id)
                 if current.lifecycle == "active" and (current.gated_reason, current.gate_context) != (reason, context):
                     self.instances.set_gated(conn, auth, request.instance_id, reason, context)
+                    conn.execute("UPDATE agent_instance SET gated_at = ? WHERE id = ?",
+                                 (to_iso(self.clock.now()), request.instance_id))
                     self.audit.append(conn, AuditEvent(
                         "instance.gated", "gate", "committed", auth.tenant_id, auth.owner_id, request.instance_id,
                         details={"denial_reason": reason}))
