@@ -1,11 +1,110 @@
 # Exact native checkpoint publication
 
-Status: **local candidate, not published** (2026-10-15). Intended releases are
-Project v1.6.0 and Development v1.10.0. Live versions remain Project v1.5.0 and
-Development v1.9.0 until reviewed merge, helper synchronization where required,
-catalog publication and full readback. No product run is authorized by this change.
+Status: **Project v1.6.0 and Development v1.10.0 published and enabled**, with full
+saved-definition readback on 2026-10-15 UTC. Source and E11 helper synchronization
+are merged. Live checkpoint/recovery acceptance remains pending; publication did
+not start or authorize an application run.
+
+## Publication evidence
+
+- [Source !49](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/49)
+  at `9522bf6c39e6564047a5ea9d775f69de90828f41` merged main at
+  `75442835aaecff7fa0f9e0d5b96cd2f7620b7996`. Independent follow-up review
+  [4021263981](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/49#note_4021263981)
+  confirmed the definite-rejection retry repair and no remaining findings.
+- [E11 helper sync !50](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/50)
+  at `5fc20b08e101f6647c6214702193c49ead3cf4ef` merged `ctx/epic-i11` at
+  `71016e8be0c87217ff89f834a7156a017c5a8de7` after independent review
+  [4021234416](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/50#note_4021234416).
+  All 17 changed paths are workflow files. E11 design/plan and application
+  verification/acceptance adapters remain byte-identical to `7ad45df2`.
+- Workflow validation, design validation and workflow tests passed in pipelines
+  [2951370940](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2951370940)
+  and [2951372315](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2951372315).
+  **Overall pipelines failed:** main has no configured application verify adapter;
+  E11 has no `backend/tests/` yet. The user explicitly approved these workflow-only
+  merges despite those failures. No CI settings, job rules or protections changed;
+  these are not application acceptance passes.
+- [CTX Project v1.6.0](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agents/1016538):
+  all 30,633 saved prompt bytes equal reviewed source with the final newline
+  removed; SHA-256 `cc4dcc0bbea23c0c717546710849ea6a58dfebc7dc3509fc50a574e0b033a7b7`.
+  Enabled/private, unchanged description, exact 24 tools and no MCP read back.
+- [CTX Development v1.10.0](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234):
+  all 40,852 saved YAML bytes equal reviewed source with the final newline
+  removed; SHA-256 `dade03331949cede1e5089d75766be7a38b3adc4cdaf7485c65a4371b461791d`.
+  Enabled/private, unchanged description/tools, 64 delegations, same service account
+  and active Mention/Assign/Assign reviewer triggers read back.
+
+No application MR was merged, source checkpoint rewritten or note deleted. No
+application session was started. To resume the previously approved objective, open
+a **new CTX Project chat** and send **`Continue E11 using issue #11.`** Project must
+reconcile current sessions/state first and use the existing authority, not reset
+budgets or duplicate active work. The live acceptance checks below remain required.
 
 ## Failure and repair boundary
+
+### Composite-identity repair (live identity/attribution verified)
+
+On 2026-10-16 UTC, isolated maintenance [session 9577889](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agent-sessions/9577889)
+ran reviewed source `9eabc5f05b5b312b7605075616e47f04a8b500bb` on maintenance
+issue **#17**, not E11. Its [receipt 4025295779](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/17#note_4025295779)
+records `oauth_owner_id=43132375`, `scoped_user_id=43066631` and
+`effective_user_id=43066631`. The one retained, non-checkpoint
+[probe 4025295291](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/17#note_4025295291)
+was created/read back through the helper, with exact body equality and actual
+server author **43132375**. The saved probe was independently inspected in GitLab.
+No token/raw credential response was printed. No E11 state was read or changed,
+and no worker, checkpoint, budget change or application execution occurred.
+
+This confirms the current runtime mechanism, not retrospective introspection of
+the credentials from the two earlier sessions. It proves identity and
+plain-note attribution; full E11 checkpoint recovery/publication remains unrun.
+Independent source follow-up [review 4025286642](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/57#note_4025286642)
+found no new issues after separating required author policy from observed identity.
+Source rollout is tracked by !57; the three-file helper/test/guide synchronization
+into `ctx/epic-i11` is !58. Verify their actual merge state before E11 use.
+
+Sessions **9576995** and **9577108** stopped before dispatch because the old helper
+equated `/api/v4/user.id` with the checkpoint author. The first
+[stop report](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4025119435)
+reports `administrator106` / **43066631**; the second
+[report](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4025138079)
+confirms the same rejection but does not expose the resolved ID. Neither report
+alone verifies the OAuth token owner. Changing the trigger path is not a remedy.
+
+GitLab's [composite identity](https://docs.gitlab.com/user/duo_agent_platform/composite_identity/)
+has a service-account OAuth owner and a human scoped user. Its
+[API authentication resolver](https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/auth/auth_finders.rb)
+returns the scoped user for composite authentication; its
+[scope parser](https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/authn/scoped_user_extractor.rb)
+uses exactly one `user:<id>` scope. A human `/user` result does not mean a personal
+token was injected. The new helper checks the actual OAuth owner through the
+documented [token information endpoint](https://docs.gitlab.com/api/oauth2/#retrieve-the-token-information),
+then binds `/user` to that verified composite identity. It still trusts only
+**43132375** as the checkpoint author, not arbitrary human-authored notes.
+
+The read-only diagnostic is `python scripts/ctx_checkpoint.py identity`. It returns
+only project, OAuth-owner, scoped-user, effective-user and required note-author IDs
+plus a verification result. It never returns token values, raw introspection/user
+responses, application metadata or headers. Run it only in a separately authorized
+maintenance diagnostic using the existing injected credential; do not start E11 to
+test this repair. An introspection denial or identity mismatch fails closed without
+falling back to `/user` alone, a personal token, new scopes or a changed writer list.
+
+`required_note_author_id` is policy, not observed POST attribution. The separate
+live probe above verifies attribution for this direct transport/source. For a changed
+transport or unresolved attribution, before using it on E11 make one non-checkpoint
+probe on a separate maintenance issue using this
+helper's authenticated `create`/`get` path; verify the actual server author and exact
+body. Retain the probe, never repeat an uncertain POST, and do not add a marker or
+owner payload. If the author differs, stop and repair the transport through review;
+do not admit human-authored checkpoints or probe the E11 chain. Identity-only
+success and fixture round trips are not live publication acceptance.
+
+This is a helper/guide-only change: the existing v1.10.0 catalog prompt already
+loads this guide and helper, so no catalog version/tool/trigger change is required.
+Independent review and helper synchronization must precede E11 use. Retain the
+seven exclusions, checkpoint **4019881978**, all notes, budgets and app MRs !45/!48.
 
 E11's [session 9530877 stop report](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4020469403)
 identifies repeated transcription of an approximately 54 KB owner payload. Copies
@@ -22,8 +121,12 @@ budgets, alters review gates, or edits/deletes notes. The controller is unaffect
 The official [custom-flow authentication contract](https://docs.gitlab.com/user/duo_agent_platform/flows/custom/#authenticate-to-the-gitlab-api)
 provides an injected OAuth credential as `GITLAB_TOKEN` / `GITLAB_OAUTH_TOKEN`;
 scripts must send `Authorization: Bearer`, not `PRIVATE-TOKEN`. Only this reviewed
-helper reads that credential in memory. It checks the CI project/origin and actual
-`/user` identity against CTX Development service account **43132375**, pins
+helper reads that credential in memory. It checks the CI project/origin, requires
+`/oauth/token/info.resource_owner_id` to equal **43132375**, a positive expiry,
+`ai_workflows`, exactly one `user:<id>` scope and optional `mcp` only. It verifies
+`/user.id` is that scoped user (or the same service account for compatible older
+API behavior). A different owner, absent/ambiguous binding or broader scope fails
+closed. Note selection and exact readback still require author **43132375**. It pins
 GitLab.com and Showcase **87329027**, refuses redirects/proxies, and exposes only
 identity reads plus issue-note list/get/create endpoints. No token flag, arbitrary
 URL, generic API verb, personal/controller credential, CLI credential store or new
