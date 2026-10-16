@@ -46,6 +46,7 @@ EVIDENCE_MAINTENANCE_PATHS = frozenset({
     "docs/development/acceptance-evidence.md", "docs/development/browser-checks.md",
     "docs/development/single-shot-development.md", "docs/development/next-action.md",
     "docs/development/automatic-acceptance.md", "docs/development/gitlab-workflow.md",
+    "docs/development/project-discovery.md", "docs/development/project-session-handoff.md",
     "tests/workflow/test_ctx_ci_context.py", "tests/workflow/test_ctx_acceptance.py",
     "tests/workflow/test_ctx_development_evidence_resume.py", "tests/workflow/test_ctx_delivery.py",
     "tests/workflow/test_ctx_workflow.py", "tests/workflow/test_ctx_verify_backend.py",
