@@ -12,12 +12,14 @@ import urllib.request
 from pathlib import Path
 
 import pytest
+from fastapi import Depends
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from aicl import hooks, routes
 from aicl.app import create_app
 from aicl.clock import FakeClock
+from aicl.control.csrf import require_csrf
 from aicl.ports import REQUIRED_PORTS, Ports, build_ports
 from aicl.settings import Settings
 from support import STARTUP_FAILURES
@@ -143,3 +145,25 @@ def test_test_server_module_serves_the_app_with_test_routes_on_loopback(tmp_path
     finally:
         proc.terminate()
         proc.wait(timeout=10)
+
+
+@pytest.mark.ac("E11-1.AC1", code="backend/aicl/control/csrf.py:require_csrf")
+def test_require_csrf_dependency_authenticates_then_checks_token_and_origin(base_env, tmp_path):
+    app = create_app(Settings.from_env({**base_env, **TEST_FLAGS, "AICL_DATABASE_URL": f"sqlite:///{tmp_path / 'csrf.db'}"}))
+
+    @app.post("/__csrf_probe__")
+    def probe(auth=Depends(require_csrf(app.state.ctx))):
+        return {"owner_id": auth.owner_id}
+
+    own_origin = app.state.ctx.settings.public_base_url
+    with TestClient(app) as anonymous:
+        denied = anonymous.post("/__csrf_probe__", headers={"x-csrf-token": "fixture-csrf-token"})
+        assert denied.status_code == 401 and denied.json()["error"] == "unauthenticated"
+    with TestClient(app) as client:
+        seeded = client.post("/__test__/seed-session", json={"fixture": "owner-a"}).json()
+        for headers in ({}, {"x-csrf-token": "wrong"}, {"x-csrf-token": seeded["csrf_token"], "origin": "http://evil.example"}):
+            refused = client.post("/__csrf_probe__", headers=headers)
+            assert refused.status_code == 403, headers
+            assert refused.json()["error"] == "denied" and refused.json()["reason"] == "csrf_failed"
+        ok = client.post("/__csrf_probe__", headers={"x-csrf-token": seeded["csrf_token"], "origin": own_origin})
+        assert ok.status_code == 200 and ok.json() == {"owner_id": seeded["owner_id"]}

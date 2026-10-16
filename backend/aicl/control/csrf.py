@@ -5,6 +5,8 @@ from __future__ import annotations
 import hmac
 from typing import Callable, Protocol
 
+from fastapi import Request
+
 from aicl.control.auth import AuthContext
 from aicl.control.errors import AiclError
 
@@ -39,8 +41,6 @@ class FixedCsrfVerifier:
 def require_csrf(ctx: object) -> Callable[..., object]:
     """Shared FastAPI dependency factory for every non-GET route. `ctx` is the AppContext; the
     dependency authenticates the session cookie, then checks `X-CSRF-Token` and `Origin`."""
-    from fastapi import Request
-
     def dependency(request: Request) -> AuthContext:
         auth = ctx.auth_provider.resolve(dict(request.cookies))
         if auth is None:
