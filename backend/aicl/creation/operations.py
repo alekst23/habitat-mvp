@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import uuid
 from sqlite3 import Connection
 from typing import Callable, Literal, Protocol
 
@@ -270,7 +271,48 @@ class SqliteInstanceOperations:
             raise error
 
     def attach_connection(self, auth, instance_id, expected_version, capability, connection_id):
-        raise NotImplementedError(NOT_IMPLEMENTED)
+        def apply(conn, instance):
+            from aicl.connections.models import CAPABILITY_SCOPES
+            from aicl.connections.service import fetch_connection
+            connection = fetch_connection(conn, auth, connection_id)
+            spec = CAPABILITY_SCOPES.get(capability)
+            if spec is None or spec[0] != connection.provider:
+                raise validation_failed(("capability", "provider_mismatch"))
+            if connection.status != "active":
+                raise validation_failed(("connection_id", "connection_not_active"))
+            if spec[1] not in connection.granted_scopes:
+                raise validation_failed(("capability", "scope_missing"))
+            current = conn.execute(
+                "SELECT id, connection_id FROM connection_attachment WHERE instance_id = ? AND capability = ? "
+                "AND detached_at IS NULL", (instance_id, capability)).fetchone()
+            if current is not None and current["connection_id"] == connection_id:
+                return False, None
+            now = to_iso(self.clock.now())
+            if current is not None:
+                conn.execute("UPDATE connection_attachment SET detached_at = ? WHERE id = ?", (now, current["id"]))
+            conn.execute(
+                "INSERT INTO connection_attachment (id, instance_id, capability, connection_id, owner_id, "
+                "tenant_id, created_at) VALUES (?,?,?,?,?,?,?)",
+                (str(uuid.uuid4()), instance_id, capability, connection_id, auth.owner_id, auth.tenant_id, now))
+            self._bump(conn, auth, instance_id)
+            event = self._event(conn, auth, instance_id, "connection.attached",
+                                {"capability": capability, "connection_id": connection_id,
+                                 "provider": connection.provider}, connection_id=connection_id)
+            return True, event.seq
+        return self.mutate(auth, instance_id, expected_version, apply)
 
     def detach_connection(self, auth, instance_id, expected_version, capability):
-        raise NotImplementedError(NOT_IMPLEMENTED)
+        def apply(conn, instance):
+            current = conn.execute(
+                "SELECT id, connection_id FROM connection_attachment WHERE instance_id = ? AND capability = ? "
+                "AND detached_at IS NULL", (instance_id, capability)).fetchone()
+            if current is None:
+                return False, None
+            conn.execute("UPDATE connection_attachment SET detached_at = ? WHERE id = ?",
+                         (to_iso(self.clock.now()), current["id"]))
+            self._bump(conn, auth, instance_id)
+            event = self._event(conn, auth, instance_id, "connection.detached",
+                                {"capability": capability, "connection_id": current["connection_id"]},
+                                connection_id=current["connection_id"])
+            return True, event.seq
+        return self.mutate(auth, instance_id, expected_version, apply, reevaluate=False)

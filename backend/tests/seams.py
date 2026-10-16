@@ -18,22 +18,26 @@ def instance_operations(env):
 
 def connection_service(env, oauth, secret_store, public_base_url="http://127.0.0.1:4173"):
     """-> ConnectionService (begin_oauth/complete_oauth/revoke_connection) over the given fake ports."""
-    raise NotImplementedError(NOT_WIRED)
+    from aicl.connections.service import SqliteConnectionService
+    return SqliteConnectionService(env.db, env.clock, oauth, secret_store, public_base_url)
 
 
 def revocation_sweeper(env, oauth, secret_store):
     """-> RevocationSweeper with run_once()."""
-    raise NotImplementedError(NOT_WIRED)
+    from aicl.connections.service import SqliteRevocationSweeper
+    return SqliteRevocationSweeper(env.db, env.clock, secret_store)
 
 
 def aes_secret_store(key: bytes):
     """-> the AES-256-GCM SecretStore built from a 32-byte key."""
-    raise NotImplementedError(NOT_WIRED)
+    from aicl.connections.ports import AesGcmSecretStore
+    return AesGcmSecretStore(key)
 
 
 def credential_broker(env, oauth, secret_store, resolver):
     """-> CredentialBroker."""
-    raise NotImplementedError(NOT_WIRED)
+    from aicl.connections.service import SqliteCredentialBroker
+    return SqliteCredentialBroker(env.db, env.clock, oauth, secret_store, resolver)
 
 
 def work_gate(env, executor, resolver, oauth=None, secret_store=None):

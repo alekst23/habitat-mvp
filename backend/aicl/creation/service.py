@@ -129,4 +129,8 @@ def read_instance_snapshot_conn(conn: Connection, auth: AuthContext, instance_id
 
 
 def _attachments(conn: Connection, instance_id: str) -> tuple[AttachmentView, ...]:
-    return ()
+    rows = conn.execute(
+        "SELECT a.capability, a.connection_id, c.display_name, c.status FROM connection_attachment a "
+        "JOIN connection c ON c.id = a.connection_id WHERE a.instance_id = ? AND a.detached_at IS NULL "
+        "ORDER BY a.capability", (instance_id,))
+    return tuple(AttachmentView(r["capability"], r["connection_id"], r["display_name"], r["status"]) for r in rows)
