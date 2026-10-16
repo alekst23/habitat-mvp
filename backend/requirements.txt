@@ -1,0 +1,10 @@
+# E11-1 pinned backend dependencies (architecture.md stack). Later tickets add only their own entries.
+# Shared pins must equal requirements-workflow.txt (pytest, PyYAML).
+fastapi==0.115.6
+uvicorn==0.34.0
+jinja2==3.1.5
+pydantic==2.10.4
+httpx==0.28.1
+python-multipart==0.0.20
+PyYAML==6.0.3
+pytest==9.1.1

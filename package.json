@@ -2,9 +2,9 @@
   "name": "habitat",
   "private": true,
   "version": "0.0.0",
-  "description": "Browser-harness manifest only; E11-1 supplies start:test (python -m aicl.test_server) and tests/browser.",
+  "description": "Browser-harness manifest only; start:test runs python -m aicl.test_server; browser tests live in tests/browser.",
   "scripts": {
-    "start:test": "node -e \"console.error('start:test is not configured: E11-1 must deliver python -m aicl.test_server'); process.exit(1)\""
+    "start:test": "PYTHONPATH=backend python -m aicl.test_server"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0"
