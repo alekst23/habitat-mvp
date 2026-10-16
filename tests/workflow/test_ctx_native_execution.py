@@ -175,6 +175,7 @@ class NativeAdmissionTests(unittest.TestCase):
         self.assertLessEqual(len(flow_path.read_bytes()), 40960)
         self.assertIn("resume-interrupted", flow_path.read_text())
         self.assertEqual(catalog["published_source_commit"], "c7b38df4ff28d22db539feb1670c267952369b1a")
+        self.assertTrue(catalog["source_merge_request"].endswith("/merge_requests/64"))
         self.assertEqual(catalog["publication_history"][-1]["catalog_version"], "1.11.0")
         self.assertEqual(catalog["publication_history"][-1]["published_definition_sha256"],
                          "edd61f87b3de0732683b7a47db4e16d77455d25a3d96449a252c9523145f4899")
