@@ -571,8 +571,8 @@ without claiming the old runtime's exact wrapping was observed.
 
 The old one-per-target transient `retry` remains unchanged. It is not the recovery
 budget for every review in a multi-session objective. An idle v2 journal whose
-latest receipt is `blocked/transient` at `verify`, `review`, `epic_review` or
-`design_review` exposes `owner_action.action=reconcile_interruption`. This does
+latest receipt is `blocked/transient` at `verify` or `review`
+exposes `owner_action.action=reconcile_interruption`. This does
 not establish eligibility by itself. The coordinator must first reconcile the
 actual failed/canceled session, its terminal runner job, current head/manifest,
 ownership, reports and artifacts. Adopt a valid saved final result rather than
@@ -605,14 +605,14 @@ success: session 9621826 failed while job 17244915866 exited zero, reporting a
 lost stream and an unfinished review delegation. Record `stream_lost` for that
 case; do not infer a hard execution limit merely from elapsed time.
 
-Recovery appends an `interruption_resume` event and reopens the SAME phase; it
-never advances it or grants a passing verdict. There are TWO recoveries per
-target/phase, cumulative across SHAs and sessions, separate from the unchanged
-old retry counter. No fallback to the old retry after this recovery cap is spent.
-Do not refund actions, repairs or reservations. Every following claim consumes
-the normal cumulative action/session allowances; checkpoint when either is spent.
-Review/epic-review requires the saved current-SHA passing verification; design
-review requires the saved current design revision. Reverify remote evidence and
+Recovery appends an `interruption_resume` event with the next integer `action`
+and reopens the SAME phase; it never advances it or grants a passing verdict.
+There is ONE recovery per target/phase, cumulative across SHAs and sessions,
+separate from the unchanged old retry counter. The transition consumes one
+journal action; the subsequent claim also consumes its normal action and session
+allowances. No fallback to the old retry after this recovery cap is spent.
+Do not refund actions, repairs or reservations; checkpoint when a limit is spent.
+Review requires the unchanged saved current-SHA passing verification. Reverify remote evidence and
 independent-review provenance before delegating. A changed candidate is not
 eligible for this same-SHA transition.
 
@@ -621,8 +621,8 @@ reviewer's saved partial checks and exact remaining work, candidate SHA and
 `save_by`; follow ctx-ticket-review's bounded retrieval and partial-save rules.
 The independent reviewer still owes a complete AC matrix/verdict. All security,
 merge and deployment controls remain in force, including source-security.
-If the next attempt is interrupted, reconcile it anew; never reuse the same
-session/job evidence to buy repeated recoveries. Exhaustion needs a precise
+If the next attempt is interrupted, reconcile saved work but do not reopen that
+target/phase again. Never reuse session/job evidence for another phase. Exhaustion needs a precise
 maintenance/access handoff, not a recommendation to bypass independent review.
 
 For the E11 repair, sync the coordinator helper/guides from reviewed workflow
@@ -631,6 +631,20 @@ candidate. The flow reads trusted default-revision coordination code. Preserve
 candidate `1e86671774206eb0cb7eb4c97867fc91a8c6a401`, its evidence and existing
 checkpoint notes; only the next authorized native continuation creates a new
 receipt/checkpoint. Publishing maintenance does not itself resume E11.
+
+Decision D-E11-REVIEW-RESUME-1 (source #11 note 4032629864) narrows the earlier
+published two-recovery policy. For checkpoint 4032513487, retain all 17 consumed
+actions, E11-2 retry 1, repairs 0 and every event. A valid recovery of review
+attempt 17 charges action 18; the following review claim charges action 19.
+Do not edit that checkpoint or failure report 4032512218. Preserve candidate
+1e866717 and the pinned manifest SHA-256; no ticket-branch helper sync is needed.
+
+Legacy unmetered `interruption_resume` events remain replayable under their
+original rules (including their original phases/cap); never rewrite or recharge
+them. They count toward the new one-use cap. New CLI transitions always emit a
+metered event; legacy events cannot follow a metered recovery. The compatibility
+reader is not permission to append old-format events or hand-edit counters.
+Remote checkpoint provenance and full history-prefix checks remain mandatory.
 
 ### Automatic CI scope and evidence recovery
 

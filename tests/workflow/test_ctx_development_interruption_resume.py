@@ -67,6 +67,37 @@ class InterruptionResumeTests(unittest.TestCase):
         self.assertEqual((advice["target"], advice["phase"]), ("E2-1", "review"))
         self.assertIn("verify", advice["reason"])
 
+    def test_legacy_unmetered_history_replays_but_already_spends_the_new_cap(self):
+        run = interrupted()
+        historical = self.resume(run)
+        # Pre-tightening serialized format: no action field or recovery charge.
+        historical["events"][-1].pop("action")
+        historical["actions"] -= 1
+        before = deepcopy(historical)
+        dev.verify_journal(historical)
+        self.assertEqual(historical, before)
+        again = blocked(historical, "E2-1", session=901, note=1100)
+        with self.assertRaisesRegex(ValueError, "budget exhausted"):
+            self.resume(again, recovery(again, note=1200))
+        self.assertEqual(dev.next_actions(again)["owner_action"]["action"], "checkpoint")
+
+    def test_recovery_charge_is_replayed_and_cannot_exceed_action_budget(self):
+        run = interrupted()
+        resumed = self.resume(run)
+        for action in (True, resumed["actions"] - 1, resumed["actions"] + 1):
+            changed = deepcopy(resumed)
+            changed["events"][-1]["action"] = action
+            with self.subTest(action=action), self.assertRaisesRegex(ValueError, "next journal action"):
+                dev.verify_journal(changed)
+        # Lower the ceiling to the next action to test the boundary without
+        # manufacturing or resetting any journal counts.
+        with patch.object(dev, "MAX_ACTIONS", run["actions"] + 1):
+            last = self.resume(run)
+            dev.verify_journal(last)
+            self.assertEqual(dev.next_actions(last)["owner_action"]["action"], "checkpoint")
+            with self.assertRaises(ValueError):
+                dev.claim(last, "E2-1")
+
     def test_recovery_keeps_evidence_history_and_budgets_and_claim_still_costs_action(self):
         run = interrupted()
         before = deepcopy(run)
@@ -77,12 +108,14 @@ class InterruptionResumeTests(unittest.TestCase):
         expected_node.update(status="pending", reason="")
         expected_node.pop("blocker_kind")
         self.assertEqual(resumed["nodes"]["E2-1"], expected_node)
-        for key in ("request", "request_sha256", "actions", "epic_heads", "required_targets"):
+        for key in ("request", "request_sha256", "epic_heads", "required_targets"):
             self.assertEqual(resumed[key], before[key])
+        self.assertEqual(resumed["actions"], before["actions"] + 1)
+        self.assertEqual(resumed["events"][-1]["action"], resumed["actions"])
         self.assertFalse(dev.next_actions(resumed)["complete"])
         dev.verify_journal(resumed)
         claimed = dev.claim(resumed, "E2-1")
-        self.assertEqual(claimed["actions"], before["actions"] + 1)
+        self.assertEqual(claimed["actions"], before["actions"] + 2)
         self.assertEqual(claimed["active"]["phase"], "review")
         with self.assertRaises(ValueError):
             dev.record(claimed, receipt(claimed))  # Still needs independent verification binding.
@@ -113,8 +146,8 @@ class InterruptionResumeTests(unittest.TestCase):
         run["events"][-1].pop("interruption")
         dev.verify_journal(run)
         resumed = self.resume(run, value, "E2-2")
-        self.assertEqual(resumed["actions"], 17)
-        self.assertEqual(dev.claim(resumed, "E2-2")["actions"], 18)
+        self.assertEqual(resumed["actions"], 18)
+        self.assertEqual(dev.claim(resumed, "E2-2")["actions"], 19)
         dev.verify_journal(resumed)
         legacy = dev.claim(dev.new_run(request()), "E2-1")
         legacy = dev.record(legacy, receipt(legacy, response="blocked", reason="worker interrupted", blocker_kind="transient"))
@@ -188,6 +221,8 @@ class InterruptionResumeTests(unittest.TestCase):
         run = interrupted(spent_retry=False)
         first = self.resume(run)
         again = blocked(first, "E2-1", session=901, note=1100)
+        with self.assertRaisesRegex(ValueError, "budget exhausted"):
+            self.resume(again, recovery(again, note=1200))
         with self.assertRaisesRegex(ValueError, "old retry"):
             dev.retry(again, "E2-1", PROJECT + "/-/issues/10#note_1101")
         # A real code repair and new SHA do not replenish interruption recoveries.
@@ -196,15 +231,13 @@ class InterruptionResumeTests(unittest.TestCase):
         run = dev.claim(run, "E2-1")
         run = dev.record(run, receipt(run, candidate_sha="d" * 40, resolved_findings=["regression-1"]))
         run = blocked(advance(run, "E2-1", "review"), "E2-1", session=901, note=1100)
-        run = self.resume(run, recovery(run, note=1200))
-        run = blocked(run, "E2-1", session=902, note=1300)
-        self.assertEqual(dev.interruption_resumes(run, "E2-1", "review"), 2)
+        self.assertEqual(dev.interruption_resumes(run, "E2-1", "review"), 1)
         self.assertEqual(run["nodes"]["E2-1"]["retries"], 0)
         advice = dev.next_actions(run)["owner_action"]
         self.assertEqual(advice["action"], "checkpoint")
         self.assertIn("interrupted-phase recovery budget exhausted", advice["reason"])
         with self.assertRaisesRegex(ValueError, "budget exhausted"):
-            self.resume(run, recovery(run, note=1400))
+            self.resume(run, recovery(run, note=1200))
         with self.assertRaisesRegex(ValueError, "old retry"):
             dev.retry(run, "E2-1", PROJECT + "/-/issues/10#note_1400")
         dev.verify_journal(run)
@@ -214,8 +247,9 @@ class InterruptionResumeTests(unittest.TestCase):
             dev.verify_journal(changed)
 
     def test_observations_and_source_notes_cannot_be_reused_even_inside_nested_recovery(self):
-        first = self.resume(interrupted())
-        old = first["events"][-1]["receipt"]["interruption"]
+        first = self.resume(interrupted("verify"))
+        first = advance(first, "E2-1", "review")
+        old = next(e["receipt"]["interruption"] for e in first["events"] if "interruption_resume" in e)
         for same in ("session", "job"):
             run = blocked(first, "E2-1", session=901, note=1100)
             obs = run["events"][-1]["interruption"]
@@ -264,7 +298,7 @@ class InterruptionResumeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.resume(run, recovery(run), "E2-2")
 
-    def test_verify_and_both_reviews_retain_all_evidence_gates(self):
+    def test_verify_and_review_retain_evidence_gates_and_other_reviews_are_excluded(self):
         verify = self.resume(interrupted("verify"))
         claim = dev.claim(verify, "E2-1")
         with self.assertRaises(ValueError):
@@ -273,7 +307,8 @@ class InterruptionResumeTests(unittest.TestCase):
         self.assertEqual(dev.phase(checked["nodes"]["E2-1"]), "review")
         dev.verify_journal(checked)
         for mutate in (lambda n: n.pop("verification_url"),
-                       lambda n: n["verification"]["acceptance"].update(source_sha="f" * 40)):
+                       lambda n: n["verification"]["acceptance"].update(source_sha="f" * 40),
+                       lambda n: n.update(verification_url=PROJECT + "/-/issues/10#note_999")):
             run = interrupted()
             mutate(run["nodes"]["E2-1"])
             with self.assertRaises(ValueError):
@@ -282,10 +317,8 @@ class InterruptionResumeTests(unittest.TestCase):
         for target in ("E2-1", "E2-2", "E2-3"):
             epic = advance(epic, target)
         epic = blocked(advance(epic, "E2", "epic_review"), "E2")
-        restored = self.resume(epic, recovery(epic, "E2"), "E2")
-        self.assertEqual(dev.phase(restored["nodes"]["E2"]), "epic_review")
-        self.assertTrue(all(restored["nodes"][t]["status"] == "done" for t in ("E2-1", "E2-2", "E2-3")))
-        dev.verify_journal(restored)
+        with self.assertRaises(ValueError):
+            self.resume(epic, recovery(epic, "E2"), "E2")
         run = dev.claim(advance(dev.new_run(repair_request()), "E2-1", "verify"), "E2-1")
         run = dev.repair(dev.record(run, defect(run) | {"blocker_kind": "technical_design"}), "E2-1")
         run = dev.claim(run, "E2-1")
@@ -293,17 +326,7 @@ class InterruptionResumeTests(unittest.TestCase):
                            changed_paths=["docs/design/trust/technical.md"], affected_targets=["E2-1"],
                            acceptance_manifest_sha256=dev.scoped_manifest(run, "E2-1")[1])
         run = blocked(dev.record(run, addendum), "E2-1")
-        restored = self.resume(run)
-        dev.verify_journal(restored)
-        claim = dev.claim(restored, "E2-1")
         with self.assertRaises(ValueError):
-            dev.record(claim, receipt(claim))
-        reviewed = dev.record(claim, receipt(claim, design_report_url=addendum["report_url"],
-            affected_targets=["E2-1"], acceptance_manifest_sha256=dev.scoped_manifest(run, "E2-1")[1]))
-        self.assertEqual(dev.phase(reviewed["nodes"]["E2-1"]), "tests")
-        dev.verify_journal(reviewed)
-        run["nodes"]["E2-1"]["design_revision"]["report_url"] = PROJECT + "/-/issues/10#note_999"
-        with self.assertRaisesRegex(ValueError, "saved current-SHA design revision"):
             self.resume(run)
 
     def test_cli_transition_is_atomic_replayable_and_rejects_repeated_or_invalid_resume(self):
@@ -327,7 +350,7 @@ class InterruptionResumeTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
             result = json.loads(journal.read_text())
             dev.verify_journal(result)
-            self.assertEqual(result["actions"], run["actions"])
+            self.assertEqual(result["actions"], run["actions"] + 1)
             self.assertEqual(result["events"][-1]["interruption_resume"], "E2-1")
             before = journal.read_bytes()
             replay = subprocess.run(command, cwd=root, capture_output=True, text=True, timeout=10)
