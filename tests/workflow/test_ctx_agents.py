@@ -4,6 +4,7 @@ import hashlib
 from copy import deepcopy
 import json
 from pathlib import Path
+import re
 import sys
 import unittest
 
@@ -15,6 +16,37 @@ import ctx_workflow as workflow
 
 
 class ChatAgentRegistrationTests(unittest.TestCase):
+    def test_project_consumer_binding_is_reviewed_not_a_name_guess(self):
+        catalog = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())
+        record = json.loads((AGENTS / "ctx-project.json").read_text())
+        prompt = (AGENTS / "ctx-project.md").read_bytes()
+        self.assertEqual(record.get("development_consumer_binding"), {
+            "project_id": 87329027,
+            "catalog_item_id": 1016234,
+            "consumer_id": 12316920,
+            "name": "CTX Development",
+            "catalog_version_at_verification": "1.10.0",
+            "verified_on": "2026-10-15",
+            "runtime_version_policy": "gitlab_configured_consumer",
+        })
+        for key, value in (("project_id", 1), ("catalog_item_id", 1),
+                           ("consumer_id", 1016234), ("consumer_id", True),
+                           ("name", "Developer"),
+                           ("runtime_version_policy", "latest_catalog_release")):
+            changed = deepcopy(record)
+            changed["development_consumer_binding"][key] = value
+            with self.subTest(field=key), self.assertRaises(workflow.Invalid):
+                workflow.validate_chat_agent("ctx-project", changed, prompt, catalog)
+        changed = deepcopy(record)
+        del changed["development_consumer_binding"]
+        with self.assertRaises(workflow.Invalid):
+            workflow.validate_chat_agent("ctx-project", changed, prompt, catalog)
+
+        changed_catalog = deepcopy(catalog)
+        changed_catalog["flows"][".gitlab/duo/flows/ctx-development.yml"]["catalog_version"] = "1.11.0"
+        with self.assertRaises(workflow.Invalid):
+            workflow.validate_chat_agent("ctx-project", record, prompt, changed_catalog)
+
     def test_chat_records_match_their_prompts_and_scope(self):
         shared = {
             "Get Project", "Get Commit", "Get Repository Files", "List Repository Tree",
@@ -103,6 +135,51 @@ class ChatAgentRegistrationTests(unittest.TestCase):
             specialist["session_handoff"] = record["session_handoff"]
             with self.subTest(specialist=name), self.assertRaises(workflow.Invalid):
                 workflow.validate_chat_agent(name, specialist, (AGENTS / f"{name}.md").read_bytes(), catalog)
+            specialist = json.loads((AGENTS / f"{name}.json").read_text())
+            specialist["tools_ui_labels"].append("GitLab GraphQL")
+            with self.subTest(graphql_specialist=name), self.assertRaises(workflow.Invalid):
+                workflow.validate_chat_agent(name, specialist, (AGENTS / f"{name}.md").read_bytes(), catalog)
+
+    def test_project_native_discovery_contract(self):
+        # Prompt/registration regression checks, not runtime enforcement.
+        prompt = (AGENTS / "ctx-project.md").read_text()
+        guide = (ROOT / "docs/development/project-discovery.md").read_text()
+        for term in ("docs/development/project-discovery.md", "status_group", "statuses",
+                     "Rejecting a malformed request", "can_start_session=false",
+                     "development_consumer_binding", "12316920", "runtime_version=not_exposed",
+                     "No GraphQL", "Known-ID reads", "trusted default-branch SHA"):
+            self.assertIn(term, prompt)
+        normalized = " ".join(guide.split())
+        for term in ("87329027", "1016234", "12316920", "release-time",
+                     "runtime version attestation", "out-of-band pin changes",
+                     "repeated cursor", "partial data", "not proof of exclusive ownership",
+                     "No continuation", "Tool discovery repaired", "Do this now",
+                     "stale binding", "explicit approval"):
+            self.assertIn(term, normalized)
+        for name in ("project-sessions", "project-flows"):
+            self.assertFalse((ROOT / ".gitlab/ctx/queries" / f"{name}.graphql").exists())
+
+    def test_project_discovery_request_and_bounded_recovery(self):
+        # Guard the actual publication inputs, not an unused local API adapter.
+        # Model compliance still requires the transcript acceptance in the guide.
+        for path in (AGENTS / "ctx-project.md", ROOT / "docs/development/project-discovery.md"):
+            with self.subTest(path=path.name):
+                text = path.read_text()
+                examples = [json.loads(body) for body in re.findall(r"```json\n(.*?)\n```", text, re.S)]
+                self.assertEqual(examples, [{"project_id": "87329027", "first": 100}],
+                                 "publish one exact filter-free session request, not empty/null placeholders")
+                normalized = " ".join(text.split())
+                for requirement in (
+                    "At most one corrected read-only attempt per user turn",
+                    "Never repeat the rejected payload",
+                    "Rejecting a malformed request is not proof of a contradictory schema",
+                    "Do not retry Start Duo Session or Send Duo Session Input under this rule",
+                    "No new permission or maintainer lookup is needed to correct your own read-only arguments",
+                    "do not reset the cursor",
+                    "access denial",
+                ):
+                    self.assertIn(requirement, normalized)
+                self.assertNotIn("Do not retry the contradictory schema if it reappears", text)
 
     def test_project_publication_record_preserves_specialists_and_pending_live_proof(self):
         catalog = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())
@@ -113,15 +190,19 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertEqual(project["display_name"], "CTX Project")
         self.assertTrue(project["enabled_in_project"])
         self.assertTrue(project["catalog_url"].endswith("/agents/1016538"))
-        self.assertEqual(project["catalog_version"], "1.5.0")
+        self.assertEqual(project["catalog_version"], "1.8.0")
         prompt = (AGENTS / project["system_prompt_file"]).read_bytes()
-        self.assertEqual(project["pending_catalog_version"], "1.6.0")
-        self.assertEqual(project["published_source_commit"], "5982f64e4db2a55ef6f6dfebc3e65fdfadeffe35")
+        self.assertNotIn("pending_catalog_version", project)
+        self.assertEqual(project["published_source_commit"], "e72534c164b2fbd17006148bb893d7b26e4f6291")
         self.assertEqual(project["published_system_prompt_sha256"],
-                         "bf0fb4828094dcd8859b5b1bfb7b607da25fdfb35a73d17492a1ee7ed6c72853")
-        self.assertTrue(project["candidate_status"].startswith("Unpublished"))
+                         "a2e33eb774a6ea74abb90175190a0c792b0213e5580ca3ff93d2fc09669a8b5a")
+        self.assertIn("Not published", project["candidate_status"])
+        self.assertEqual(project["candidate_catalog_version"], "1.9.0")
         self.assertTrue(project["verification"]["resumable_owner_live"].startswith("pending"))
         self.assertNotEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertTrue(project["verification"]["discovery_fallback_live"].startswith("passed discovery-only"))
+        self.assertTrue(project["verification"]["discovery_recovery_live"].startswith("pending"))
+        self.assertTrue(project["verification"]["ordinary_continuation_preflight_live"].startswith("partial"))
         self.assertTrue(project["verification"]["session_handoff_live"].startswith("pending"))
         self.assertTrue(project["verification"]["next_action_live"].startswith("pending"))
         self.assertEqual(project["next_entrypoint"], "development-native-session-handoff")
@@ -133,9 +214,9 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         previous = project["publication_history"][1]
         self.assertEqual(previous["catalog_version"], "1.1.0")
         self.assertEqual(previous["published_system_prompt_sha256"], "197e9f37dcc9483a7310d599290e0c1730cb2be2d6a790e4b773e2a6978ef8ff")
-        self.assertEqual(project["publication_history"][-1]["catalog_version"], "1.4.0")
+        self.assertEqual(project["publication_history"][-1]["catalog_version"], "1.7.0")
         self.assertEqual(project["publication_history"][-1]["published_system_prompt_sha256"],
-                         "14dd6dd4233ac98cf2510893cd1fa261054e70c5f7e5900459acbeb2a79a5a7f")
+                         "cb55d49826871686118dc4f5a5fc10507045f7a0b8d2062dcfcdf4395abb4fcb")
         self.assertTrue(project["verification"]["catalog_readback"].startswith("passed"))
         self.assertTrue(project["verification"]["chat_picker"].startswith("passed"))
         self.assertEqual(project["verification"]["chat_interview_save_smoke"], "pending")
