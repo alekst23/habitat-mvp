@@ -697,7 +697,9 @@ class ExecutionTests(unittest.TestCase):
                   "assert os.environ['CTX_AC_MANIFEST']=='docs/plan/E2/acceptance.json'; "
                   "pathlib.Path('.ctx/acceptance.json').write_text(" + repr(json.dumps(self.ac_report)) + "); "
                   "pathlib.Path(os.environ['CTX_OUTPUT']).write_text(" + repr(json.dumps(evidence("verify"))) + ")")
-        with patch.dict(os.environ, {"CTX_AC_SCOPE": "E99-9", "CTX_AC_MANIFEST": "bad.json"}):
+        # Keep this fixture's identity independent of the enclosing GitLab job.
+        with patch.dict(os.environ, {"PATH": os.environ["PATH"], "CTX_AC_SCOPE": "E99-9",
+                                     "CTX_AC_MANIFEST": "bad.json"}, clear=True):
             self.config["commands"]["verify"]["argv"] = [sys.executable, "-c", script]
             (self.root / ".gitlab/ctx/commands.yml").write_text(yaml.safe_dump(self.config))
             with contextlib.redirect_stdout(io.StringIO()):
