@@ -82,17 +82,20 @@ def test_settings_accepts_a_valid_configuration_and_rejects_every_invalid_row(ba
 @pytest.mark.ac("E11-1.AC1", code="backend/aicl/ports.py:build_ports")
 def test_build_ports_requires_exactly_the_clock_and_ignores_later_ticket_ports(base_env):
     settings = Settings.from_env(base_env)
-    assert REQUIRED_PORTS == ("clock",)
+    # design-mandated E11-2 extension (DR-30: each owning ticket extends the tuple)
+    assert REQUIRED_PORTS == ("clock", "secret_store", "credential_broker", "provider_oauth", "work_executor",
+                              "resolver")
     ports = build_ports(settings)
     assert isinstance(ports, Ports) and hasattr(ports.clock, "now") and ports.clock.now().tzinfo is not None
-    assert not hasattr(ports, "secret_store") and not hasattr(ports, "magic_link_sender")
+    assert hasattr(ports, "secret_store") and not hasattr(ports, "magic_link_sender")
     with pytest.raises(ValidationError):
         ports.clock = FakeClock(ports.clock.now())  # frozen model
 
 
 @pytest.mark.ac("E11-1.AC1", code="backend/aicl/app.py:create_app")
 def test_create_app_migrates_imports_prices_starts_with_empty_extension_points_and_gates_test_routes(base_env, tmp_path):
-    assert len(routes.ROUTE_FACTORIES) == 1 and hooks.STARTUP_HOOKS == ()  # E11-2 slice 1: app-tools router registered
+    # design-mandated E11-2 extension: its two routers and the sweeper-then-reconciler hooks are registered
+    assert len(routes.ROUTE_FACTORIES) == 2 and len(hooks.STARTUP_HOOKS) == 2
 
     dev = create_app(Settings.from_env(base_env))
     with TestClient(dev) as client:

@@ -125,7 +125,7 @@ class AesGcmSecretStore:
 
     _MEMORY: dict[str, dict] = {}
 
-    def __init__(self, key: bytes, db=None) -> None:
+    def __init__(self, key: bytes, db=None) -> None:  # db: a Database (or LazyDatabase) to persist into
         if not isinstance(key, (bytes, bytearray)) or len(key) != 32:
             raise SecretUnavailable("secret key must be 32 bytes")
         self._aead = AESGCM(bytes(key))

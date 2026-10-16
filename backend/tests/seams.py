@@ -42,15 +42,18 @@ def credential_broker(env, oauth, secret_store, resolver):
 
 def work_gate(env, executor, resolver, oauth=None, secret_store=None):
     """-> WorkAuthorization wired to env.budget/confirmations/audit and the given fakes."""
-    raise NotImplementedError(NOT_WIRED)
+    from aicl.work.gate import SqliteWorkGate
+    return SqliteWorkGate(env.db, env.clock, env.budget, env.confirmations, executor, resolver,
+                          env.budget.hold_stale_seconds)
 
 
 def hold_reconciler(env, executor):
     """-> HoldReconciler with run_once()."""
-    raise NotImplementedError(NOT_WIRED)
+    from aicl.work.gate import SqliteHoldReconciler
+    return SqliteHoldReconciler(env.db, env.clock, env.budget, executor)
 
 
 def budget_audit_recorder(env):
     """-> BudgetAuditRecorder (O-1) appending through env.audit."""
-    from aicl.work.gate import UnimplementedBudgetAuditRecorder
-    return UnimplementedBudgetAuditRecorder()
+    from aicl.work.gate import SqliteBudgetAuditRecorder
+    return SqliteBudgetAuditRecorder(env.audit)

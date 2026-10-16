@@ -136,3 +136,10 @@ class Database:
         finally:
             self._local.conn = None
             conn.close()
+
+
+class LazyDatabase:
+    """Proxy resolving the process-default Database at use (ports are built before any unit of work)."""
+
+    def __getattr__(self, name: str):
+        return getattr(Database.current(), name)
