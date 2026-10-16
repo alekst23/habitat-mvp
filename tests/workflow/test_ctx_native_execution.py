@@ -162,16 +162,15 @@ class NativeAdmissionTests(unittest.TestCase):
             ".gitlab/duo/flows/ctx-development.yml"]
         self.assertNotIn("pending_catalog_version", catalog)
         self.assertEqual(catalog["catalog_version"], "1.12.0")
-        self.assertNotIn("candidate_catalog_version", catalog)
-        self.assertNotIn("candidate_status", catalog)
+        self.assertEqual(catalog["candidate_catalog_version"], "1.13.0")
+        self.assertIn("Pending publication", catalog["candidate_status"])
         self.assertIn("live two-run acceptance pending", catalog["publication_status"])
-        self.assertEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
+        self.assertNotEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
         self.assertEqual(catalog["published_definition_sha256"],
                          "3442cb93da7b416a1d4b11fdd2c75bfee65cca2b752fa287d8c654475bd6d34e")
         self.assertEqual(catalog["catalog_saved_definition_sha256"],
                          "349ba308ffbe9cb80a89fc6ffd6b6ee63e7490340025bd0ae926a2c1e1da85b3")
-        self.assertEqual(catalog["catalog_saved_definition_sha256"],
-                         hashlib.sha256(flow_path.read_bytes().removesuffix(b"\n")).hexdigest())
+        self.assertIn("once per target/phase, one action plus next claim", flow_path.read_text())
         self.assertEqual(catalog["definition_sha256"], hashlib.sha256(flow_path.read_bytes()).hexdigest())
         self.assertLessEqual(len(flow_path.read_bytes()), 40960)
         self.assertIn("resume-interrupted", flow_path.read_text())
