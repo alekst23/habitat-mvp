@@ -1,27 +1,23 @@
-# Optional until the application foundation supplies package-lock.json and start:test.
-# Python and backend/requirements.txt (when present) are installed before the browser run.
-# Enable with CTX_BROWSER_CHECKS=1; UI acceptance cannot pass without this evidence.
+# Scope and browser applicability come from committed candidate identity.
+# A non-UI scope records not-applicable; a UI scope fails without real browser evidence.
 ctx:browser:
   stage: verify
   image: mcr.microsoft.com/playwright:v1.63.0-noble
   before_script: []
   allow_failure: false
   timeout: 10 minutes
+  variables:
+    GIT_DEPTH: "0"
   rules:
-    - if: '$CTX_BROWSER_CHECKS == "1"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      exists: ["docs/plan/E*/state.json"]
+    - if: '$CI_COMMIT_BRANCH'
+      exists: ["docs/plan/E*/state.json"]
   script:
-    - test -n "$CTX_AC_MANIFEST" && test -n "$CTX_AC_SCOPE"
-    - test -f package-lock.json
-    # The Playwright image has no Python. Install the distro Python (3.12 on noble) and an isolated
-    # venv for the pinned backend dependencies so `npm run start:test` can run `python -m aicl.test_server`.
-    # Any failed step fails the job; requirements are only skipped before E11-1 supplies the file.
     - apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 python3-venv python3-pip
     - python3 -m venv .ctx/venv
     - export PATH="$PWD/.ctx/venv/bin:$PATH"
-    - if [ -f backend/requirements.txt ]; then python -m pip install --disable-pip-version-check -r backend/requirements.txt; fi
-    - npm ci
-    - test "$(node -p 'require("@playwright/test/package.json").version')" = "1.63.0"
-    - npx --no-install playwright test --config .gitlab/ctx/playwright.config.ts
+    - python scripts/ctx_ci_context.py browser
   artifacts:
     when: always
     expire_in: 30 days

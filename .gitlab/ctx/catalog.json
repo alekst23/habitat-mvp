@@ -85,13 +85,13 @@
         ]
       },
       "mode": "bounded-supervisor",
+      "candidate_catalog_version": "1.11.0",
+      "candidate_status": "Local implementation: automatic candidate scope and evidence-resume recovery. Not published; preserve the recorded live version and consumer until release-time readback. See docs/development/automatic-acceptance.md.",
       "max_delegations": 64,
       "runtime_parallelism": "serial-fallback; native parallel delegation unverified",
-      "publication_status": "Published and enabled v1.9.0 on 2026-10-12 UTC. Full saved 40948-byte YAML equals reviewed source after final-newline normalization. Visible handoff framing and explicit trusted legacy-note migration repair the session 9303064 persistence stop. Same 64-delegation ceiling, component tools, private visibility, service account and active Mention/Assign/Assign reviewer triggers. Controller remains disabled; same-tool-path recovery and live two-run acceptance pending.",
-      "catalog_version": "1.9.0",
-      "pending_catalog_version": "1.10.0",
-      "candidate_status": "Unpublished file-based checkpoint read/assemble/publish; exact readback, seven reviewed E11 exclusions without deletion, same tools/budgets/review gates. Requires reviewed merge, helper compatibility/sync and catalog readback before live recovery.",
-      "published_source_commit": "256492461fb329f2b018fc5aa3348a9a472f14ce",
+      "publication_status": "Published and enabled v1.10.0 on 2026-10-15 UTC. Full saved 40852-byte YAML equals reviewed source after final-newline normalization. File-based checkpoint transfer and seven scoped E11 exclusions preserve all notes/history/budgets. Same 64-delegation ceiling, tools, private visibility, service account and active Mention/Assign/Assign reviewer triggers. Controller remains disabled; live two-run acceptance pending. No application run started.",
+      "catalog_version": "1.10.0",
+      "published_source_commit": "9522bf6c39e6564047a5ea9d775f69de90828f41",
       "publication_history": [
         {
           "catalog_version": "1.5.0",
@@ -119,11 +119,18 @@
           "published_definition_sha256": "d596106c64a8b730370adc8e61609f91a6b7217d78da7ec1d3a912f948203dd9",
           "catalog_saved_definition_sha256": "f474cc9682e0a5e8d16becb696ba448b79a025630bc9e72683d175a209bfb660",
           "verification": "Source !31 passed pipeline 2936414071 and independent follow-up review 3994185023; merged main 56d930d5. E2 sync !32 passed pipeline 2936414062 and independent review 3994187239; merged cbd92690. 184 local tests and full 40873-byte catalog readback passed. Subsequent native session 9303064 reported HTML-comment delimiter loss and stopped before dispatch; v1.9.0 repairs this transport defect. No successful live two-run acceptance was established."
+        },
+        {
+          "catalog_version": "1.9.0",
+          "published_source_commit": "256492461fb329f2b018fc5aa3348a9a472f14ce",
+          "published_definition_sha256": "575262d3f5c6fb3d4eb1321b536c426531caebfc854e328439e0a6bd695c9779",
+          "catalog_saved_definition_sha256": "080a37445951b671901af655666065282cd0174ed39d08befc07f7e9f15400bd",
+          "verification": "Source !35 passed pipeline 2936852177 and independent review 3994970235, merging main 9deb5530. E2 helper sync !36 passed pipeline 2936856436 and review 3994972774, merging 9b4e8810. 187 local tests passed; E2 product docs remained unchanged. Full 40948-byte saved YAML, private/enabled state, service account and active triggers read back 2026-10-12 UTC. No application run started. E11 session 9530877 later reported model-transcribed checkpoint corruption; live recovery was not established."
         }
       ],
       "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234",
-      "definition_sha256": "bd3782349477db5b6410b1592fcabd04c3e538fcdcce8645f9b173ee729d2000",
-      "verification": "Source !35 passed pipeline 2936852177 at 256492461fb329f2b018fc5aa3348a9a472f14ce and independent Duo review 3994970235 with no findings; merged main 9deb5530d295cf42d8f1db1417e6c1beb681f839. E2 helper sync !36 passed pipeline 2936856436 at 0f6d1883c2da231891b933f0f6568eaa1df22cb9 and independent Duo review 3994972774 with no findings; merged 9b4e88102972b525088ddc47f026a8a5c5277390. All 187 local tests, validator, diff and secret scans passed. E2 docs/design and docs/plan remain byte-identical to df380b13. Full saved v1.9.0 YAML SHA-256 080a37445951b671901af655666065282cd0174ed39d08befc07f7e9f15400bd read back on 2026-10-12 UTC, with enabled/private state, unchanged service account and active triggers. No source checkpoint rewritten, application/closure run launched, product MR !8 merge, permissions change or controller activation. Actual note-tool migration and live two-run acceptance remain pending.",
+      "definition_sha256": "edd61f87b3de0732683b7a47db4e16d77455d25a3d96449a252c9523145f4899",
+      "verification": "Published/read back 2026-10-15 UTC: source 9522bf6c, full 40852-byte saved YAML SHA-256 dade03331949cede1e5089d75766be7a38b3adc4cdaf7485c65a4371b461791d. v1.10.0 enabled/private, unchanged tools, max_delegations=64, service account and active Mention/Assign/Assign reviewer triggers verified. Source !49 merged main 75442835 after independent review 4021263981; E11 helper sync !50 merged 71016e8b after review 4021234416. All workflow jobs passed in pipelines 2951370940/2951372315; overall pipelines failed on separate incomplete application verification. User explicitly approved only the workflow merges despite those failures; no CI rules/protections changed. 202 source and 208 sync tests passed locally. E11 product design/plan and application adapters remain byte-identical to 7ad45df2. No app MR merged, checkpoint rewritten or application run started. Actual runtime publication/recovery and live two-run acceptance remain pending; see docs/development/checkpoint-publication.md.",
       "managed_terminal_tokens": {
         "design": [
           "ready",
@@ -163,8 +170,8 @@
           "blocked"
         ]
       },
-      "published_definition_sha256": "575262d3f5c6fb3d4eb1321b536c426531caebfc854e328439e0a6bd695c9779",
-      "catalog_saved_definition_sha256": "080a37445951b671901af655666065282cd0174ed39d08befc07f7e9f15400bd"
+      "published_definition_sha256": "bd3782349477db5b6410b1592fcabd04c3e538fcdcce8645f9b173ee729d2000",
+      "catalog_saved_definition_sha256": "dade03331949cede1e5089d75766be7a38b3adc4cdaf7485c65a4371b461791d"
     },
     ".gitlab/duo/flows/ctx-delivery.yml": {
       "operations": [
