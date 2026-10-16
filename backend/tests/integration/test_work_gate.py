@@ -156,8 +156,9 @@ def test_gate_runs_fixed_order_denies_at_first_failure_and_reserves_last(build_e
     types = audit_types(env, auth, inst)
     assert types.count("work.denied") >= 6 and "work.dispatched" in types
     assert "SECRET-BODY" not in repr(env.audit.list_for_owner(auth)) and "a@example.com" not in repr(env.audit.list_for_owner(auth))
+    # list_for_instance is newest first (control-plane technical.md audit readers), so the latest denial is [0]
     assert [e.details.get("denial_reason") for e in env.audit.list_for_instance(auth, inst.id)
-            if e.event_type == "work.denied"][-1] == "budget_exhausted"
+            if e.event_type == "work.denied"][0] == "budget_exhausted"
 
 
 @pytest.mark.ac("E11-2.AC1", code="backend/aicl/work/gate.py:WorkAuthorization")
