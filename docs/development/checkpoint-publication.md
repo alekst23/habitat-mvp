@@ -43,7 +43,24 @@ budgets or duplicate active work. The live acceptance checks below remain requir
 
 ## Failure and repair boundary
 
-### Composite-identity repair (candidate; live verification pending)
+### Composite-identity repair (live identity/attribution verified; rollout pending)
+
+On 2026-10-16 UTC, isolated maintenance [session 9577889](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agent-sessions/9577889)
+ran reviewed source `9eabc5f05b5b312b7605075616e47f04a8b500bb` on maintenance
+issue **#17**, not E11. Its [receipt 4025295779](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/17#note_4025295779)
+records `oauth_owner_id=43132375`, `scoped_user_id=43066631` and
+`effective_user_id=43066631`. The one retained, non-checkpoint
+[probe 4025295291](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/17#note_4025295291)
+was created/read back through the helper, with exact body equality and actual
+server author **43132375**. The saved probe was independently inspected in GitLab.
+No token/raw credential response was printed. No E11 state was read or changed,
+and no worker, checkpoint, budget change or application execution occurred.
+
+This confirms the current runtime mechanism, not retrospective introspection of
+the expired credentials from the two earlier sessions. It proves identity and
+plain-note attribution; full E11 checkpoint recovery/publication remains unrun.
+Independent source follow-up [review 4025286642](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/57#note_4025286642)
+found no new issues after separating required author policy from observed identity.
 
 Sessions **9576995** and **9577108** stopped before dispatch because the old helper
 equated `/api/v4/user.id` with the checkpoint author. The first
@@ -72,9 +89,10 @@ maintenance diagnostic using the existing injected credential; do not start E11 
 test this repair. An introspection denial or identity mismatch fails closed without
 falling back to `/user` alone, a personal token, new scopes or a changed writer list.
 
-`required_note_author_id` is policy, not observed POST attribution. Composite-token
-note attribution is still unverified for this direct transport. Before using it on
-E11, make one non-checkpoint probe on a separate maintenance issue using this
+`required_note_author_id` is policy, not observed POST attribution. The separate
+live probe above verifies attribution for this direct transport/source. For a changed
+transport or unresolved attribution, before using it on E11 make one non-checkpoint
+probe on a separate maintenance issue using this
 helper's authenticated `create`/`get` path; verify the actual server author and exact
 body. Retain the probe, never repeat an uncertain POST, and do not add a marker or
 owner payload. If the author differs, stop and repair the transport through review;
