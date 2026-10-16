@@ -186,3 +186,43 @@ def test_resolve_gate_for_capability_and_budget_reasons_clears_only_when_control
     version = env.instances.get(auth, inst.id).version
     resolved = resolve(version)
     assert resolved.changed and resolved.instance.gated_reason is None and resolved.instance.version == version + 1
+
+
+@pytest.mark.ac("E11-2.AC1", code="backend/aicl/creation/operations.py:InstanceOperations")
+def test_network_domain_edits_version_conflict_and_network_denied_gate(ops):
+    import hashlib
+    env, o = ops
+    auth, inst = env.new_instance(limits=Limits(), capabilities=("network.fetch",))
+    added = o.add_network_domain(auth, inst.id, 1, "example.com")
+    assert added.changed and added.instance.network_domains == ("example.com",) and added.instance.version == 2
+    again = o.add_network_domain(auth, inst.id, 2, "example.com")  # already present at the current version
+    assert again.changed is False and again.instance.version == 2 and again.audit_event_id is None
+    with pytest.raises(AiclError) as e:  # stale version
+        o.add_network_domain(auth, inst.id, 1, "other.example.org")
+    assert e.value.error == "conflict" and e.value.extra["current_version"] == 2
+    for raw in ("https://example.org", "*.example.org", "127.0.0.1", "Example.org"):
+        with pytest.raises(AiclError) as e:
+            o.add_network_domain(auth, inst.id, 2, raw)
+        assert e.value.error == "validation_failed", raw
+    assert env.instances.get(auth, inst.id).network_domains == ("example.com",)
+    events = [x for x in env.audit.list_for_instance(auth, inst.id) if x.event_type == "instance.domain_added"]
+    assert len(events) == 1 and events[0].details == {"host": "example.com"}
+
+    removed = o.remove_network_domain(auth, inst.id, 2, "example.com")
+    assert removed.instance.network_domains == () and removed.instance.version == 3
+    assert o.remove_network_domain(auth, inst.id, 3, "example.com").changed is False
+
+    # network_denied (host_not_allowed) re-check: permits only with network.fetch enabled AND the hashed host present
+    host_hash = hashlib.sha256(b"example.com").hexdigest()[:12]
+    with env.db.transaction() as conn:
+        env.instances.set_gated(conn, auth, inst.id, "network_denied", GateContext(("network.fetch",), host_hash))
+    version = env.instances.get(auth, inst.id).version
+    with pytest.raises(AiclError) as e:
+        o.resolve_gate(auth, inst.id, version)
+    assert e.value.extra["reason"] == "gate_unresolved"
+    fixed = o.add_network_domain(auth, inst.id, version, "example.com")  # the fixing mutation clears the gate
+    assert fixed.instance.gated_reason is None
+    with env.db.transaction() as conn:
+        env.instances.set_gated(conn, auth, inst.id, "network_denied", GateContext(("network.fetch",), host_hash))
+    version = env.instances.get(auth, inst.id).version
+    assert o.resolve_gate(auth, inst.id, version).instance.gated_reason is None  # control permits: explicit resolve
