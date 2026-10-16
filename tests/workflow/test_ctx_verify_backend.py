@@ -223,17 +223,18 @@ class VerifyAdapterTests(unittest.TestCase):
         script = browser["script"]
         self.assertEqual(browser["image"], "mcr.microsoft.com/playwright:v1.63.0-noble")
         self.assertIs(browser["allow_failure"], False)
-        self.assertEqual(browser["rules"], [{"if": '$CTX_BROWSER_CHECKS == "1"'}])
+        self.assertEqual(browser["rules"], [
+            {"if": '$CI_PIPELINE_SOURCE == "merge_request_event"', "exists": ["docs/plan/E*/state.json"]},
+            {"if": '$CI_COMMIT_BRANCH', "exists": ["docs/plan/E*/state.json"]},
+        ])
         self.assertEqual(browser["timeout"], "10 minutes")
-        self.assertIn("npm ci", script)
-        self.assertIn('test "$(node -p \'require("@playwright/test/package.json").version\')" = "1.63.0"', script)
-        # Python + pinned backend dependencies are installed (failing the job on error) before Playwright runs.
+        self.assertEqual(script[-1], "python scripts/ctx_ci_context.py browser")
+        # Python precedes the context helper; its tested browser adapter owns
+        # pinned dependency installation and Playwright for UI scopes only.
         steps = [i for i, line in enumerate(script) if "python3-venv" in line]
         self.assertEqual(len(steps), 1)
-        install = [i for i, line in enumerate(script) if "pip install" in line and "backend/requirements.txt" in line]
-        playwright = [i for i, line in enumerate(script) if line.startswith("npx --no-install playwright test")]
         path = [i for i, line in enumerate(script) if line.startswith("export PATH=") and ".ctx/venv/bin" in line]
-        self.assertTrue(steps[0] < path[0] < install[0] < playwright[0], script)
+        self.assertTrue(steps[0] < path[0] < len(script) - 1, script)
         self.assertFalse(any("||" in line or "set +e" in line for line in script), "install failure must fail the job")
 
 

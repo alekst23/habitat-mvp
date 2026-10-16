@@ -16,6 +16,7 @@ import sys
 from urllib.parse import urlparse
 
 import yaml
+from ctx_ci_context import resolve_context
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_FLOW_BYTES = 40 * 1024  # GitLab AI Catalog's entered flow-YAML limit.
@@ -413,6 +414,19 @@ def validate_chat_agent(name, record, prompt, catalog):
     if name == "ctx-project":
         allowed |= {"List Duo Sessions", "Get Duo Session", "List Duo Agents And Flows",
                     "Start Duo Session", "Send Duo Session Input"}
+        binding = record.get("development_consumer_binding")
+        expected_binding = {
+            "project_id": 87329027,
+            "catalog_item_id": 1016234,
+            "consumer_id": 12316920,
+            "name": "CTX Development",
+            "catalog_version_at_verification": "1.10.0",
+            "verified_on": "2026-10-15",
+            "runtime_version_policy": "gitlab_configured_consumer",
+        }
+        require(isinstance(binding, dict) and binding == expected_binding and
+                all(type(binding[key]) is type(value) for key, value in expected_binding.items()),
+                "reviewed Development consumer binding changed")
         handoff = record.get("session_handoff")
         expected_handoff = {
             "allowed_entrypoint": "development",
@@ -431,6 +445,8 @@ def validate_chat_agent(name, record, prompt, catalog):
         expected_url = f"https://gitlab.com/{record['project_path']}/-/automate/flows/{handoff['flow_catalog_item_id']}"
         require(target.get("kind") == "flow" and flow_record.get("catalog_url") == expected_url,
                 "project handoff flow identity changed")
+        require(flow_record.get("catalog_version") == binding["catalog_version_at_verification"],
+                "Development publication changed; reverify consumer binding")
     else:
         require("session_handoff" not in record, "specialist cannot gain session dispatch")
     require(isinstance(tools, list) and all(isinstance(t, str) for t in tools) and
@@ -544,10 +560,13 @@ def validate_repository(root=ROOT):
     require(ci["ctx:design-validate"]["script"] == ["python scripts/ctx_design.py --all"],
             "generated design artifacts must be checked in CI")
     jobs = read_yaml(root / ".gitlab/ci/delivery.yml")
+    require({"local": ".gitlab/ci/delivery.yml"} in ci["include"],
+            "application checks cannot depend on manually supplied CI variables")
     require(jobs[".ctx-check"]["allow_failure"] is False, "checks must block on failure")
     require(jobs[".ctx-check"]["rules"] == [
-        {"if": '$CI_PIPELINE_SOURCE == "merge_request_event"'}, {"if": '$CI_COMMIT_BRANCH'},
-    ], "opted-in application checks must run in MR and branch pipelines")
+        {"if": '$CI_PIPELINE_SOURCE == "merge_request_event"', "exists": ["docs/plan/E*/state.json"]},
+        {"if": '$CI_COMMIT_BRANCH', "exists": ["docs/plan/E*/state.json"]},
+    ], "committed plans must automatically activate MR and branch application checks")
     for i, step in enumerate(STEPS):
         job = jobs[f"ctx:{step}"]
         require(job["stage"] in ci["stages"], "CI stage missing")
@@ -563,11 +582,23 @@ def validate_repository(root=ROOT):
     browser = read_yaml(root / ".gitlab/ci/browser.yml")["ctx:browser"]
     require(browser["allow_failure"] is False and browser["stage"] == "verify",
             "browser execution must be a blocking verification job")
+    require(browser["rules"] == jobs[".ctx-check"]["rules"] and
+            browser["script"][-1] == "python scripts/ctx_ci_context.py browser",
+            "browser applicability must come from committed scope, not manual variables")
+    require(jobs["ctx:epic-scope"]["extends"] == ".ctx-check" and
+            jobs["ctx:epic-scope"]["stage"] == "acceptance" and
+            jobs["ctx:epic-scope"]["needs"] == ["ctx:verify"] and
+            jobs["ctx:epic-scope"]["rules"] == [{
+                "if": '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH',
+                "exists": ["docs/plan/E*/state.json"]}] and
+            jobs["ctx:epic-scope"]["script"] == ["python scripts/ctx_ci_context.py require-whole-epic"],
+            "default-target MRs must require whole-epic scope before merge")
     readiness = jobs["ctx:delivery-readiness"]
     require(readiness["stage"] in ci["stages"] and readiness["extends"] == ".ctx-check" and
             readiness["when"] == "always" and
-            readiness["rules"] == [{"if": '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'}] and
-            readiness["script"] == ["python scripts/ctx_delivery.py --phase candidate"] and
+            readiness["rules"] == [{"if": '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH',
+                                    "exists": ["docs/plan/E*/state.json"]}] and
+            readiness["script"] == ["python scripts/ctx_ci_context.py delivery-readiness"] and
             set(readiness["needs"]) == {f"ctx:{s}" for s in STEPS} and
             "environment" not in readiness and readiness.get("allow_failure", False) is False,
             "delivery readiness must reconcile all CI evidence without deployment authority")
@@ -793,10 +824,21 @@ def execute_step(step, root=ROOT, environment=None):
         config = read_yaml(root / ".gitlab/ctx/commands.yml")
         validate_commands(config)
         command = config["commands"][step]
-        require(command["argv"] is not None, f"{step} command is not configured; application foundation required")
         require(not subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=normal"],
                                             cwd=root, text=True).strip(),
                 "candidate checkout is dirty; commit changes before recording SHA-bound evidence")
+        context = resolve_context(root, env)
+        report["acceptance_context"] = context
+        if context.get("mode") == "maintenance":
+            report.update(status="not_applicable", reason=context["reason"])
+            (reports_dir / f"{step}.json").write_text(json.dumps(report, indent=2) + "\n")
+            print(json.dumps(report, indent=2))
+            return 0  # Structural-only; cannot satisfy application receipts.
+        require(command["argv"] is not None, f"{step} command is not configured; application foundation required")
+        # Compatibility outputs to reviewed adapters, never caller-selected inputs.
+        # Project/pipeline variable precedence cannot override this process-local mapping.
+        env["CTX_AC_SCOPE"] = context["scope"]
+        env["CTX_AC_MANIFEST"] = context["manifest"]
         prior = {}
         for name in STEPS[:STEPS.index(step)]:
             path = reports_dir / f"{name}.json"
@@ -807,6 +849,10 @@ def execute_step(step, root=ROOT, environment=None):
         # This path is exclusively generated evidence, never a user-supplied target.
         require(not output.is_symlink(), "refusing symlink evidence output")
         output.unlink(missing_ok=True)
+        if step == "verify":
+            acceptance_output = root / ".ctx/acceptance.json"
+            require(not acceptance_output.is_symlink(), "refusing symlink acceptance output")
+            acceptance_output.unlink(missing_ok=True)
         env["CTX_OUTPUT"] = str(output)
         env["CTX_SOURCE_SHA"] = head
         env["CTX_STEP"] = step
@@ -826,6 +872,16 @@ def execute_step(step, root=ROOT, environment=None):
             require(output.is_file() and not output.is_symlink(), "command emitted no fresh evidence")
             evidence = json.loads(output.read_text())
             validate_evidence(step, evidence, identity, prior)
+            if step == "verify":
+                from ctx_acceptance import check_identity
+                require(acceptance_output.is_file() and not acceptance_output.is_symlink(),
+                        "verify emitted no fresh acceptance report")
+                ac_report = json.loads(acceptance_output.read_text())
+                check_identity(ac_report, {**identity, "scope": context["scope"]}, context["manifest_sha256"])
+            elif step == "acceptance":
+                require(evidence.get("scope") == context["scope"] and
+                        evidence.get("manifest_sha256") == context["manifest_sha256"],
+                        "acceptance adapter returned the wrong candidate scope/manifest")
             report.update(status="passed", evidence=evidence)
             code = 0
     except subprocess.TimeoutExpired:

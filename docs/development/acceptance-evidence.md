@@ -26,71 +26,69 @@ low-risk changes, not as a way around missing runtime checks. That criterion als
 needs `inspection_reason` explaining why executable coverage adds no value.
 Do not remove or weaken criteria to pass a failed check; intent changes need review.
 
-Use these pipeline variables (example identities, not project defaults):
+## Automatic candidate scope (local revision; publish and sync before use)
 
-```text
-CTX_APPLICATION_CHECKS=1
-CTX_AC_MANIFEST=docs/plan/E2/acceptance.json
-CTX_AC_SCOPE=E2-1
-CTX_BROWSER_CHECKS=1
+Ordinary MR/push pipelines activate application checks when a committed
+`docs/plan/E*/state.json` exists. No manual application/browser switches, manifest
+path or scope variables are needed. `scripts/ctx_ci_context.py resolve` uses the
+MR **source** branch (or branch pipeline ref), committed version-2 issue/branch
+mappings and `docs/plan/<epic>/acceptance.json`. Unknown/ambiguous branches,
+wrong projects, uncommitted inputs and wrong-SHA candidates fail closed.
+Old `CTX_APPLICATION_CHECKS`/`CTX_BROWSER_CHECKS` values no longer gate jobs.
+Old `CTX_AC_SCOPE`/`CTX_AC_MANIFEST` values cannot choose scope: the adapter runner
+overwrites them with derived values only as internal compatibility outputs to
+existing reviewed adapters. Acceptance and the browser reporter resolve independently.
+
+Before saving a ticket candidate, its implementation worker runs:
+
+```sh
+python scripts/ctx_ci_context.py prepare
 ```
 
-For whole-epic review, set scope to `E2` and prove every criterion. Set browser checks
-only when that scope needs them; missing required browser evidence always blocks.
-Use a reviewed branch/ticket-to-scope mapping when making CI mandatory. The verifier
-cannot know whether a human or agent selected the wrong ticket: the reviewer must
-compare scope with the MR and independently check the manifest against the spec.
+This writes `.gitlab/ctx/verification-context.json` from that branch's plan, without
+a user-selected ticket argument. Commit it with the candidate, before tests and
+review. This narrowly authorized candidate-data file is not permission to modify
+CI policy. Its scope travels through the ticket merge so CI can verify that ticket
+again at the resulting epic SHA. A stale context from another ticket is rejected,
+not silently reused. A legacy ticket without the file still resolves from its
+branch; adding the file later changes SHA and invalidates old evidence/review.
+
+After all tickets integrate, the epic docs worker runs `prepare --whole-epic`
+on the epic branch and commits the result BEFORE full-epic verification/review.
+The mandatory `ctx:epic-scope` MR gate rejects partial scope before default merge.
+Ticket-scoped jobs still run on the draft epic MR for post-integration evidence;
+their green status does not make that epic MR merge-ready. Ticket MRs must target
+their own epic, and epic MRs must target default; cross-epic/direct-ticket-to-default
+MRs fail identity validation. Default-branch verification requires whole-epic context. An epic
+without a context defaults to whole-epic scope; it never guesses the last ticket.
+The journal still requires ticket-scoped post-integration evidence and whole-epic
+evidence for final review. Never silently narrow an epic completion claim.
+Do not rewrite a reviewed candidate's context after review. Parallel writers must
+reconcile context conflicts under the existing merge/re-review rules.
+
+Browser applicability comes from the selected criteria. A non-UI scope produces
+only an explicit not-applicable diagnostic, not a synthetic browser pass. A UI
+scope runs the pinned browser harness and fails when prerequisites/evidence are
+missing. Workflow-only branches without a plan remain structural-only, not app
+verification. An unmapped branch can produce a structural-only maintenance result
+only when its complete ancestor diff proves exclusively reviewed workflow paths
+(`MAINTENANCE_FILES`/`MAINTENANCE_PREFIXES` in the resolver). Its MR target must be
+a known ticket/epic/default branch. CI retains full history to verify the diff base.
+Application, plan, AC, command-adapter, credential or checkpoint-policy changes
+cannot use this exemption. Mixed diffs and missing/unknown bases fail closed.
+Planned ticket/epic refs always run application checks, even for maintenance-only
+diffs. Maintenance jobs return explicit `not_applicable`, never passing AC evidence;
+merge still needs independent maintenance review and existing controls.
+
+The reviewer still compares the mapping and manifest against the intended task,
+actual jobs, assertions and current SHA. Scope consistency is not semantic proof.
 
 ## Verify adapter output
 
-Status: `commands.yml` runs the reviewed `scripts/ctx_verify_backend.py` (pytest over
-`backend/tests` with `PYTHONPATH=backend`). It writes `CTX_OUTPUT` only when the JUnit
-XML counts at least one test and none failed, errored or were skipped, the checkout
-is clean at `CTX_SOURCE_SHA` and `CI_JOB_URL` is an HTTPS URL; otherwise it exits 2
-and leaves no evidence. `ctx:verify` installs `backend/requirements.txt` when it
-exists (E11-1 supplies it). The lane stays opt-in: a maintainer sets
-`CTX_APPLICATION_CHECKS=1` (and `CTX_BROWSER_CHECKS=1` for browser scope) with the
-manifest variables below. Neither job has run on GitLab yet.
-
-### Acceptance report writer and test-to-AC mapping
-
-The same adapter run now also writes `.ctx/acceptance.json` (already a `.ctx-check`
-artifact) for the scope in `CTX_AC_SCOPE`, using the committed manifest named by
-`CTX_AC_MANIFEST` and `CI_PROJECT_ID`, `CI_PIPELINE_ID`, `CTX_SOURCE_SHA` and the real
-`CI_JOB_URL`. It is written only after the passing pytest run, in the clean candidate.
-
-Tests declare what they prove with the reviewed marker in `scripts/ctx_pytest_ac.py`
-(loaded by the adapter; no `conftest.py` or `pytest.ini` is needed):
-
-```python
-@pytest.mark.ac("E11-1.AC1", "E11-1.AC2", code="backend/aicl/budget.py:reserve")
-def test_reservation_blocks_over_budget(): ...
-```
-
-- One test may name several ACs; several tests may name one AC. `code` is required,
-  has no whitespace, and must be a tracked repository file with an optional `:symbol`.
-  A missing or malformed marker aborts collection and the verify job fails.
-- The mapping is read back from the executed run's JUnit XML (marker values are copied
-  into test properties). Test IDs are the executed, passing cases (`file::Class::test[param]`),
-  never hand-written. The row `code` is the sorted union of the `code` values.
-- An AC with a `test` method needs at least one passing mapped test, or the writer fails.
-  A UI AC with `browser` stays `pending-browser`; browser-only ACs get no test evidence,
-  only the code reference, and the independent `ctx:browser` report must supply the rest.
-  Methods other than `test` and `browser` (inspection) cannot be produced here and fail
-  closed: use a scope without such ACs, or a separate reviewed inspection writer.
-- Fail closed (exit 2, `CTX_OUTPUT` and `.ctx/acceptance.json` removed): missing
-  `CTX_AC_SCOPE`/`CTX_AC_MANIFEST`/`CI_PROJECT_ID`/`CI_PIPELINE_ID`, an untracked or
-  invalid manifest or out-of-manifest scope, a marker naming an AC not in the manifest,
-  any failing, erroring or skipped test, an in-scope AC without a passing mapped test,
-  dirty checkout or HEAD different from `CTX_SOURCE_SHA`. Tests for ACs in other
-  tickets may still be mapped; only the requested scope is reported.
-- The adapter exposes `scripts/` on `PYTHONPATH` for the marker plugin, so backend tests
-  could import those helpers; do not depend on that.
-
-The reviewed `verify` adapter runs the minimal applicable tests and writes ordinary step
-evidence to `CTX_OUTPUT` (see [workflow guide](gitlab-workflow.md)). It ALSO writes
-`.ctx/acceptance.json` for the selected scope, including browser-only criteria
-(schema below; the example identities are illustrative):
+The application foundation supplies the real `verify` command in `commands.yml`.
+It runs the minimal applicable tests and writes ordinary step evidence to
+`CTX_OUTPUT` (see [workflow guide](gitlab-workflow.md)). It ALSO writes
+`.ctx/acceptance.json` for the selected scope, including browser-only criteria:
 
 ```json
 {
@@ -143,3 +141,12 @@ still be wrong, and links/hashes do not prove the content behind them. Protect C
 definitions and manifest changes, verify actual job results, require independent
 review, and make application checks mandatory before implementation merges.
 Workflow-only green pipelines are not application or acceptance evidence.
+
+### Recover an existing evidence stop
+
+A new green pipeline is not itself a journal transition. The coordinator owns
+the supported `resume-evidence` protocol in [single-shot development](single-shot-development.md),
+then fresh verification and independent review. Keep the original objective,
+candidate/history and every consumed action/retry/repair. A new helper-sync SHA
+needs explicit reviewed maintenance adoption, never an in-place checkpoint edit.
+No user pipeline-variable override, personal token, policy bypass or budget reset.

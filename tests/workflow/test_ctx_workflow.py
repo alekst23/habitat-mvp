@@ -16,6 +16,7 @@ from unittest.mock import patch
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "scripts"))
 spec = importlib.util.spec_from_file_location("ctx_workflow", ROOT / "scripts/ctx_workflow.py")
 ctx = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ctx)
@@ -631,6 +632,16 @@ class ExecutionTests(unittest.TestCase):
         self.git = patch.object(ctx.subprocess, "check_output", side_effect=lambda args, **kw:
                                 SHA + "\n" if args[1] == "rev-parse" else "")
         self.git.start()
+        self.context = {"scope": "E2-1", "manifest": "docs/plan/E2/acceptance.json",
+                        "manifest_sha256": "d" * 64}
+        scope_patch = patch.object(ctx, "resolve_context", return_value=self.context)
+        scope_patch.start()
+        self.addCleanup(scope_patch.stop)
+        (self.root / ".ctx").mkdir()
+        self.ac_report = {
+            "version": 1, "project_id": "local", "pipeline_id": "local", "source_sha": SHA,
+            "scope": "E2-1", "manifest_sha256": "d" * 64, "criteria": []}
+        (self.root / ".ctx/acceptance.json").write_text(json.dumps(self.ac_report))
 
     def tearDown(self):
         self.git.stop()
@@ -666,10 +677,49 @@ class ExecutionTests(unittest.TestCase):
         self.assertEqual(code, 2)
 
     def test_real_command_and_fresh_evidence_pass(self):
-        script = "import os,pathlib; pathlib.Path(os.environ['CTX_OUTPUT']).write_text(" + repr(json.dumps(evidence("verify"))) + ")"
+        script = ("import os,pathlib; pathlib.Path('.ctx/acceptance.json').write_text(" +
+                  repr(json.dumps(self.ac_report)) + "); pathlib.Path(os.environ['CTX_OUTPUT']).write_text(" +
+                  repr(json.dumps(evidence("verify"))) + ")")
         code, report = self.run_step([sys.executable, "-c", script])
         self.assertEqual(code, 0)
         self.assertEqual(report["status"], "passed")
+
+    def test_wrong_scope_adapter_output_fails_verify_before_acceptance(self):
+        script = ("import os,pathlib,json; p=pathlib.Path('.ctx/acceptance.json'); "
+                  "p.write_text(" + repr(json.dumps({**self.ac_report, "scope": "E2-2"})) + "); "
+                  "pathlib.Path(os.environ['CTX_OUTPUT']).write_text(" + repr(json.dumps(evidence("verify"))) + ")")
+        code, report = self.run_step([sys.executable, "-c", script])
+        self.assertEqual(code, 2)
+        self.assertIn("scope", report["reason"])
+
+    def test_legacy_adapter_receives_only_resolved_scope_not_project_variables(self):
+        script = ("import os,pathlib; assert os.environ['CTX_AC_SCOPE']=='E2-1'; "
+                  "assert os.environ['CTX_AC_MANIFEST']=='docs/plan/E2/acceptance.json'; "
+                  "pathlib.Path('.ctx/acceptance.json').write_text(" + repr(json.dumps(self.ac_report)) + "); "
+                  "pathlib.Path(os.environ['CTX_OUTPUT']).write_text(" + repr(json.dumps(evidence("verify"))) + ")")
+        # Keep this fixture's identity independent of the enclosing GitLab job.
+        with patch.dict(os.environ, {"PATH": os.environ["PATH"], "CTX_AC_SCOPE": "E99-9",
+                                     "CTX_AC_MANIFEST": "bad.json"}, clear=True):
+            self.config["commands"]["verify"]["argv"] = [sys.executable, "-c", script]
+            (self.root / ".gitlab/ctx/commands.yml").write_text(yaml.safe_dump(self.config))
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(ctx.execute_step("verify", self.root), 0)
+
+    def test_stale_acceptance_output_cannot_be_reused(self):
+        script = "import os,pathlib; pathlib.Path(os.environ['CTX_OUTPUT']).write_text(" + repr(json.dumps(evidence("verify"))) + ")"
+        code, report = self.run_step([sys.executable, "-c", script])
+        self.assertEqual(code, 2)
+        self.assertIn("no fresh acceptance", report["reason"])
+
+    def test_proven_maintenance_is_not_an_application_pass(self):
+        maintenance = {"mode": "maintenance", "reason": "Verified workflow-only ancestor diff"}
+        with patch.object(ctx, "resolve_context", return_value=maintenance):
+            code, report = self.run_step()  # No fabricated application adapter needed.
+        self.assertEqual(code, 0)
+        self.assertEqual(report["status"], "not_applicable")
+        self.assertNotIn("evidence", report)
+        with self.assertRaisesRegex(ctx.Invalid, "not passed"):
+            ctx.validate_prior("acceptance", {"verify": report}, IDENTITY)
 
     def test_timeout_fails(self):
         with patch.object(ctx.subprocess, "run", side_effect=subprocess.TimeoutExpired("adapter", 1)):

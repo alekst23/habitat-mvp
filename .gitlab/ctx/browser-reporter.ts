@@ -22,12 +22,14 @@ export default class AcceptanceReporter implements Reporter {
           || git(['status', '--porcelain', '--untracked-files=normal'])) {
         throw new Error('Browser candidate changed or checkout is dirty');
       }
-      const path = resolve(env('CTX_AC_MANIFEST'));
+      const context = JSON.parse(execFileSync('python', ['scripts/ctx_ci_context.py', 'resolve'],
+        { encoding: 'utf8' }));
+      const path = resolve(context.manifest);
       const local = relative(process.cwd(), path);
       if (isAbsolute(local) || local.startsWith('..')) throw new Error('Manifest outside checkout');
       const raw = readFileSync(path);
       const manifest = JSON.parse(raw.toString());
-      const scope = env('CTX_AC_SCOPE');
+      const scope = context.scope;
       if (manifest.version !== 1 || !/^E[1-9][0-9]*$/.test(manifest.epic)
           || !(scope === manifest.epic || new RegExp(`^${manifest.epic}-[1-9][0-9]*$`).test(scope))) {
         throw new Error('Invalid manifest or scope');

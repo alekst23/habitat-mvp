@@ -120,8 +120,10 @@ def validate_acceptance(manifest, digest, report, expected, browser=None):
 
 def main():
     try:
+        from ctx_ci_context import resolve_context
         root = Path.cwd().resolve()
-        path = (root / os.environ["CTX_AC_MANIFEST"]).resolve()
+        context = resolve_context(root)
+        path = (root / context["manifest"]).resolve()
         require(path.is_relative_to(root) and path.is_file(), "manifest must be a committed repository file")
         # The outer workflow adapter checks a clean checkout/HEAD; prove this is tracked too.
         subprocess.run(["git", "ls-files", "--error-unmatch", str(path.relative_to(root))],
@@ -132,7 +134,7 @@ def main():
         expected = {"project_id": os.environ["CI_PROJECT_ID"],
                     "source_sha": os.environ["CTX_SOURCE_SHA"],
                     "pipeline_id": os.environ["CI_PIPELINE_ID"],
-                    "scope": os.environ["CTX_AC_SCOPE"]}
+                    "scope": context["scope"]}
         report = json.loads((root / ".ctx/acceptance.json").read_text())
         browser_path = root / ".ctx/browser/acceptance.json"
         browser = json.loads(browser_path.read_text()) if browser_path.is_file() else None
