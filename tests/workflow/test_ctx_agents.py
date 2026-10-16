@@ -196,9 +196,10 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertEqual(project["published_source_commit"], "e72534c164b2fbd17006148bb893d7b26e4f6291")
         self.assertEqual(project["published_system_prompt_sha256"],
                          "a2e33eb774a6ea74abb90175190a0c792b0213e5580ca3ff93d2fc09669a8b5a")
-        self.assertNotIn("candidate_status", project)
+        self.assertIn("Not published", project["candidate_status"])
+        self.assertEqual(project["candidate_catalog_version"], "1.9.0")
         self.assertTrue(project["verification"]["resumable_owner_live"].startswith("pending"))
-        self.assertEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertNotEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
         self.assertTrue(project["verification"]["discovery_fallback_live"].startswith("passed discovery-only"))
         self.assertTrue(project["verification"]["discovery_recovery_live"].startswith("pending"))
         self.assertTrue(project["verification"]["ordinary_continuation_preflight_live"].startswith("partial"))

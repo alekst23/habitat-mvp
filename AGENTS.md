@@ -279,9 +279,15 @@ Establish reviewed argument arrays and evidence writers in `.gitlab/ctx/commands
 as part of the application foundation. `python scripts/ctx_workflow.py run verify`
 currently returns blocked (exit 2), correctly. Workflow self-tests are not application
 tests. Workflow self-checks run automatically on merge requests and the default
-branch; `CTX_WORKFLOW_CHECKS=1` also enables them on other branches. Set
-`CTX_APPLICATION_CHECKS=1` for the application CI lane; until configured,
-its first job fails closed. Make the lane mandatory before implementation MRs merge.
+branch; `CTX_WORKFLOW_CHECKS=1` also enables them on other branches. Application
+checks activate automatically wherever committed version-2 plans exist.
+Until adapters are configured, their jobs fail closed. Scope/manifest/browser needs
+come from committed plan/branch identity, not manually supplied pipeline variables.
+Read docs/development/acceptance-evidence.md. The candidate-data file
+`.gitlab/ctx/verification-context.json` is the narrow exception to workflow-policy
+write restrictions: ticket implementation runs `scripts/ctx_ci_context.py prepare`
+and commits it before verification/review; epic docs runs `prepare --whole-epic`
+before final verification. This does not authorize any other CI/policy changes.
 
 The application lane's `ctx:delivery-readiness` job collects prerequisite receipts
 and produces a nine-stage evidence summary, even for incomplete candidates. Read

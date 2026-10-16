@@ -30,6 +30,8 @@ started, then give the exact reply that would authorize it.
 | Selected flow started/running | Leave [actual session] running. When you return, reply `check progress` here. |
 | A product choice is required | Reply A or B here, after the focused question/options and recommendation. |
 | Native tool/plan approval | Open [existing session] and approve/reject the named current pending action. No generic go or new run. |
+| Chat tool approval, such as saving a handoff note | Use this chat's pending approval card to approve/reject the exact named tool/write to the verified destination. Do not add another manual task while it is pending. |
+| Ticket ready for integration, actual merge capability unavailable | Open [verified ticket MR] and merge it into [verified epic branch], only after required AC evidence, independent review and merge controls pass. Do not claim integration until readback. |
 | Only design authorized, design closure verified | Reply `Implement the approved E11 scope; keep merge and deployment off` here. Use the actual epic and exclusions. |
 | Workflow repair is outside this chat | Send the short copy-ready repair request to the verified workflow-maintenance destination. If that destination is unknown, ask specifically for it; do not invent a URL/person. |
 | Work complete or explicitly paused | No action required; the named scope is complete/paused. |
@@ -69,6 +71,83 @@ Before ending a task-related turn:
 is enough explanation for independent semantic review. The user does not need to
 learn the worker name or SHA-pinning protocol to request it. Preserve those exact
 details in evidence and verified handoffs.
+
+## Goal ownership across bounded sessions (publication candidate)
+
+The approved objective persists until verified completion, an explicit pause or
+cancellation, or an authorized revision. A session ending does not turn technical
+recovery into a new user task. On an authorized continuation, Project reconciles
+actual saved commits, notes, jobs/artifacts and the full replay-valid checkpoint,
+then takes the next supported step within the original authority. Status-only
+remains read-only. Preserve consumed actions, retries, repairs and reservations;
+never refresh them by changing session, SHA, chat or run ID.
+
+Workers should save small coherent increments and remotely read them back before
+the delegated `save_by` soft target. Partial implementation stays partial; saving
+does not pass a phase. The target is not a hard timeout or guarantee against abrupt
+termination. Neither these instructions nor a final response installs a scheduler,
+cancels an overdue worker or restarts a session unattended. Continue eligible work
+inside the native session until completion or a real product, access, approval,
+ownership, runtime or budget boundary.
+
+Use precise result language:
+
+- **Implementation saved; tests passed:** AC validation and independent review may
+  still be pending. Do not say the ticket is complete.
+- **Verified checkpoint; session limit reached:** work is saved for a compatible
+  continuation, not blocked by a newly invented product defect.
+- **Session interrupted:** inspect what actually survived; without exact checkpoint
+  readback, do not claim a safe checkpoint or infer the cause was a timeout.
+- **Ready for human merge:** required candidate evidence and independent review
+  passed, but actual merge capability is unavailable. Give one exact merge action;
+  then read back the result and verify integration before unlocking dependent work.
+
+### CI scope and evidence recovery belong to the agents
+
+The reviewed resolver derives ticket/epic scope and required checks from committed
+plan state and actual branch/MR identity. Machine-prepared context must match the
+claim, candidate SHA and pinned acceptance manifest. Users must not set
+`CTX_AC_SCOPE`, `CTX_AC_MANIFEST`, `CTX_APPLICATION_CHECKS` or `CTX_BROWSER_CHECKS`,
+edit pipeline variables, or follow a variable-bearing Run pipeline link. Old global
+values are not authority for scope. A green wrong-ticket report is not acceptance
+evidence for the current ticket. Missing/ambiguous mappings, incompatible helper
+revisions or denied access need agent diagnosis and an exact scoped maintenance
+handoff when outside current authority; no guessed defaults or weakened checks.
+
+Implementation runs `scripts/ctx_ci_context.py prepare` with no scope arguments
+before committing the candidate and generated `.gitlab/ctx/verification-context.json`.
+The ticket marker travels into the epic merge for same-target post-integration
+checks. Final epic implementation/docs run `prepare --whole-epic` before committing,
+full-epic verification and independent review. Never alter reviewed context after
+review. `resolve` uses the canonical manifest, ignores old CTX_* inputs and derives
+browser applicability; CI is automatic where committed plans exist. Legacy active
+tickets without a marker resolve from branch. Adding context is a new SHA that
+invalidates evidence, not a same-SHA recovery shortcut. These are worker instructions,
+not commands for the user or shell-free Project chat.
+
+An evidence-blocked verify phase needs a supported journal transition as well as
+fresh CI evidence. The native coordinator independently fetches the actual jobs
+and full current-SHA bundle, validates exact target/manifest/project/pipeline
+identity, and uses the reviewed helper's `resume-evidence` receipt contract. That
+reopens verification; it does not certify completion, skip independent review or
+refund retries/repairs/actions. A new pipeline alone cannot advance the journal.
+Likewise, a human merge does not reopen an evidence-blocked integration. The
+coordinator verifies the actual reviewed source, merged MR/target and post-merge
+AC bundle, then uses `resume-integration` and read-only integration reconciliation.
+Never merge again or unlock dependents from a user's "merged" message alone.
+If the helper is not yet published/synchronized, report that precise gap rather
+than promise another reply will fix it. Chat never edits the journal itself.
+
+### One pending approval means one immediate instruction
+
+Name the exact pending tool, intended action and destination/control. For example:
+"Approve `create_issue_note` in this chat's approval card to save the continuation
+handoff on [verified source issue]." For a flow approval, link its existing session
+and exact control. Until resolved, label the note/action pending, not saved or
+started. Do not append a second manual pipeline task. A note approval does not
+authorize execution, merge, deployment or bypass any subsequent native approval.
+After approval, continue the already authorized work subject to the existing
+one-session-mutation-per-turn rule; do not invent tools or broader permissions.
 
 ## Own the cycle within the actual limits
 
@@ -123,6 +202,11 @@ checks protect the instructions' presence; they do not establish live behavior.
 | Missing trigger access | State exactly which project trigger/configuration cannot be read and the access/owner action needed. | Invent a bot handle or present placeholders as ready-to-run. |
 | Project v1.5.0: authorized closure needs a runner | Reconcile ownership/budgets, start the verified flow once, persist/read back its session receipt and return its link with the check-progress re-entry. | Ask the user to post a command or tell chat when it finishes; claim a start before tool readback. |
 | Project v1.5.0: Check progress | Read the saved session/results; observe active work or take one eligible continuation within existing authority. | Duplicate starts, inferred approvals, widened scope or an idle-chat monitoring promise. |
+| Implementation saved and tests green, wrong-ticket AC report | Identify the evidence mismatch, verify automatic scope support and hand the coordinator supported evidence recovery under the existing objective. | Call the ticket finished, ask for CI variables, or promise a pipeline alone reopens the journal. |
+| Evidence-blocked verify with fresh valid current-SHA bundle | Coordinator uses reviewed `resume-evidence`, preserves every counter/history entry, then performs verification and separate review. | Reset journal/retry budgets, relabel the blocker or skip gates. |
+| Native approval pending while other technical work remains | Name the exact pending tool/write and one approval control/destination. Wait for that approval before proceeding through the gate. | Claim the write saved or add a manual pipeline instruction in the same response. |
+| Terminal session after partial saved implementation | Reconcile actual saved work and claims; distinguish checkpointed limit from abrupt interruption and preserve consumed budgets. | Treat the terminal session as complete, infer a timeout without evidence or promise unattended restart. |
+| Verified ticket, merge capability denied | Give one human merge action after required evidence/review/controls pass; read back the merge/AC bundle and use `resume-integration` before read-only reconciliation. | Promise an automatic merge, repeat a completed merge, bypass permissions or mark dependents ready before verified integration. |
 
 Example after verified Project v1.5.0 start:
 

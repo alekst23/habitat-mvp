@@ -23,8 +23,8 @@ The application foundation must supply:
    Any database/service dependency needs separately reviewed CI setup.
 3. The smallest useful tests in `tests/browser/`, with real observable assertions.
    Annotate the ACs proved by the test; annotations alone do not prove behavior.
-4. The committed manifest and scoped pipeline variables from
-   [acceptance evidence](acceptance-evidence.md), including `CTX_BROWSER_CHECKS=1`.
+4. The committed plan/manifest and automatically prepared candidate context from
+   [acceptance evidence](acceptance-evidence.md). No browser/scope pipeline variables.
 
 For example, attach these annotations to ONE real journey when it proves both ACs:
 
@@ -57,11 +57,14 @@ expected failures and failed runs cannot be counted as passing AC evidence.
 One test may annotate multiple criteria. Never include credentials/customer data
 in fixtures or artifacts; traces can contain network payloads and UI text.
 
-No application or browser journeys are supplied by this workflow change. Enabling
-the job before foundation prerequisites exist fails; it does not manufacture a pass.
-`CTX_BROWSER_CHECKS` is only relevant inside the `CTX_APPLICATION_CHECKS=1` lane.
-An omitted browser job is allowed for non-UI scope; acceptance still blocks any
-manifest that requires browser evidence but lacks the matching report.
+No application or browser journeys are supplied by this workflow change. The job
+runs automatically alongside verification for committed plans, resolves the same
+scope, and records not-applicable without installing Node dependencies when no
+browser criterion exists. Otherwise missing foundation prerequisites fail; the
+job never manufactures a pass. Missing required matching browser evidence blocks
+acceptance regardless of old project variables. The image installs isolated Python
+for context resolution and, only for UI scope, pinned backend dependencies when
+present before npm/Playwright and application startup.
 
 ## Agent-driven exploration
 
