@@ -420,8 +420,8 @@ def validate_chat_agent(name, record, prompt, catalog):
             "catalog_item_id": 1016234,
             "consumer_id": 12316920,
             "name": "CTX Development",
-            "catalog_version_at_verification": "1.10.0",
-            "verified_on": "2026-10-15",
+            "catalog_version_at_verification": "1.11.0",
+            "verified_on": "2026-10-16",
             "runtime_version_policy": "gitlab_configured_consumer",
         }
         require(isinstance(binding, dict) and binding == expected_binding and

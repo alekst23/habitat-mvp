@@ -85,13 +85,11 @@
         ]
       },
       "mode": "bounded-supervisor",
-      "candidate_catalog_version": "1.11.0",
-      "candidate_status": "Local implementation: automatic candidate scope and evidence-resume recovery. Not published; preserve the recorded live version and consumer until release-time readback. See docs/development/automatic-acceptance.md.",
       "max_delegations": 64,
       "runtime_parallelism": "serial-fallback; native parallel delegation unverified",
-      "publication_status": "Published and enabled v1.10.0 on 2026-10-15 UTC. Full saved 40852-byte YAML equals reviewed source after final-newline normalization. File-based checkpoint transfer and seven scoped E11 exclusions preserve all notes/history/budgets. Same 64-delegation ceiling, tools, private visibility, service account and active Mention/Assign/Assign reviewer triggers. Controller remains disabled; live two-run acceptance pending. No application run started.",
-      "catalog_version": "1.10.0",
-      "published_source_commit": "9522bf6c39e6564047a5ea9d775f69de90828f41",
+      "publication_status": "Published and enabled v1.11.0 on 2026-10-16 UTC. Full 40932-byte saved YAML matches the 40933-byte reviewed source after removal of its final newline. Private visibility, unchanged tools, max_delegations=64, service account and active Mention/Assign/Assign reviewer triggers verified. Source !60 and maintenance syncs !61/!62 merged with passing CI. Final ticket verify/acceptance passed; pipeline 2956291204 failed on unconfigured source-security. Expected browser N/A is not browser execution. Security remains a gate; live two-run acceptance pending. No E11 agent run, checkpoint reset, application MR merge or deployment is part of this release.",
+      "catalog_version": "1.11.0",
+      "published_source_commit": "4f56e11fff5decb6bd43a16904f84f5210fad7f4",
       "publication_history": [
         {
           "catalog_version": "1.5.0",
@@ -126,11 +124,19 @@
           "published_definition_sha256": "575262d3f5c6fb3d4eb1321b536c426531caebfc854e328439e0a6bd695c9779",
           "catalog_saved_definition_sha256": "080a37445951b671901af655666065282cd0174ed39d08befc07f7e9f15400bd",
           "verification": "Source !35 passed pipeline 2936852177 and independent review 3994970235, merging main 9deb5530. E2 helper sync !36 passed pipeline 2936856436 and review 3994972774, merging 9b4e8810. 187 local tests passed; E2 product docs remained unchanged. Full 40948-byte saved YAML, private/enabled state, service account and active triggers read back 2026-10-12 UTC. No application run started. E11 session 9530877 later reported model-transcribed checkpoint corruption; live recovery was not established."
+        },
+        {
+          "catalog_version": "1.10.0",
+          "published_source_commit": "9522bf6c39e6564047a5ea9d775f69de90828f41",
+          "published_definition_sha256": "bd3782349477db5b6410b1592fcabd04c3e538fcdcce8645f9b173ee729d2000",
+          "catalog_saved_definition_sha256": "dade03331949cede1e5089d75766be7a38b3adc4cdaf7485c65a4371b461791d",
+          "publication_status": "Published and enabled v1.10.0 on 2026-10-15 UTC. Full saved 40852-byte YAML equals reviewed source after final-newline normalization. File-based checkpoint transfer and seven scoped E11 exclusions preserve all notes/history/budgets. Same 64-delegation ceiling, tools, private visibility, service account and active Mention/Assign/Assign reviewer triggers. Controller remains disabled; live two-run acceptance pending. No application run started.",
+          "verification": "Published/read back 2026-10-15 UTC: source 9522bf6c, full 40852-byte saved YAML SHA-256 dade03331949cede1e5089d75766be7a38b3adc4cdaf7485c65a4371b461791d. v1.10.0 enabled/private, unchanged tools, max_delegations=64, service account and active Mention/Assign/Assign reviewer triggers verified. Source !49 merged main 75442835 after independent review 4021263981; E11 helper sync !50 merged 71016e8b after review 4021234416. All workflow jobs passed in pipelines 2951370940/2951372315; overall pipelines failed on separate incomplete application verification. User explicitly approved only the workflow merges despite those failures; no CI rules/protections changed. 202 source and 208 sync tests passed locally. E11 product design/plan and application adapters remain byte-identical to 7ad45df2. No app MR merged, checkpoint rewritten or application run started. Actual runtime publication/recovery and live two-run acceptance remain pending; see docs/development/checkpoint-publication.md."
         }
       ],
       "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234",
       "definition_sha256": "edd61f87b3de0732683b7a47db4e16d77455d25a3d96449a252c9523145f4899",
-      "verification": "Published/read back 2026-10-15 UTC: source 9522bf6c, full 40852-byte saved YAML SHA-256 dade03331949cede1e5089d75766be7a38b3adc4cdaf7485c65a4371b461791d. v1.10.0 enabled/private, unchanged tools, max_delegations=64, service account and active Mention/Assign/Assign reviewer triggers verified. Source !49 merged main 75442835 after independent review 4021263981; E11 helper sync !50 merged 71016e8b after review 4021234416. All workflow jobs passed in pipelines 2951370940/2951372315; overall pipelines failed on separate incomplete application verification. User explicitly approved only the workflow merges despite those failures; no CI rules/protections changed. 202 source and 208 sync tests passed locally. E11 product design/plan and application adapters remain byte-identical to 7ad45df2. No app MR merged, checkpoint rewritten or application run started. Actual runtime publication/recovery and live two-run acceptance remain pending; see docs/development/checkpoint-publication.md.",
+      "verification": "Live publication readback verified 2026-10-16 UTC: source 4f56e11fff5decb6bd43a16904f84f5210fad7f4, saved YAML SHA-256 54e4a3995002ce8f4659cf1b0e7ee7e98bbfe50f5c46ff6b8fc9ff2a8026e124. Source !60 merged f4c7f09f11a680ce72b88c029a5b3ae085f566f3 after pipeline 2956257602 passed; two independent local reviewers passed, relayed in note 4031025070. Native Duo review failed with HTTP 502 and then a review lock, not native approval. E11 maintenance sync !61 at f96c20f2de5f4f1517ed1167c609ba10c84e50d7 merged 318d2883f8a5ebc301767ea26fd9644b84652c95 after pipeline 2956258905 and independent local review note 4031026495; native review failed HTTP 503. Ticket maintenance sync !62 at 3d10d11dd45a9ff6a6cc0f195816ef6840bb923e merged ee86c6b2d52341b7a9bc1e3bd2a9509d9f7ac857 after pipeline 2956261588 and independent local review note 4031035383 (238 tests). Final ticket marker candidate 1e86671774206eb0cb7eb4c97867fc91a8c6a401 passed independent complete 32-file maintenance-diff review and 238 local tests/contract validation; Final candidate 1e86671774206eb0cb7eb4c97867fc91a8c6a401 pipeline 2956291204 finished FAILED overall: workflow validate/tests/design passed; ctx:verify job 17241593113 passed with 47 tests and one warning; ctx:acceptance job 17241593114 passed (passed=true, criteria_total=1, scope E11-2, manifest SHA-256 7950f2341e00c03f4e59beb2b82c79c885bbfd3b1d38025e26c1292994975dba, browser_required=false, mode=application, branch ctx/ticket-i13). Acceptance .ctx/reports and .ctx/acceptance.json artifacts uploaded with HTTP 201. ctx:browser job 17241593112 succeeded with 'Browser not applicable to this checked context; no browser pass claimed.' This is expected N/A, not browser execution. ctx:source-security job 17241593115 failed with exit 2: 'source-security command is not configured; application foundation required'. That remaining security/merge gate is not waived; preserve the adapter and all controls. Independent local maintenance review is https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/59#note_4031054561, not native or application-review approval. Live journal maintenance adoption, independent ticket review and integration recovery remain pending; no full-green, merge-ready or completed-ticket claim. No application code/AC, checkpoint or budget changes. See docs/development/automatic-acceptance.md.",
       "managed_terminal_tokens": {
         "design": [
           "ready",
@@ -170,8 +176,9 @@
           "blocked"
         ]
       },
-      "published_definition_sha256": "bd3782349477db5b6410b1592fcabd04c3e538fcdcce8645f9b173ee729d2000",
-      "catalog_saved_definition_sha256": "dade03331949cede1e5089d75766be7a38b3adc4cdaf7485c65a4371b461791d"
+      "published_definition_sha256": "edd61f87b3de0732683b7a47db4e16d77455d25a3d96449a252c9523145f4899",
+      "catalog_saved_definition_sha256": "54e4a3995002ce8f4659cf1b0e7ee7e98bbfe50f5c46ff6b8fc9ff2a8026e124",
+      "source_merge_request": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/60"
     },
     ".gitlab/duo/flows/ctx-delivery.yml": {
       "operations": [
