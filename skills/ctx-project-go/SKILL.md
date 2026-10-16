@@ -104,6 +104,14 @@ verification or substitute self-review. Implementation saved and tests passed
 are milestones, not ticket completion without AC validation, separate independent
 review and verified integration. Continue the authorized goal after recovery.
 
+For `owner_action=reconcile_interruption`, inspect terminal sessions/jobs, saved
+partial/final results and ownership before using the guide's `resume-interrupted`
+receipt. This reopens only unfinished verify/review/epic_review/design_review at
+the unchanged candidate and manifest. Two recoveries per target/phase accumulate
+across sessions and SHAs; old retries, repairs and actions stay consumed. Normal
+claim/session budgets still apply. No human-review bypass, fake approval, checkpoint
+rewrite or retry loop. Preserve a successful final report instead of redoing it.
+
 Use ctx-epic-run to enumerate the complete ready frontier. Delegate work to separate
 SDLC components, keeping shared project state and consolidation in the coordinator.
 Continue after ticket integration; process other ready work when one target blocks.

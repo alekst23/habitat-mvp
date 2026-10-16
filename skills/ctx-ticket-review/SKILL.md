@@ -23,6 +23,25 @@ inspection reference, browser evidence where required, and checked SHA. A single
 test may support several ACs. An inspected implementation cannot substitute for
 required runtime behavior. No UI evidence is acceptable only for non-UI criteria.
 
+## Bounded retrieval and interrupted reviews
+
+Start from the exact candidate SHA, changed-path list and verification report.
+Fetch complete changed files at that SHA, once per path; use the installed
+repository-file or read-only GitLab API tool with an explicit ref. Repository
+search is discovery, not a substitute for file contents. Cache successful reads
+within this review. Do not repeatedly fetch an unchanged MR diff or issue the
+same unsuccessful search. After one corrected request, use a supported exact-file
+read; if that also fails, save the concrete missing path/tool error and return
+blocked for evidence/access. Never infer missing source from search snippets.
+
+Before the supplied `save_by`, publish/read back a partial review note with claim,
+candidate SHA, verification URL, checked files/ACs, findings and exact remaining
+checks. Partial notes are progress evidence, never approval or a final verdict.
+On recovery, inspect saved partial notes and validate their SHA/provenance, then
+finish the remaining checks and reconsider all findings before publishing the
+complete independent review. A platform interruption is not a code defect, and
+neither a successful runner job nor a partial matrix proves the review passed.
+
 Block for missing/failed/stale acceptance evidence or unresolved material findings.
 Record ready, needs changes or needs decision with precise evidence. This verdict
 is not GitLab MR approval, ticket integration or release authorization.
