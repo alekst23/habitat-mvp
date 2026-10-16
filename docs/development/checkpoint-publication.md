@@ -43,7 +43,7 @@ budgets or duplicate active work. The live acceptance checks below remain requir
 
 ## Failure and repair boundary
 
-### Composite-identity repair (live identity/attribution verified; rollout pending)
+### Composite-identity repair (live identity/attribution verified)
 
 On 2026-10-16 UTC, isolated maintenance [session 9577889](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/agent-sessions/9577889)
 ran reviewed source `9eabc5f05b5b312b7605075616e47f04a8b500bb` on maintenance
@@ -57,10 +57,12 @@ No token/raw credential response was printed. No E11 state was read or changed,
 and no worker, checkpoint, budget change or application execution occurred.
 
 This confirms the current runtime mechanism, not retrospective introspection of
-the expired credentials from the two earlier sessions. It proves identity and
+the credentials from the two earlier sessions. It proves identity and
 plain-note attribution; full E11 checkpoint recovery/publication remains unrun.
 Independent source follow-up [review 4025286642](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/57#note_4025286642)
 found no new issues after separating required author policy from observed identity.
+Source rollout is tracked by !57; the three-file helper/test/guide synchronization
+into `ctx/epic-i11` is !58. Verify their actual merge state before E11 use.
 
 Sessions **9576995** and **9577108** stopped before dispatch because the old helper
 equated `/api/v4/user.id` with the checkpoint author. The first
