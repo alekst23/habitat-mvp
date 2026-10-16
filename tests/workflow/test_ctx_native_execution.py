@@ -149,9 +149,10 @@ class NativeAdmissionTests(unittest.TestCase):
             ".gitlab/duo/flows/ctx-development.yml"]
         self.assertNotIn("pending_catalog_version", catalog)
         self.assertEqual(catalog["catalog_version"], "1.10.0")
-        self.assertNotIn("candidate_status", catalog)
+        self.assertIn("Not published", catalog["candidate_status"])
+        self.assertEqual(catalog["candidate_catalog_version"], "1.11.0")
         self.assertIn("live two-run acceptance pending", catalog["publication_status"])
-        self.assertEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
+        self.assertNotEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
         self.assertEqual(catalog["publication_history"][-1]["catalog_version"], "1.9.0")
         controller = json.loads((ROOT / ".gitlab/ctx/controller.json").read_text())
         self.assertFalse(controller["enabled"])

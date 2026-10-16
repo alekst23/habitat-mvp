@@ -540,6 +540,8 @@ python scripts/ctx_development.py retry .ctx/development/RUN.json E2-1 --observa
 
 `retry` re-observes a wait/transient condition; it does not authorize code repair or
 prove that the supplied URL was visited. The supervisor must inspect new evidence.
+An evidence-blocked verification phase uses the distinct `resume-evidence`
+transition below, not a relabeled transient retry or a manual status edit.
 The journal stops at 60 actions, below the engine's 64-delegation cap. A budget,
 unresolved CI wait, decision or conflict results in a truthful durable checkpoint.
 The invocation may span multiple tickets but cannot promise unlimited execution.
@@ -562,6 +564,115 @@ prepare and before capture, so the new adapter removes output-format dependence
 without claiming the old runtime's exact wrapping was observed.
 
 ## Version-2 verification and repair
+
+### Automatic CI scope and evidence recovery
+
+Read [acceptance-evidence.md](acceptance-evidence.md). The worker prepares and
+commits candidate context before verification/review; branch/plan identity selects
+scope and manifest, whose criteria select browser checks. No manual CI switches
+or variable-bearing Run pipeline links. A default-target epic MR has a separate
+mandatory whole-epic scope gate; intermediate ticket evidence is not epic readiness.
+
+For an idle v2 target blocked with `blocker_kind=evidence` at `verify`, `next`
+returns `owner_action.action=reconcile_evidence`. The coordinator reads actual
+current branch/MR, successful required CI jobs and full artifacts, then saves and
+reads back a recovery report. A correct pipeline alone does not change the journal.
+Once those observations supply a complete passing bundle, run:
+
+```sh
+python scripts/ctx_development.py resume-evidence .ctx/development/RUN.json TARGET --receipt RECOVERY.json
+```
+
+The receipt has exactly `run_id`, `target`, `phase: verify`, `blocked_attempt`,
+`blocked_report_url`, `candidate_sha`, `report_url`, `report_readback: true`, and
+`verification` (the complete existing bundle documented below). Bind the latest
+recorded blocked attempt/report and the current target. The saved recovery note
+must be newer than recorded source reports; its pipeline must be newer than
+recorded verification pipelines for that target. Independently check actual remote
+ownership, head, job/artifact results and provenance; monotonic IDs and JSON are
+consistency checks, not authentication or evidence that a tool read occurred.
+
+This appends a replayable event and reopens **verify**, not review/integration.
+Persist/read back the full owner checkpoint, claim verify normally, then require
+fresh independent review. Actions already consumed, transient retries, repairs,
+manifest bytes, request identity, dependencies and history never reset. No active
+claim, exhausted budget, wrong scope/SHA/hash, missing browser report, decision or
+conflict can be bypassed. An unresolved prerequisite still checkpoints truthfully.
+
+If separately authorized workflow maintenance changed the candidate SHA, add
+`candidate_update` containing `previous_sha`, `reviewed_sha`, `changed_paths`,
+`acceptance_manifest_sha256`, `review_url`, `authorization_url`, and
+`remote_readback: true`. The previous SHA must equal the blocked candidate;
+reviewed SHA must equal the new candidate. Every changed path must be in the
+helper's exact `EVIDENCE_MAINTENANCE_PATHS` allowlist. The independent review must
+be a readable same-project MR note for that exact maintenance candidate; human
+maintenance authorization must have readable provenance on the source issue and
+precede the recovery report. The coordinator verifies ancestry, COMPLETE diff,
+exact paths/content, unchanged pinned manifest and actual authority/reviewer,
+not just those receipt booleans. This adopts an already saved reviewed fix; it
+does not give the executing agent permission to edit workflow policy.
+
+When `.gitlab/ctx/verification-context.json` changed, include its exact saved
+contents as `candidate_update.verification_context`; it must still identify the
+same blocked project/epic/target. Confirm with the resolver at the new candidate.
+No product code, plan/AC changes, command-adapter edits, credential/checkpoint
+policy or unrelated changes may ride along. Those require their own authorized
+repair/revision, not this transition. A same-SHA receipt cannot pretend a sync
+never happened. A maintenance SHA change invalidates old verification/review;
+the new bundle and subsequent independent application review remain mandatory.
+
+### Resume after an actual human merge
+
+If a reviewed ticket stopped at `integrate` with an evidence/access blocker,
+`next.owner_action` requests `reconcile_integration`. The coordinator reads the
+actual MR and current epic head, confirms the exact reviewed source was merged
+into its mapped epic, and collects passing ticket-scoped post-merge CI/AC/browser
+evidence. It must verify ownership and ancestry; a human's "merged" message alone
+is not a receipt. A changed reviewed source or moved/unknown target is not silently
+accepted. No merge command is issued by this recovery.
+
+Publish/read back a fresh source report and run:
+
+```sh
+python scripts/ctx_development.py resume-integration .ctx/development/RUN.json TARGET --receipt MERGE_RECEIPT.json
+```
+
+The receipt binds `run_id`, `target`, `phase: integrate`, `blocked_attempt`,
+`blocked_report_url`, unchanged reviewed `candidate_sha`, `report_url`, and
+`report_readback`, `remote_readback`, `ownership_verified` all true. Its
+`merge_request` contains the same-project `url` and `project_id`, `state: merged`,
+mapped `source_branch`/`target_branch`, reviewed `source_sha`, observed `merge_sha`
+and `target_head_sha`. Its `integration` contains `source_sha`, `epic_sha`, the
+post-merge `pipeline_url`, saved independent `review_url`, and full `verification`
+bundle for that target at the resulting epic SHA. The coordinator independently
+reads every referenced fact; JSON booleans cannot establish remote truth.
+
+This reopens integration in `read-only-reconciliation` mode, without marking the
+ticket done, moving the recorded epic head or unlocking dependents. Persist/read
+back, claim normally (consuming the normal action), recheck remote truth, and
+record the exact observed integration. Do not run merge again, substitute another
+candidate/result, reclassify the blocker or reset any counters/history. Existing
+review and source verification remain bound to the original candidate; missing
+post-merge evidence, active claims, exhausted budgets or uncertainty still block.
+
+### Durable goal, bounded session
+
+Use one approved objective and the native continuation protocol, not a new task
+per technical finding. Save/read back small coherent worker increments before
+`save_by`; partial saves never pass a phase. The admission helper's soft targets
+do not cancel workers or prove a crash's cause. After a terminal interruption,
+reconcile actual saved work and claims before adopting or retrying anything.
+Keep a verified execution-limit checkpoint distinct from an application defect
+or an abrupt session without verified checkpoint. No automatic chat wake-up,
+recursive flow launch or budget renewal is installed by this change.
+
+Tests passed, implementation saved, AC verified, independently reviewed and
+integrated are separate milestones. Continue eligible technical work under the
+same authorization; ask only at real product/access/approval/limit boundaries.
+Project's next human instruction must name one exact action/control, not ask the
+user to configure scope, diagnose logs or transfer reports between agents.
+
+### Verification bundle
 
 All managed workers obey the shared identity, authority and publication contract.
 Leave the coordinator journal/project index, other tickets and foreign resources
