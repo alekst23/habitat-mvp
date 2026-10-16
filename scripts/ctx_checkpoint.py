@@ -21,7 +21,7 @@ import ctx_owner as owner
 
 API = "https://gitlab.com/api/v4"
 BASE = "https://gitlab.com/" + owner.closure.PROJECT
-WRITER_ID = 43132375  # Verified CTX Development service account, not the human user.
+WRITER_ID = 43132375  # OAuth owner and trusted note author, NOT necessarily /user.
 MAX_RESPONSE_BYTES = 32 * 1024 * 1024
 MAX_BODY_BYTES = 512 * 1024
 MAX_POST_ATTEMPTS = 2  # One retry only after a definite rejection, never uncertainty.
@@ -80,14 +80,15 @@ class GitLabNotes:
 
     def _request(self, method, path, data=None):
         # Internal callers alone construct paths; no generic URL/method/token CLI.
-        require((method == "GET" and path == "/user") or
+        require((method == "GET" and path in {"/user", "/oauth/token/info"}) or
                 re.fullmatch(rf"/projects/{owner.PROJECT_ID}/issues/[1-9][0-9]*/notes"
                              r"(?:/[1-9][0-9]*|\?per_page=100&page=[1-9][0-9]*&order_by=created_at&sort=asc)?", path)
                 and method in {"GET", "POST"}, "unsupported checkpoint endpoint")
         require(method != "POST" or (path.endswith("/notes") and isinstance(data, dict)
                 and set(data) == {"body"} and isinstance(data["body"], str)), "unsupported checkpoint write")
         require(data is None or self._token not in data["body"], "credential detected in checkpoint")
-        request = Request(API + path, method=method,
+        url = "https://gitlab.com/oauth/token/info" if path == "/oauth/token/info" else API + path
+        request = Request(url, method=method,
                           data=None if data is None else json.dumps(data, ensure_ascii=False).encode("utf-8"),
                           headers={"Authorization": "Bearer " + self._token,
                                    "Content-Type": "application/json"})
@@ -104,11 +105,36 @@ class GitLabNotes:
             # Never echo response bodies, headers, payloads or credential values.
             raise TransportError("invalid or oversized response") from None
 
-    def authenticate(self):
+    def identity(self):
+        # /user resolves to the human scoped user for GitLab composite identity.
+        # The OAuth introspection endpoint retains the actual token owner. Never
+        # infer credential type from /user, an env name, or a claimed session ID.
+        info, _ = self._request("GET", "/oauth/token/info")
+        require(isinstance(info, dict) and type(info.get("resource_owner_id")) is int and
+                info["resource_owner_id"] == WRITER_ID,
+                "flow OAuth owner is not the registered CTX Development service account")
+        scopes = info.get("scope")
+        require(isinstance(scopes, list) and all(isinstance(s, str) for s in scopes) and
+                len(scopes) == len(set(scopes)), "invalid flow OAuth scopes")
+        users = [s for s in scopes if re.fullmatch(r"user:[1-9][0-9]*", s)]
+        require(len(users) == 1 and "ai_workflows" in scopes and
+                set(scopes) <= {"ai_workflows", "mcp", *users},
+                "requires restricted composite flow OAuth with one scoped user; no added scopes")
+        scoped_user_id = int(users[0].split(":")[1])
+        require(scoped_user_id != WRITER_ID and type(info.get("expires_in")) is int and
+                info["expires_in"] > 0, "requires an expiring composite flow OAuth credential")
         user, _ = self._request("GET", "/user")
-        require(isinstance(user, dict) and user.get("id") == WRITER_ID,
-                "requires the registered CTX Development service account, not a personal credential")
-        return user["id"]
+        require(isinstance(user, dict) and type(user.get("id")) is int and
+                user["id"] in {WRITER_ID, scoped_user_id},
+                "effective API user does not match the verified composite OAuth identity")
+        # Only these non-secret fields may leave the helper; never the full /user
+        # or token-info response (which can contain personal/application metadata).
+        return {"action": "identity", "verified": True, "project_id": owner.PROJECT_ID,
+                "oauth_owner_id": WRITER_ID, "scoped_user_id": scoped_user_id,
+                "effective_user_id": user["id"], "required_note_author_id": WRITER_ID}
+
+    def authenticate(self):
+        return self.identity()["oauth_owner_id"]
 
     @staticmethod
     def normalize(source, value):
@@ -286,6 +312,7 @@ def publish(api, value, summary, *, previous_note_id, receipt_path, initial=Fals
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("identity", help="read-only, allowlisted composite identity diagnostic")
     build = commands.add_parser("assemble")
     build.add_argument("input", type=Path)
     build.add_argument("--journal-file", type=Path)
@@ -317,6 +344,8 @@ def main():
             dev.save_json(args.output, value)
             result = {"action": "assembled", "output": str(args.output),
                       "payload_sha256": digest(owner.render(value))}
+        elif args.command == "identity":
+            result = GitLabNotes.from_environment().identity()
         elif args.command == "read":
             api = GitLabNotes.from_environment()
             result = download(api, args.source_issue, args.epic, args.output_dir, args.legacy_note_ids)

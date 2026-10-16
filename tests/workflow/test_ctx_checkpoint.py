@@ -42,6 +42,39 @@ class Notes:
 
 
 class CheckpointTests(unittest.TestCase):
+    def test_composite_oauth_authenticates_owner_not_effective_user(self):
+        api = checkpoint.GitLabNotes("fixture-oauth-token")
+        token_info = {"resource_owner_id": checkpoint.WRITER_ID,
+                      "scope": ["ai_workflows", "mcp", "user:43066631"], "expires_in": 7200}
+        def response(method, path):
+            return (token_info if path == "/oauth/token/info" else
+                    {"id": 43066631, "username": "administrator106"}, {})
+        with patch.object(api, "_request", side_effect=response) as request:
+            self.assertEqual(api.authenticate(), checkpoint.WRITER_ID)
+            self.assertEqual(request.call_args_list[0].args, ("GET", "/oauth/token/info"))
+            self.assertEqual(request.call_args_list[1].args, ("GET", "/user"))
+        # A human-owned OAuth token is not a composite flow credential. A PAT
+        # cannot pass token introspection at all. Never trust an arbitrary /user.
+        invalid = [token_info | {"resource_owner_id": 43066631},
+                   token_info | {"scope": ["api", "user:43066631"]},
+                   token_info | {"scope": ["ai_workflows"]},
+                   token_info | {"scope": ["ai_workflows", "user:1", "user:2"]},
+                   token_info | {"scope": ["ai_workflows", "user:43066631", "api"]},
+                   token_info | {"expires_in": 0}]
+        for info in invalid:
+            with self.subTest(info=info), patch.object(api, "_request", return_value=(info, {})) as request:
+                with self.assertRaises(ValueError):
+                    api.authenticate()
+                self.assertEqual(request.call_count, 1)
+        with patch.object(api, "_request", side_effect=[(token_info, {}), ({"id": 123}, {})]):
+            with self.assertRaises(ValueError):
+                api.authenticate()
+        with patch.object(api, "_request", side_effect=response):
+            self.assertEqual(api.identity(), {"action": "identity", "verified": True,
+                "project_id": 87329027, "oauth_owner_id": checkpoint.WRITER_ID,
+                "scoped_user_id": 43066631, "effective_user_id": 43066631,
+                "required_note_author_id": checkpoint.WRITER_ID})
+
     def test_file_assembly_cli_transfers_large_history_without_stdout_payload(self):
         value = snapshot()
         value["resources"] = [{"event": "observed", "note": "retained history " * 6000}]
@@ -209,14 +242,20 @@ class CheckpointTests(unittest.TestCase):
                 checkpoint.GitLabNotes.from_environment(invalid)
         api = checkpoint.GitLabNotes.from_environment(base)
         with patch.object(api, "_opener") as opener:
-            opener.open.return_value.__enter__.return_value.read.return_value = b'{"id":43132375}'
+            opener.open.return_value.__enter__.return_value.read.side_effect = [json.dumps({
+                "resource_owner_id": checkpoint.WRITER_ID,
+                "scope": ["ai_workflows", "mcp", "user:43066631"], "expires_in": 7200
+            }).encode(), b'{"id":43066631}']
             opener.open.return_value.__enter__.return_value.headers = {}
             self.assertEqual(api.authenticate(), checkpoint.WRITER_ID)
+            self.assertEqual(opener.open.call_args_list[0].args[0].full_url,
+                             "https://gitlab.com/oauth/token/info")
             request = opener.open.call_args.args[0]
             self.assertEqual(request.full_url, "https://gitlab.com/api/v4/user")
             self.assertEqual(request.get_header("Authorization"), "Bearer fixture-oauth-token")
             self.assertIsNone(request.get_header("Private-token"))
             body = "Generated history ☃ " * 6000
+            opener.open.return_value.__enter__.return_value.read.side_effect = None
             opener.open.return_value.__enter__.return_value.read.return_value = json.dumps({
                 "id": 123, "body": body, "author": {"id": checkpoint.WRITER_ID}}).encode()
             self.assertEqual(api.create(10, body)["body"], body)
@@ -245,6 +284,7 @@ class CheckpointTests(unittest.TestCase):
                 api.authenticate()
             self.assertNotIn("fixture-oauth-token", str(raised.exception))
             for method, path, data in (("POST", "/user", {"body": "hi"}),
+                                      ("POST", "/oauth/token/info", {"body": "hi"}),
                                       ("POST", "/projects/1/issues/10/notes", {"body": "hi"}),
                                       ("DELETE", "/projects/87329027/issues/10/notes/1", None),
                                       ("POST", "/projects/87329027/issues/10/notes", {"body": "fixture-oauth-token"})):
