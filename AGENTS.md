@@ -10,6 +10,28 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Published/read back **Project v1.9.0 / Development v1.11.0** (2026-10-16 UTC):
+read docs/development/automatic-acceptance.md. Acceptance scope/browser requirements
+come from committed plan/branch/candidate context, not manual pipeline variables.
+Persistent objectives retain budgets/history across sessions; supported evidence,
+maintenance-adoption and human-integration recovery still require actual current-SHA
+CI and independent review. Source !60 merged main f4c7f09; maintenance sync !61
+merged E11 318d2883 and !62 merged the ticket ee86c6b2, all with passing CI and
+independent local reviews. Native Duo reviews failed (502/review lock and 503),
+not native approval. Full saved Project/Development definitions matched reviewed
+source 4f56e11 after final-newline removal; unchanged tools, visibility, enablement,
+service identity and triggers were read back. Numeric consumer 12316920 is retained
+from its reviewed binding, not freshly API-queried; verify live eligibility before use.
+Final ticket marker candidate 1e866717 passed independent full maintenance review
+and local tests. Pipeline 2956291204 finished: workflow checks, 47 application tests
+and E11-2 acceptance passed; browser was expected N/A, not browser execution.
+The pipeline FAILED overall: source-security is unconfigured (exit 2), a remaining
+gate, not a waived check. Maintenance review !59 note 4031054561 is not application
+or native approval. Live journal recovery and independent ticket review remain pending. No E11
+agent continuation, checkpoint/budget reset, application MR merge or deployment is
+authorized by this publication record. Earlier version/publication statements below
+are historical; their enduring scope, evidence and security controls still apply.
+
 Checkpoint identity repair: read docs/development/checkpoint-publication.md.
 GitLab composite OAuth may resolve `/user` to the triggering human. The helper
 verifies the service-account OAuth owner and scoped-user binding using read-only

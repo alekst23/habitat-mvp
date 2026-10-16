@@ -1,4 +1,5 @@
 """Native session admission and journal simulation, not live Duo acceptance."""
+import hashlib
 import json
 import subprocess
 import sys
@@ -148,12 +149,28 @@ class NativeAdmissionTests(unittest.TestCase):
         catalog = json.loads((ROOT / ".gitlab/ctx/catalog.json").read_text())["flows"][
             ".gitlab/duo/flows/ctx-development.yml"]
         self.assertNotIn("pending_catalog_version", catalog)
-        self.assertEqual(catalog["catalog_version"], "1.10.0")
-        self.assertIn("Not published", catalog["candidate_status"])
-        self.assertEqual(catalog["candidate_catalog_version"], "1.11.0")
+        self.assertEqual(catalog["catalog_version"], "1.11.0")
+        self.assertNotIn("candidate_status", catalog)
+        self.assertNotIn("candidate_catalog_version", catalog)
         self.assertIn("live two-run acceptance pending", catalog["publication_status"])
-        self.assertNotEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
-        self.assertEqual(catalog["publication_history"][-1]["catalog_version"], "1.9.0")
+        self.assertEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
+        self.assertEqual(catalog["published_definition_sha256"],
+                         "edd61f87b3de0732683b7a47db4e16d77455d25a3d96449a252c9523145f4899")
+        self.assertEqual(catalog["catalog_saved_definition_sha256"],
+                         "54e4a3995002ce8f4659cf1b0e7ee7e98bbfe50f5c46ff6b8fc9ff2a8026e124")
+        self.assertEqual(catalog["published_definition_sha256"], hashlib.sha256(flow_path.read_bytes()).hexdigest())
+        self.assertEqual(catalog["catalog_saved_definition_sha256"],
+                         hashlib.sha256(flow_path.read_bytes().removesuffix(b"\n")).hexdigest())
+        self.assertEqual(catalog["published_source_commit"], "4f56e11fff5decb6bd43a16904f84f5210fad7f4")
+        self.assertEqual(catalog["publication_history"][-1]["catalog_version"], "1.10.0")
+        self.assertEqual(catalog["publication_history"][-1]["published_definition_sha256"],
+                         "bd3782349477db5b6410b1592fcabd04c3e538fcdcce8645f9b173ee729d2000")
+        self.assertEqual(catalog["publication_history"][-2]["catalog_version"], "1.9.0")
+        self.assertIn("pipeline 2956291204 finished FAILED overall", catalog["verification"])
+        self.assertIn("Expected browser N/A is not browser execution", catalog["publication_status"])
+        self.assertIn("source-security command is not configured; application foundation required",
+                      catalog["verification"])
+        self.assertNotIn("final-candidate CI remains pending", catalog["verification"])
         controller = json.loads((ROOT / ".gitlab/ctx/controller.json").read_text())
         self.assertFalse(controller["enabled"])
 

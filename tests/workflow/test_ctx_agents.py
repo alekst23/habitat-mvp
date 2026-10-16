@@ -25,8 +25,8 @@ class ChatAgentRegistrationTests(unittest.TestCase):
             "catalog_item_id": 1016234,
             "consumer_id": 12316920,
             "name": "CTX Development",
-            "catalog_version_at_verification": "1.10.0",
-            "verified_on": "2026-10-15",
+            "catalog_version_at_verification": "1.11.0",
+            "verified_on": "2026-10-16",
             "runtime_version_policy": "gitlab_configured_consumer",
         })
         for key, value in (("project_id", 1), ("catalog_item_id", 1),
@@ -43,7 +43,7 @@ class ChatAgentRegistrationTests(unittest.TestCase):
             workflow.validate_chat_agent("ctx-project", changed, prompt, catalog)
 
         changed_catalog = deepcopy(catalog)
-        changed_catalog["flows"][".gitlab/duo/flows/ctx-development.yml"]["catalog_version"] = "1.11.0"
+        changed_catalog["flows"][".gitlab/duo/flows/ctx-development.yml"]["catalog_version"] = "1.12.0"
         with self.assertRaises(workflow.Invalid):
             workflow.validate_chat_agent("ctx-project", record, prompt, changed_catalog)
 
@@ -190,16 +190,26 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertEqual(project["display_name"], "CTX Project")
         self.assertTrue(project["enabled_in_project"])
         self.assertTrue(project["catalog_url"].endswith("/agents/1016538"))
-        self.assertEqual(project["catalog_version"], "1.8.0")
+        self.assertEqual(project["catalog_version"], "1.9.0")
         prompt = (AGENTS / project["system_prompt_file"]).read_bytes()
         self.assertNotIn("pending_catalog_version", project)
-        self.assertEqual(project["published_source_commit"], "e72534c164b2fbd17006148bb893d7b26e4f6291")
+        self.assertEqual(project["published_source_commit"], "4f56e11fff5decb6bd43a16904f84f5210fad7f4")
         self.assertEqual(project["published_system_prompt_sha256"],
-                         "a2e33eb774a6ea74abb90175190a0c792b0213e5580ca3ff93d2fc09669a8b5a")
-        self.assertIn("Not published", project["candidate_status"])
-        self.assertEqual(project["candidate_catalog_version"], "1.9.0")
+                         "303810d6b9cd60b84d1680ba6398d315720b1b11e8c04bd083cec2fcccb57702")
+        self.assertNotIn("candidate_status", project)
+        self.assertNotIn("candidate_catalog_version", project)
         self.assertTrue(project["verification"]["resumable_owner_live"].startswith("pending"))
-        self.assertNotEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt.rstrip()).hexdigest())
+        self.assertEqual(project["published_system_prompt_sha256"], hashlib.sha256(prompt).hexdigest())
+        self.assertEqual(project["system_prompt_sha256"], project["published_system_prompt_sha256"])
+        self.assertEqual(project["catalog_saved_system_prompt_sha256"],
+                         "a8b44db7e05514b7f2c31d8bde7bceeca26c57c9f81f6a430660f7c50a1120ee")
+        self.assertEqual(project["catalog_saved_system_prompt_sha256"],
+                         hashlib.sha256(prompt.removesuffix(b"\n")).hexdigest())
+        self.assertTrue(project["verification"]["automatic_acceptance_recovery_live"].startswith("pending"))
+        recovery = project["verification"]["automatic_acceptance_recovery_live"]
+        self.assertIn("pipeline 2956291204 finished FAILED overall", recovery)
+        self.assertIn("not native or application-review approval", recovery)
+        self.assertNotIn("final-candidate CI is pending", recovery)
         self.assertTrue(project["verification"]["discovery_fallback_live"].startswith("passed discovery-only"))
         self.assertTrue(project["verification"]["discovery_recovery_live"].startswith("pending"))
         self.assertTrue(project["verification"]["ordinary_continuation_preflight_live"].startswith("partial"))
@@ -214,8 +224,11 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         previous = project["publication_history"][1]
         self.assertEqual(previous["catalog_version"], "1.1.0")
         self.assertEqual(previous["published_system_prompt_sha256"], "197e9f37dcc9483a7310d599290e0c1730cb2be2d6a790e4b773e2a6978ef8ff")
-        self.assertEqual(project["publication_history"][-1]["catalog_version"], "1.7.0")
+        self.assertEqual(project["publication_history"][-1]["catalog_version"], "1.8.0")
         self.assertEqual(project["publication_history"][-1]["published_system_prompt_sha256"],
+                         "a2e33eb774a6ea74abb90175190a0c792b0213e5580ca3ff93d2fc09669a8b5a")
+        self.assertEqual(project["publication_history"][-2]["catalog_version"], "1.7.0")
+        self.assertEqual(project["publication_history"][-2]["published_system_prompt_sha256"],
                          "cb55d49826871686118dc4f5a5fc10507045f7a0b8d2062dcfcdf4395abb4fcb")
         self.assertTrue(project["verification"]["catalog_readback"].startswith("passed"))
         self.assertTrue(project["verification"]["chat_picker"].startswith("passed"))
