@@ -73,7 +73,7 @@ class CheckpointTests(unittest.TestCase):
             self.assertEqual(api.identity(), {"action": "identity", "verified": True,
                 "project_id": 87329027, "oauth_owner_id": checkpoint.WRITER_ID,
                 "scoped_user_id": 43066631, "effective_user_id": 43066631,
-                "checkpoint_author_id": checkpoint.WRITER_ID})
+                "required_note_author_id": checkpoint.WRITER_ID})
 
     def test_file_assembly_cli_transfers_large_history_without_stdout_payload(self):
         value = snapshot()

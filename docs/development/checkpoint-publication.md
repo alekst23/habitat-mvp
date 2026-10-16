@@ -65,12 +65,21 @@ then binds `/user` to that verified composite identity. It still trusts only
 **43132375** as the checkpoint author, not arbitrary human-authored notes.
 
 The read-only diagnostic is `python scripts/ctx_checkpoint.py identity`. It returns
-only project, OAuth-owner, scoped-user, effective-user and checkpoint-author IDs
+only project, OAuth-owner, scoped-user, effective-user and required note-author IDs
 plus a verification result. It never returns token values, raw introspection/user
 responses, application metadata or headers. Run it only in a separately authorized
 maintenance diagnostic using the existing injected credential; do not start E11 to
 test this repair. An introspection denial or identity mismatch fails closed without
 falling back to `/user` alone, a personal token, new scopes or a changed writer list.
+
+`required_note_author_id` is policy, not observed POST attribution. Composite-token
+note attribution is still unverified for this direct transport. Before using it on
+E11, make one non-checkpoint probe on a separate maintenance issue using this
+helper's authenticated `create`/`get` path; verify the actual server author and exact
+body. Retain the probe, never repeat an uncertain POST, and do not add a marker or
+owner payload. If the author differs, stop and repair the transport through review;
+do not admit human-authored checkpoints or probe the E11 chain. Identity-only
+success and fixture round trips are not live publication acceptance.
 
 This is a helper/guide-only change: the existing v1.10.0 catalog prompt already
 loads this guide and helper, so no catalog version/tool/trigger change is required.

@@ -131,7 +131,7 @@ class GitLabNotes:
         # or token-info response (which can contain personal/application metadata).
         return {"action": "identity", "verified": True, "project_id": owner.PROJECT_ID,
                 "oauth_owner_id": WRITER_ID, "scoped_user_id": scoped_user_id,
-                "effective_user_id": user["id"], "checkpoint_author_id": WRITER_ID}
+                "effective_user_id": user["id"], "required_note_author_id": WRITER_ID}
 
     def authenticate(self):
         return self.identity()["oauth_owner_id"]
