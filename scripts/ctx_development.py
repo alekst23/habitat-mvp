@@ -30,8 +30,8 @@ V2_TICKET_PHASES = ("design", "tests", "implementation", "verify", "review", "in
 V2_EPIC_PHASES = ("implementation", "docs", "verify", "epic_review", "close")
 MAX_REPAIRS = 3
 REPAIR_PHASES = {"implementation", "verify", "review", "epic_review"}
-INTERRUPTION_PHASES = {"verify", "review", "epic_review", "design_review"}
-MAX_INTERRUPTION_RESUMES = 2  # Per target/phase, cumulative across candidates and sessions.
+INTERRUPTION_PHASES = {"verify", "review"}
+MAX_INTERRUPTION_RESUMES = 1  # Per target/phase, cumulative across candidates and sessions.
 MAINTENANCE_CONTEXT_PATH = ".gitlab/ctx/verification-context.json"
 # Exact runtime/guide/test files for the automatic-acceptance maintenance sync.
 # Not a generic workflow-edit grant: no commands, checkpoint identity, exclusions,
@@ -317,7 +317,7 @@ def owner_action(run, frontier):
                     "reason": node["reason"]}
     if exhausted_interruptions:
         return {"action": "checkpoint", "targets": exhausted_interruptions,
-                "reason": "interrupted-phase recovery budget exhausted (2 per target/phase); "
+                "reason": "interrupted-phase recovery budget exhausted (1 per target/phase); "
                           "retain history and do not fall back to the old retry"}
     questions = []
     for target, node in blocked:
@@ -565,13 +565,13 @@ def interruption_resumes(run, target, operation):
                for e in run["events"] if "interruption_resume" in e)
 
 
-def interruption_blocker(run, target):
+def interruption_blocker(run, target, *, phases_allowed=INTERRUPTION_PHASES):
     """An eligible local reconciliation candidate, NOT proof of a runtime failure."""
     if run["version"] != 2 or run["active"] is not None or target not in run["required_targets"]:
         return None
     node = run["nodes"][target]
     if (node["status"] != "blocked" or node.get("blocker_kind") != "transient"
-            or phase(node) not in INTERRUPTION_PHASES):
+            or phase(node) not in phases_allowed):
         return None
     event = next((e for e in reversed(run["events"]) if e.get("target") == target), None)
     if (event and event.get("run_id") == run["request"]["run_id"] and event.get("phase") == phase(node)
@@ -583,6 +583,11 @@ def interruption_blocker(run, target):
 
 
 def resume_interrupted(run, target, receipt):
+    """Charge one action for a single same-candidate verify/review recovery."""
+    return _resume_interrupted(run, target, receipt)
+
+
+def _resume_interrupted(run, target, receipt, *, legacy_replay=False):
     """Reopen one interrupted read-only phase; all remote facts need independent readback.
 
     The interruption claim binds the observed failed session/job to the exact saved
@@ -594,10 +599,13 @@ def resume_interrupted(run, target, receipt):
     next_actions(run)
     require(run["version"] == 2 and run["active"] is None and run["actions"] < MAX_ACTIONS,
             "interruption resume needs an idle version-2 journal with remaining actions")
-    blocked = interruption_blocker(run, target)
+    # The previously published event had no action field and allowed two recoveries
+    # in four read-only phases. Replay it unchanged, but never emit it from the CLI.
+    allowed = {"verify", "review", "epic_review", "design_review"} if legacy_replay else INTERRUPTION_PHASES
+    blocked = interruption_blocker(run, target, phases_allowed=allowed)
     require(blocked is not None, "resume requires an in-scope transient-blocked unfinished read-only phase")
     operation = blocked["phase"]
-    require(interruption_resumes(run, target, operation) < MAX_INTERRUPTION_RESUMES,
+    require(interruption_resumes(run, target, operation) < (2 if legacy_replay else MAX_INTERRUPTION_RESUMES),
             "interrupted-phase recovery budget exhausted; persist checkpoint")
     require(isinstance(receipt, dict) and set(receipt) == {
         "run_id", "target", "phase", "blocked_attempt", "blocked_report_url", "candidate_sha",
@@ -678,7 +686,11 @@ def resume_interrupted(run, target, receipt):
     node = result["nodes"][target]
     node.update(status="pending", reason="")
     node.pop("blocker_kind", None)
-    result["events"].append({"interruption_resume": target, "receipt": deepcopy(receipt)})
+    event = {"interruption_resume": target, "receipt": deepcopy(receipt)}
+    if not legacy_replay:
+        result["actions"] += 1
+        event["action"] = result["actions"]
+    result["events"].append(event)
     return result
 
 
@@ -795,7 +807,8 @@ def require_fresh_recovery(run, target, report_url, pipeline_id=None):
     note_ids, pipeline_ids = [], []
     for event in run["events"]:
         prior = event["receipt"] if set(event) in ({"decision_resume", "receipt"}, {"evidence_resume", "receipt"},
-                                                  {"integration_resume", "receipt"}, {"interruption_resume", "receipt"}) else event
+                                                  {"integration_resume", "receipt"}, {"interruption_resume", "receipt"},
+                                                  {"interruption_resume", "receipt", "action"}) else event
         if "report_url" in prior:
             note_ids.append(int(prior["report_url"].rsplit("#note_", 1)[1]))
         if prior.get("target") != target:
@@ -921,6 +934,12 @@ def verify_journal(run):
         elif set(event) == {"integration_resume", "receipt"}:
             expected = resume_integration(expected, event["integration_resume"], event["receipt"])
         elif set(event) == {"interruption_resume", "receipt"}:
+            require(not any("interruption_resume" in e and "action" in e for e in expected["events"]),
+                    "legacy interruption event cannot follow a metered recovery")
+            expected = _resume_interrupted(expected, event["interruption_resume"], event["receipt"], legacy_replay=True)
+        elif set(event) == {"interruption_resume", "receipt", "action"}:
+            require(type(event["action"]) is int and event["action"] == expected["actions"] + 1,
+                    "interruption recovery must consume the next journal action")
             expected = resume_interrupted(expected, event["interruption_resume"], event["receipt"])
         else:
             expected = record(claim(expected, event["target"]), event)

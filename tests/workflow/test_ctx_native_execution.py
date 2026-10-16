@@ -21,7 +21,8 @@ class NativeAdmissionTests(unittest.TestCase):
                      "complete independent review", "Terminal tokens: [ready, blocked]"):
             self.assertIn(text, review)
         guide = (ROOT / "docs/development/single-shot-development.md").read_text()
-        for text in ("resume-interrupted", "TWO recoveries per", "source-security",
+        for text in ("resume-interrupted", "ONE recovery per", "transition consumes one",
+                     "source-security",
                      "not the unchanged `ctx/ticket-i13`", "stream_lost"):
             self.assertIn(text, guide)
 
