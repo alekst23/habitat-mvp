@@ -593,17 +593,78 @@ The exact receipt fields are `run_id`, `target`, `phase`, `blocked_attempt`,
 `report_readback: true`, `remote_readback: true`, `ownership_verified: true`, and
 `interruption`. The last object contains string `project_id`, `session_id`,
 `session_url`, `status` (failed/canceled), `job_url`, `job_status`, `cause`,
-`terminal_reason`, `evidence_url` (that job's `#L<number>` log line), nonempty
+`terminal_reason`, `evidence_url` (that job's `#L<number>` log line, or the job URL
+with the structured evidence handoff below), nonempty
 `detail`, `result_absent: true`, and `claim`. The claim is the blocked receipt's
 exact run_id/target/phase/attempt/candidate_sha/report_url. Cause is
 `execution_limit`, `runner_failure` or `stream_lost`; terminal_reason matches
 cause except stream_lost uses `delegation_result_missing`. Job status is
 failed/canceled, or success ONLY for evidenced stream_lost. Bind project/session
 and job through actual remote readback, not their URL syntax alone. Read the
-report and log; never fabricate attestations. A passed wrapper job is not session
+report and either the log or its authenticated evidence handoff; never fabricate
+attestations. A passed wrapper job is not session
 success: session 9621826 failed while job 17244915866 exited zero, reporting a
 lost stream and an unfinished review delegation. Record `stream_lost` for that
 case; do not infer a hard execution limit merely from elapsed time.
+
+#### Transfer observed evidence, not technical work to the user
+
+Project follows [its evidence-collection workflow](project-session-handoff.md#own-interruption-evidence-collection)
+before dispatch. The direct numbered-log path remains compatible. For the observed
+`stream_lost` case only, `interruption` may additionally contain `log_evidence`:
+
+```json
+{
+  "version": 1,
+  "observer": "ctx-project",
+  "observer_author_id": "ACTUAL_SERVER_AUTHOR_ID",
+  "access_path": "job_log_tool",
+  "note_url": "https://gitlab.com/PROJECT/-/issues/SOURCE#note_EVIDENCE_ID",
+  "excerpt": "Workflow SESSION_ID stream ended while still CREATED; the turn's tail was lost\nRun ended with the delegation to review still in progress; no result was returned."
+}
+```
+
+Use observer `ctx-project`, `ctx-development` or `workflow-maintainer`; access_path
+is `job_log_tool` or `job_ui`, whichever actually exposed the text. An existing
+supported browser observation by authorized maintenance is valid; this grants
+no browser/tool capability to Project. Excerpt lines contain exact message bodies
+(original prefixes/timestamps may be retained), binding the failed session ID
+and delegated component (`browser` for verify, `review` for review). Do not
+paraphrase them, reconstruct timestamps, paste entire logs/secrets, or use this
+variant to classify an unknown failure. Other platform causes retain the existing
+direct evidence path. `evidence_url` is the same job, optionally with `#L<number>`;
+line anchors are helpful but not mandatory for this structured path.
+
+The evidence note contains one fenced JSON object with the recovery identity fields
+`run_id`, `target`, `phase`, `blocked_attempt`, `blocked_report_url`, `candidate_sha`,
+`acceptance_manifest_sha256`, and `interruption`. In that published object omit
+`log_evidence.note_url` (the note does not exist yet). Read the full saved object
+back, then the consumer supplies its real server URL as `note_url` in the recovery
+receipt. The evidence note must postdate the blocked report and precede the fresh
+recovery report. Compare every other field exactly; no model reconstruction of the
+full checkpoint. Keep notes/checkpoints immutable and transport native state through
+ctx_checkpoint.py as before. Preserve an existing structured blocker observation;
+only add log_evidence or a same-job locator, never change its recorded failure facts.
+
+The consumer MUST read the evidence note by ID, verify its source/project/server
+author and complete payload, and establish that author independently from the
+authenticated Project invocation, registered agent identity or explicitly authorized
+workflow maintainer. Never derive trust from the claimed observer/author in the
+note. A user-account publication can be an agent-authored observation; it is not
+human attestation. Reject untrusted, edited/conflicting, summary-only or mismatched
+records. `remote_readback: true` now covers this verified transport plus fresh
+session-to-job attribution/status, exclusive ownership, current candidate/manifest,
+unchanged passing verification and search for any saved final result. It does NOT
+claim the consumer directly reread the log. Saved final results are adopted instead.
+The helper checks consistency and required messages; it cannot authenticate tools,
+authors or network observations. No signature or independent-review pass is implied.
+
+After these checks, publish/read back the ordinary fresh recovery report and call
+`resume-interrupted`. A worker's trace API denial is not an additional blocker when
+this authenticated handoff is complete; do not ask for human line-number confirmation
+or launch repeated evidence-only sessions. Unknown provenance or conflicting/live
+ownership still blocks. This changes evidence transport, not recovery eligibility,
+action/retry/repair counts, checkpoint history, candidate identity or review gates.
 
 Recovery appends an `interruption_resume` event with the next integer `action`
 and reopens the SAME phase; it never advances it or grants a passing verdict.
