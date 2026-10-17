@@ -25,8 +25,8 @@ class ChatAgentRegistrationTests(unittest.TestCase):
             "catalog_item_id": 1016234,
             "consumer_id": 12316920,
             "name": "CTX Development",
-            "catalog_version_at_verification": "1.13.0",
-            "verified_on": "2026-10-16",
+            "catalog_version_at_verification": "1.14.0",
+            "verified_on": "2026-10-17",
             "runtime_version_policy": "gitlab_configured_consumer",
         })
         for key, value in (("project_id", 1), ("catalog_item_id", 1),
@@ -190,20 +190,23 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertEqual(project["display_name"], "CTX Project")
         self.assertTrue(project["enabled_in_project"])
         self.assertTrue(project["catalog_url"].endswith("/agents/1016538"))
-        self.assertEqual(project["catalog_version"], "1.11.0")
+        self.assertEqual(project["catalog_version"], "1.12.0")
         prompt = (AGENTS / project["system_prompt_file"]).read_bytes()
         self.assertNotIn("pending_catalog_version", project)
-        self.assertEqual(project["published_source_commit"], "45d5719b53a54e177c9b61cf99659c4a92633d88")
-        self.assertTrue(project["source_merge_request"].endswith("/merge_requests/67"))
+        self.assertEqual(project["published_source_commit"], "de2cec7603bfc7a127c8a0235adba373271f19c1")
+        self.assertTrue(project["source_merge_request"].endswith("/merge_requests/70"))
         self.assertEqual(project["published_system_prompt_sha256"],
-                         "52ee0cf83afb6a22b214957362a4ebdd9857b4ee447fbe3fd33247fd387d7b64")
-        self.assertEqual(project["candidate_catalog_version"], "1.12.0")
-        self.assertIn("publication pending", project["candidate_status"])
+                         "b5722f852f34500891a9570a8c3d714546a5967083eec19720cd99a892a969da")
+        self.assertNotIn("candidate_catalog_version", project)
+        self.assertNotIn("candidate_status", project)
         self.assertTrue(project["verification"]["resumable_owner_live"].startswith("pending"))
         self.assertEqual(project["system_prompt_sha256"], hashlib.sha256(prompt).hexdigest())
-        self.assertNotEqual(project["system_prompt_sha256"], project["published_system_prompt_sha256"])
+        self.assertEqual(project["system_prompt_sha256"], project["published_system_prompt_sha256"])
         self.assertEqual(project["catalog_saved_system_prompt_sha256"],
-                         "eab7e72c1d24eaffa2d81c3667ba3349ef33e483ba24168fabca615c85a65501")
+                         "7cc900ed86f47648695e4cf42eaab91e2aa4b43d6b5d0f3d2ec170bae38e0eff")
+        self.assertEqual(project["catalog_saved_system_prompt_sha256"],
+                         hashlib.sha256(prompt.removesuffix(b"\n")).hexdigest())
+        self.assertTrue(project["verification"]["interruption_evidence_handoff_live"].startswith("pending"))
         self.assertIn(b"One verify/review recovery per target/phase", prompt)
         self.assertIn(b"costs one action plus the next claim", prompt)
         self.assertTrue(project["verification"]["interrupted_phase_recovery_live"].startswith("pending"))
@@ -229,11 +232,14 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         previous = project["publication_history"][1]
         self.assertEqual(previous["catalog_version"], "1.1.0")
         self.assertEqual(previous["published_system_prompt_sha256"], "197e9f37dcc9483a7310d599290e0c1730cb2be2d6a790e4b773e2a6978ef8ff")
-        self.assertEqual(project["publication_history"][-1]["catalog_version"], "1.10.0")
+        self.assertEqual(project["publication_history"][-1]["catalog_version"], "1.11.0")
         self.assertEqual(project["publication_history"][-1]["published_system_prompt_sha256"],
-                         "0b97a0f9ce430a8983de6e75b9d0512cde9f2e4a60d3d72fec9f1a87198514d8")
-        self.assertEqual(project["publication_history"][-2]["catalog_version"], "1.9.0")
+                         "52ee0cf83afb6a22b214957362a4ebdd9857b4ee447fbe3fd33247fd387d7b64")
+        self.assertEqual(project["publication_history"][-2]["catalog_version"], "1.10.0")
         self.assertEqual(project["publication_history"][-2]["published_system_prompt_sha256"],
+                         "0b97a0f9ce430a8983de6e75b9d0512cde9f2e4a60d3d72fec9f1a87198514d8")
+        self.assertEqual(project["publication_history"][-3]["catalog_version"], "1.9.0")
+        self.assertEqual(project["publication_history"][-3]["published_system_prompt_sha256"],
                          "303810d6b9cd60b84d1680ba6398d315720b1b11e8c04bd083cec2fcccb57702")
         self.assertTrue(project["verification"]["catalog_readback"].startswith("passed"))
         self.assertTrue(project["verification"]["chat_picker"].startswith("passed"))

@@ -10,6 +10,13 @@ nine-stage delivery plan.
 
 ## Workflow instructions
 
+Current release: **Project v1.12.0 / Development v1.14.0**, published/read back
+2026-10-17 UTC. See the interruption-evidence handoff release at the end of this
+file and the normative Project/session and single-shot guides. Project collects
+and transfers authenticated observed evidence; Development refreshes live gates
+without demanding human log-line confirmation. Earlier release entries below
+are history, not requests to republish or change existing recovery budgets.
+
 Published/read back **Project v1.11.0 / Development v1.13.0** (2026-10-16 UTC).
 Scoped maintenance D-E11-REVIEW-RESUME-1 supersedes the recovery policy below:
 read single-shot-development.md. New `resume-interrupted` transitions allow only
@@ -351,3 +358,27 @@ those require an explicitly scoped foundation/policy change and independent revi
 Never push directly to default, force-push, self-approve, expose secrets or deploy
 from an agent session. Do not add deployment credentials before protected target
 and approver controls have been configured and verified.
+# Interruption evidence handoff release (2026-10-17 UTC)
+
+Project v1.12.0 / Development v1.14.0 are published and enabled, with complete
+saved prompt/YAML readback matching reviewed source de2cec76 after final-newline
+removal. Tools, visibility, service account, triggers and existing limits are
+unchanged. Source !70 passed pipeline 2957542026 and independent local review
+4033373727, merging main d9d78d12. Coordinator-only sync !71 passed pipeline
+2957542093 and review 4033373771, merging ctx/epic-i11 abde5c05. Source/sync local
+suites passed 248/253 tests. Old publication records below remain history.
+
+Project owns evidence collection under docs/development/project-session-handoff.md.
+Development consumes authenticated structured log_evidence under the single-shot
+guide, refreshing live ownership/identity instead of requiring duplicate denied
+log reads or human line-number confirmation. Source note4033375909 preserves the
+directly observed session9621826/job17244915866 messages with honest maintainer
+attribution; exact payload and server author were read back. This is not approval,
+a current ownership grant or passing review. Native consumption remains pending.
+
+No E11 run was started. Ticket1e866717 and checkpoint4032513487, all history/budgets,
+product/plan/AC/manifest and CI controls remain untouched. One recovery per target
+verify/review phase still costs one action plus the next claim; no refunds.
+Application MRs !45/!59 were not merged; source-security stays unwaived. Maintenance
+CI is not application acceptance. Resume the same authorized objective through a
+fresh CTX Project chat; do not ask the user to collect technical evidence.
