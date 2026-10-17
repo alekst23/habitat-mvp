@@ -36,6 +36,16 @@ TEMPLATES = {
 <fieldset><legend>Capabilities</legend>{% for c in capabilities %}
 <label><input type="checkbox" name="capabilities" value="{{ c }}"{% if c in selected %} checked{% endif %}> {{ c }}</label>
 {% endfor %}</fieldset><button type="submit">Create</button></form>{% endblock %}""",
+    "chat": """{% extends "base" %}{% block body %}
+<p>Tell me about the agent you want and I will guide you step by step.</p>
+{% if error %}<p role="alert">{{ error }}</p>{% endif %}
+<ol aria-label="Conversation">{% for m in messages %}<li><strong>{{ "You" if m.role == "user" else "Assistant" }}:</strong>
+<span style="white-space: pre-wrap">{{ m.text }}</span></li>{% endfor %}</ol>
+<form method="post" action="/chat/messages">
+<input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="chat_session_id" value="{{ session_id }}">
+<label for="message">Message</label><input id="message" name="text" autocomplete="off">
+<button type="submit">Send</button></form>
+<p><a href="/workspace">Back to workspace</a></p>{% endblock %}""",
     "created": """{% extends "base" %}{% block body %}
 <p>{{ instance.name }}</p><p>This agent is a draft: it is not active until you activate it.</p>
 <p><a href="/workspace">Back to workspace</a></p>{% endblock %}""",

@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from aicl.auth.magic_link import CaptureMagicLinkSender, SmtpConfig, SmtpMagicLinkSender
 from aicl.auth.purge import MagicLinkPurge
+from aicl.chat.ports import ScriptedChatModel
 from aicl.clock import SystemClock
 from aicl.connections.ports import AesGcmSecretStore, FakeProviderOAuth
 from aicl.connections.service import SqliteConnectionService, SqliteCredentialBroker, SqliteRevocationSweeper
@@ -67,7 +68,13 @@ def magic_link_sender(settings: Settings):
                                           settings.smtp_password, settings.smtp_from))
 
 
+def chat_model(settings: Settings) -> ScriptedChatModel:
+    """The only chat model is the deterministic fake (Settings rejects any other AICL_CHAT_MODEL_MODE)."""
+    return ScriptedChatModel()
+
+
 PORT_FACTORIES = {
+    "chat_model": chat_model,
     "magic_link_sender": magic_link_sender,
     "secret_store": lambda settings: components_for(settings).secret_store,
     "credential_broker": lambda settings: components_for(settings).credential_broker,
