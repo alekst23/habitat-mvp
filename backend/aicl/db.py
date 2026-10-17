@@ -94,6 +94,15 @@ class Database:
             conn.close()
 
     @contextmanager
+    def snapshot_reader(self) -> Iterator[Connection]:
+        """A short-lived connection that always sees committed state only (never the open unit of work)."""
+        conn = self._connect()
+        try:
+            yield conn
+        finally:
+            conn.close()
+
+    @contextmanager
     def transaction(self) -> Iterator[Connection]:
         """One BEGIN IMMEDIATE transaction; commit on success, roll back on error; lock timeout is
         AiclError('unavailable'). An exception with `commit_on_error` True still commits (a durable
@@ -136,3 +145,10 @@ class Database:
         finally:
             self._local.conn = None
             conn.close()
+
+
+class LazyDatabase:
+    """Proxy resolving the process-default Database at use (ports are built before any unit of work)."""
+
+    def __getattr__(self, name: str):
+        return getattr(Database.current(), name)
