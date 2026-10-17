@@ -7,6 +7,8 @@ import base64
 import threading
 from dataclasses import dataclass
 
+from aicl.auth.magic_link import CaptureMagicLinkSender, SmtpConfig, SmtpMagicLinkSender
+from aicl.auth.purge import MagicLinkPurge
 from aicl.clock import SystemClock
 from aicl.connections.ports import AesGcmSecretStore, FakeProviderOAuth
 from aicl.connections.service import SqliteConnectionService, SqliteCredentialBroker, SqliteRevocationSweeper
@@ -14,7 +16,7 @@ from aicl.control.budget import SqliteBudgetPort
 from aicl.control.confirmation import SqliteConfirmationStore
 from aicl.db import LazyDatabase
 from aicl.network.policy import FakeResolver
-from aicl.settings import Settings
+from aicl.settings import Settings, SettingsError
 from aicl.work.gate import SqliteHoldReconciler, SqliteWorkGate
 from aicl.work.ports import FakeWorkExecutor
 
@@ -54,7 +56,19 @@ def components_for(settings: Settings) -> Components:
         return built
 
 
+def magic_link_sender(settings: Settings):
+    """Capture fake only in the test composition (both flags); else the SMTP sender, which needs AICL_SMTP_HOST
+    (startup fails when it is unset)."""
+    if settings.test_mode and settings.environment == "test":
+        return CaptureMagicLinkSender()
+    if not settings.smtp_host:
+        raise SettingsError("AICL_SMTP_HOST", "is required outside the test composition")
+    return SmtpMagicLinkSender(SmtpConfig(settings.smtp_host, settings.smtp_port, settings.smtp_username,
+                                          settings.smtp_password, settings.smtp_from))
+
+
 PORT_FACTORIES = {
+    "magic_link_sender": magic_link_sender,
     "secret_store": lambda settings: components_for(settings).secret_store,
     "credential_broker": lambda settings: components_for(settings).credential_broker,
     "provider_oauth": lambda settings: components_for(settings).provider_oauth,
@@ -95,3 +109,19 @@ def start_hold_reconciler(ctx) -> None:
             reconciler.run_once()
 
     threading.Thread(target=loop, name="aicl-hold-reconciler", daemon=True).start()
+
+
+def start_magic_link_purge(ctx) -> None:
+    """Deletes magic_link rows expired for more than 24 hours at startup, then hourly in-process."""
+    purge = MagicLinkPurge(ctx.db, ctx.clock)
+    purge.run_once()
+
+    def loop() -> None:
+        while True:
+            threading.Event().wait(3600)
+            try:
+                purge.run_once()
+            except Exception:  # a failed hourly sweep must not kill the thread
+                pass
+
+    threading.Thread(target=loop, name="aicl-magic-link-purge", daemon=True).start()

@@ -9,8 +9,12 @@ from datetime import timedelta
 from pathlib import Path
 
 from fastapi import APIRouter, FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
+from aicl.auth.composite import CompositeAuthProvider, CompositeCsrfVerifier
+from aicl.auth.csrf import HmacCsrfVerifier
+from aicl.auth.session import SessionAuthProvider, SqliteSignInService
+from aicl.control.audit import SqliteAuditLog
 from aicl.control.auth import AuthContext, AuthProvider, FixedAuthProvider
 from aicl.control.csrf import CsrfVerifier, FixedCsrfVerifier
 from aicl.control.errors import ERROR_HTTP_STATUS, AiclError
@@ -20,6 +24,7 @@ from aicl.hooks import STARTUP_HOOKS
 from aicl.ports import Ports, build_ports
 from aicl.routes import ROUTE_FACTORIES
 from aicl.settings import Settings
+from aicl.web.routes import FormCsrfShim
 
 
 @dataclass(frozen=True)
@@ -30,6 +35,7 @@ class AppContext:
     auth_provider: AuthProvider
     csrf_verifier: CsrfVerifier
     ports: Ports
+    sign_in: object = None
 
 
 FIXTURE_OWNERS = {"owner-a": "00000000-0000-4000-8000-0000000000a1",
@@ -38,7 +44,7 @@ FIXTURE_CSRF_TOKEN = "fixture-csrf-token"
 
 
 def _register_test_routes(app: FastAPI, ctx: AppContext) -> None:
-    """Test-composition only (both flags): seeded session and clock. No magic-link capture (E11-3)."""
+    """Test-composition only (both flags): seeded session, clock and the captured magic link."""
     router = APIRouter(prefix="/__test__")
 
     @router.post("/seed-session")
@@ -53,6 +59,14 @@ def _register_test_routes(app: FastAPI, ctx: AppContext) -> None:
         response = JSONResponse({"owner_id": owner_id, "csrf_token": FIXTURE_CSRF_TOKEN})
         response.set_cookie("aicl_session", cookie, httponly=True, samesite="lax")
         return response
+
+    @router.get("/last-magic-link")
+    def last_magic_link(email: str = "") -> PlainTextResponse:
+        normalized = ctx.sign_in.normalize_email(email)
+        link = ctx.ports.magic_link_sender.last_for(normalized) if normalized else None
+        if link is None:
+            return PlainTextResponse("no link captured", status_code=404)
+        return PlainTextResponse(link)
 
     @router.get("/clock")
     def clock() -> dict:
@@ -69,9 +83,18 @@ def create_app(settings: Settings, ports: Ports | None = None) -> FastAPI:
     with db.transaction() as conn:
         import_price_table(conn, Path(settings.price_table_path))
     built = ports if ports is not None else build_ports(settings)
-    ctx = AppContext(settings, db, built.clock, FixedAuthProvider({}),
-                     FixedCsrfVerifier(FIXTURE_CSRF_TOKEN, frozenset(), settings.public_base_url), built)
+    sign_in = SqliteSignInService(
+        db, built.clock, SqliteAuditLog(built.clock), built.magic_link_sender,
+        identity_key=settings.identity_hmac_key, public_base_url=settings.public_base_url,
+        link_ttl_seconds=settings.magic_link_ttl_seconds, session_ttl_seconds=settings.session_ttl_seconds)
+    ctx = AppContext(
+        settings, db, built.clock,
+        CompositeAuthProvider(SessionAuthProvider(sign_in), FixedAuthProvider({})),
+        CompositeCsrfVerifier(HmacCsrfVerifier(settings.session_secret, settings.public_base_url),
+                              FixedCsrfVerifier(FIXTURE_CSRF_TOKEN, frozenset(), settings.public_base_url)),
+        built, sign_in)
     app = FastAPI(title="Habitat AICL control plane")
+    app.add_middleware(FormCsrfShim)
     app.state.ctx = ctx
 
     @app.exception_handler(AiclError)

@@ -75,4 +75,5 @@ def base_env(tmp_path) -> dict[str, str]:
         "AICL_SESSION_SECRET": "s" * 40,
         "AICL_IDENTITY_HMAC_KEY": "i" * 40,
         "AICL_SECRET_ENCRYPTION_KEY": base64.b64encode(bytes(range(32))).decode(),
+        "AICL_SMTP_HOST": "smtp.invalid",  # O-4: required outside the test composition; no connection until a send
     }

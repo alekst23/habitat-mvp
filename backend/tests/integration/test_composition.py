@@ -83,23 +83,25 @@ def test_settings_accepts_a_valid_configuration_and_rejects_every_invalid_row(ba
 def test_build_ports_requires_exactly_the_clock_and_ignores_later_ticket_ports(base_env):
     settings = Settings.from_env(base_env)
     # design-mandated E11-2 extension (DR-30: each owning ticket extends the tuple)
+    # O-3: E11-3 appends magic_link_sender (CaptureMagicLinkSender in test mode, SMTP sender otherwise)
     assert REQUIRED_PORTS == ("clock", "secret_store", "credential_broker", "provider_oauth", "work_executor",
-                              "resolver")
+                              "resolver", "magic_link_sender")
     ports = build_ports(settings)
     assert isinstance(ports, Ports) and hasattr(ports.clock, "now") and ports.clock.now().tzinfo is not None
-    assert hasattr(ports, "secret_store") and not hasattr(ports, "magic_link_sender")
+    assert hasattr(ports, "secret_store") and hasattr(ports, "magic_link_sender")
     with pytest.raises(ValidationError):
         ports.clock = FakeClock(ports.clock.now())  # frozen model
 
 
 @pytest.mark.ac("E11-1.AC1", code="backend/aicl/app.py:create_app")
 def test_create_app_migrates_imports_prices_starts_with_empty_extension_points_and_gates_test_routes(base_env, tmp_path):
-    # design-mandated E11-2 extension: its two routers and the sweeper-then-reconciler hooks are registered
-    assert len(routes.ROUTE_FACTORIES) == 2 and len(hooks.STARTUP_HOOKS) == 2
+    # design-mandated extensions: E11-2's two routers plus E11-3's web router; sweeper, reconciler, magic-link purge
+    assert len(routes.ROUTE_FACTORIES) == 3 and len(hooks.STARTUP_HOOKS) == 3
 
     dev = create_app(Settings.from_env(base_env))
     with TestClient(dev) as client:
         assert [r.path for r in dev.routes if r.path.startswith("/__test__")] == []
+        assert client.get("/__test__/last-magic-link", params={"email": "a@b.co"}).status_code == 404
         assert client.post("/__test__/seed-session", json={"fixture": "owner-a"}).status_code == 404
         assert client.get("/__test__/clock").status_code == 404
     db_file = Path(base_env["AICL_DATABASE_URL"].removeprefix("sqlite:///"))
@@ -115,7 +117,7 @@ def test_create_app_migrates_imports_prices_starts_with_empty_extension_points_a
         seeded = client.post("/__test__/seed-session", json={"fixture": "owner-a"})
         assert seeded.status_code == 200 and "aicl_session" in seeded.cookies
         assert client.get("/__test__/clock").status_code == 200
-        assert not any(p.startswith("/__test__") and "magic" in p for p in paths)  # capture routes belong to E11-3
+        assert "/__test__/last-magic-link" in paths  # O-3: E11-3 owns the test-mode-only capture route
 
     # startup failures: unusable price table, and a changed table under an already-imported version
     missing = {**base_env, "AICL_PRICE_TABLE_PATH": str(tmp_path / "nope.json")}
