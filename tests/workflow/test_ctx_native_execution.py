@@ -23,8 +23,14 @@ class NativeAdmissionTests(unittest.TestCase):
         guide = (ROOT / "docs/development/single-shot-development.md").read_text()
         for text in ("resume-interrupted", "ONE recovery per", "transition consumes one",
                      "source-security",
-                     "not the unchanged `ctx/ticket-i13`", "stream_lost"):
+                     "not the unchanged `ctx/ticket-i13`", "stream_lost", "log_evidence",
+                     "Never derive trust", "line anchors are helpful"):
             self.assertIn(text, guide)
+        project = (ROOT / ".gitlab/duo/agents/ctx-project.md").read_text()
+        handoff = (ROOT / "docs/development/project-session-handoff.md").read_text()
+        self.assertIn("own evidence collection", project)
+        self.assertIn("Never ask the user to attest machine evidence", handoff)
+        self.assertIn("Status-only requests remain read-only", handoff)
 
     def test_owner_continues_unrelated_work_before_questions_and_reconciles_retry(self):
         run = dev.claim(dev.new_run(repair_request()), "E2-1")
@@ -162,17 +168,17 @@ class NativeAdmissionTests(unittest.TestCase):
             ".gitlab/duo/flows/ctx-development.yml"]
         self.assertNotIn("pending_catalog_version", catalog)
         self.assertEqual(catalog["catalog_version"], "1.13.0")
-        self.assertNotIn("candidate_catalog_version", catalog)
-        self.assertNotIn("candidate_status", catalog)
+        self.assertEqual(catalog["candidate_catalog_version"], "1.14.0")
+        self.assertIn("publication pending", catalog["candidate_status"])
         self.assertIn("live two-run acceptance pending", catalog["publication_status"])
-        self.assertEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
+        self.assertNotEqual(catalog["definition_sha256"], catalog["published_definition_sha256"])
         self.assertEqual(catalog["published_definition_sha256"],
                          "0ec7b23541c187ff438d8379982c10834b5d4fb0702464891d365d93fe405f17")
         self.assertEqual(catalog["catalog_saved_definition_sha256"],
                          "9901677ca09d85b609a98cbfd9db7977df1b525b39276d83812e78428a5fef8a")
-        self.assertEqual(catalog["catalog_saved_definition_sha256"],
-                         hashlib.sha256(flow_path.read_bytes().removesuffix(b"\n")).hexdigest())
-        self.assertIn("once per target/phase, one action plus next claim", flow_path.read_text())
+        self.assertIn("once per target/phase,", flow_path.read_text())
+        self.assertIn("one action plus next claim", flow_path.read_text())
+        self.assertIn("authenticate evidence, refresh ownership", flow_path.read_text())
         self.assertEqual(catalog["definition_sha256"], hashlib.sha256(flow_path.read_bytes()).hexdigest())
         self.assertLessEqual(len(flow_path.read_bytes()), 40960)
         self.assertIn("resume-interrupted", flow_path.read_text())

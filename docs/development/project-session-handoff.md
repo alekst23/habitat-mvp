@@ -167,6 +167,43 @@ authority. Inspect checkpoints even for `finished`; technical work may remain.
 
 ## Returning answers and approvals
 
+### Own interruption-evidence collection
+
+On an authorized continuation, Project owns the technical preflight, not the user.
+For `reconcile_interruption`, first read any saved evidence handoff and its server
+author. If one is already valid, reuse it. Otherwise read the failed session and
+its linked job using available native tools. An empty trace is not evidence that
+the log is empty. Make at most one corrected read through an available supported
+path; do not invent tools, endpoints, credentials or new permissions. Read actual
+log text, not only a previous agent's summary. Do not launch another session merely
+to repeat an unchanged inaccessible-log request.
+
+If Project can read the log but Development cannot, publish a source-issue note
+headed **CTX interruption evidence v1**. Follow the structured `log_evidence`
+contract in single-shot-development.md. Include exact observed message excerpts,
+session/job identities, blocked claim, candidate and manifest hash. Record the
+actual observer and authenticated publishing account; a Project/maintenance note
+is an agent observation, never a human confirmation or execution approval.
+Read back the full saved note, its server author/ID and exact payload. Keep native
+tool approvals intact. Preserve previous notes; do not rewrite the checkpoint.
+
+Pass this note URL in the ordinary prepared request and native goal. Development
+reads/verifies this evidence handoff, independently refreshes ownership, session/job
+status, candidate/manifest, saved verification and absence of a final result, then
+uses the existing one-use recovery. It need not fetch the same inaccessible log
+again. Log line numbers and timestamp rendering are locators, not extra human
+approval gates. An excerpt must contain actual messages, not an invented timestamp
+or a claimed match to unread text.
+
+If neither an authenticated handoff nor a supported direct read exists, record the
+exact failed read and missing evidence as a technical access boundary. Address an
+already verified maintenance destination within authority; otherwise name the
+specific missing access, not a request to diagnose logs or choose an SDLC phase.
+Never ask the user to attest machine evidence simply to satisfy our helper.
+Status-only requests remain read-only. Evidence publication alone neither consumes
+a journal action nor authorizes a start. The normal one-session-mutation rule,
+original objective, recovery/action caps and all execution gates still apply.
+
 Re-read the existing session before Send Duo Session Input. GitLab accepts input
 only after its last CI job has finished in a supported waiting state. Keep the same
 `workflow_id`; do not turn an input request into a new flow. Store/read back the
