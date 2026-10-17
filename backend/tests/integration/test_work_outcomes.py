@@ -247,6 +247,6 @@ def test_startup_rejects_non_fake_modes_and_registers_e11_2_hooks_in_order(base_
         assert "real" not in str(err.value) or "enablement" in str(err.value) or "fake" in str(err.value)
     from aicl import hooks, ports, routes
     assert "secret_store" in ports.REQUIRED_PORTS and "work_executor" in ports.REQUIRED_PORTS
-    assert len(routes.ROUTE_FACTORIES) >= 1 and len(hooks.STARTUP_HOOKS) == 2  # sweeper first, then reconciler
+    assert len(routes.ROUTE_FACTORIES) >= 1 and len(hooks.STARTUP_HOOKS) == 3  # sweeper first, then reconciler, then E11-3 purge (O-3)
     names = [getattr(h, "__name__", type(h).__name__).lower() for h in hooks.STARTUP_HOOKS]
     assert "sweep" in names[0] and "reconcil" in names[1], names

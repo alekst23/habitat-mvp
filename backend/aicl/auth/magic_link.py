@@ -61,4 +61,15 @@ class SmtpMagicLinkSender:
         self.config = config
 
     def send(self, email: str, link: str) -> None:
-        raise NotImplementedError(NOT_IMPLEMENTED)
+        import smtplib
+        from email.message import EmailMessage
+        message = EmailMessage()
+        message["From"] = self.config.sender or self.config.username or "no-reply@localhost"
+        message["To"] = email
+        message["Subject"] = "Your sign-in link"
+        message.set_content(f"Use this link to sign in (single use, expires soon):\n\n{link}\n")
+        with smtplib.SMTP(self.config.host, self.config.port, timeout=10) as smtp:
+            if self.config.username:
+                smtp.starttls()
+                smtp.login(self.config.username, self.config.password)
+            smtp.send_message(message)

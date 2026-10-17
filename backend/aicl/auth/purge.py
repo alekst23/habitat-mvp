@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
+from aicl.db import to_iso
+
 NOT_IMPLEMENTED = "E11-3 behavior is not implemented (contract stub)"
 PURGE_AFTER_EXPIRY_HOURS = 24
 
@@ -15,4 +19,6 @@ class MagicLinkPurge:
 
     def run_once(self) -> int:
         """Returns the number of deleted rows."""
-        raise NotImplementedError(NOT_IMPLEMENTED)
+        cutoff = to_iso(self.clock.now() - timedelta(hours=PURGE_AFTER_EXPIRY_HOURS))
+        with self.db.transaction() as conn:
+            return conn.execute("DELETE FROM magic_link WHERE expires_at < ?", (cutoff,)).rowcount

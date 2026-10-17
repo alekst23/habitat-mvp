@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import hmac
+
 from aicl.control.auth import AuthContext
 
 NOT_IMPLEMENTED = "E11-3 behavior is not implemented (contract stub)"
@@ -17,7 +20,11 @@ class HmacCsrfVerifier:
         self.public_base_url = public_base_url
 
     def token_for(self, session_id: str) -> str:
-        raise NotImplementedError(NOT_IMPLEMENTED)
+        return hmac.new(self.session_secret.encode(), session_id.encode(), hashlib.sha256).hexdigest()
 
     def verify(self, auth: AuthContext, submitted_token: str | None, origin: str | None) -> bool:
-        raise NotImplementedError(NOT_IMPLEMENTED)
+        if not submitted_token:
+            return False
+        if origin is not None and origin.rstrip("/") != self.public_base_url.rstrip("/"):
+            return False
+        return hmac.compare_digest(submitted_token.encode(), self.token_for(auth.session_id).encode())

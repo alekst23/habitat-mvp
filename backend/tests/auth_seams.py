@@ -20,5 +20,7 @@ def sign_in_service(env, sender, *, identity_key: str = IDENTITY_KEY, session_se
     `sender` is a CaptureMagicLinkSender. The service builds each link as
     f"{public_base_url}/auth/verify?token=<token>".
     """
-    from aicl.auth.session import UnimplementedSignInService
-    return UnimplementedSignInService()
+    from aicl.auth.session import SqliteSignInService
+    return SqliteSignInService(env.db, env.clock, env.audit, sender, identity_key=identity_key,
+                               public_base_url=public_base_url, link_ttl_seconds=link_ttl_seconds,
+                               session_ttl_seconds=session_ttl_seconds)

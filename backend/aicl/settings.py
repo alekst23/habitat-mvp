@@ -39,6 +39,11 @@ class Settings(BaseModel):
     provider_mode: str = "fake"
     executor_mode: str = "fake"
     chat_model_mode: str = "fake"
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> "Settings":
@@ -127,4 +132,7 @@ class Settings(BaseModel):
             magic_link_ttl_seconds=integer("AICL_MAGIC_LINK_TTL_SECONDS", 900, 60, 3600),
             confirmation_ttl_seconds=integer("AICL_CONFIRMATION_TTL_SECONDS", 300, 30, 3600),
             reconcile_interval_seconds=reconcile, hold_stale_seconds=hold_stale,
-            executor_timeout_seconds=executor_timeout, **modes)
+            executor_timeout_seconds=executor_timeout,
+            smtp_host=env.get("AICL_SMTP_HOST") or "", smtp_port=integer("AICL_SMTP_PORT", 587, 1, 65535),
+            smtp_username=env.get("AICL_SMTP_USERNAME") or "", smtp_password=env.get("AICL_SMTP_PASSWORD") or "",
+            smtp_from=env.get("AICL_SMTP_FROM") or "", **modes)
