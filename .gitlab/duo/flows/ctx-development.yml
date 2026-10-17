@@ -279,14 +279,14 @@ prompts:
         publish/read back run_id/target/phase/attempt/candidate_sha BEFORE delegate_task.
         Delegate the component (verify maps to browser) with isolated worktree/branch,
         actual IID, pinned design/manifest and full claim. Do not build in the coordinator.
-        Independently verify saved report, identity/SHA, CI/AC/browser, ancestry and reviewer
-        provenance; record the helper receipt. Unknown/conflicting signals fail closed;
-        tokens/builder assertions are not evidence.
-        Persist/read back after EVERY result, then reassess/next and delegate again while
-        admitted. integrate.more means continue here, not return a final response.
-        Confirmed crashes get attributed receipts; uncertain writes remain active.
-        For reconcile_interruption use resume-interrupted per guide: verify/review only,
-        once per target/phase, one action plus next claim; preserve history/evidence.
+        Verify report, identity/SHA, CI/AC/browser, ancestry and reviewer provenance;
+        record receipt. Unknown/conflicting signals fail closed; tokens are not evidence.
+        Persist/read back EVERY result, reassess and delegate while admitted.
+        integrate.more means continue here. Attribute crashes; uncertain writes stay active.
+        For reconcile_interruption follow the guide's resume-interrupted/log_evidence:
+        authenticate evidence, refresh ownership; no repeated denied log read or human
+        line confirmation. Verify/review only, once per target/phase,
+        one action plus next claim; preserve history/evidence and independent review.
         For blocker_kind=defect use repair JOURNAL TARGET from next.repairable; retain all
         findings, three cumulative repairs per target and ONE reconciled transient/CI retry.
         technical_design shares that repair budget: design_revision -> design mode=technical-addendum;

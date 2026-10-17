@@ -53,6 +53,24 @@ def recovery(run, target="E2-1", note=1000):
             "interruption": deepcopy(event["interruption"])}
 
 
+def transferred_evidence(run):
+    """An authenticated remote readback is a runner obligation, not a fixture claim."""
+    value = recovery(run)
+    obs = value["interruption"]
+    obs.update(job_status="success", cause="stream_lost", terminal_reason="delegation_result_missing",
+               detail="Observed lost stream and unfinished delegation", evidence_url=obs["job_url"])
+    component = "browser" if value["phase"] == "verify" else "review"
+    obs["log_evidence"] = {
+        "version": 1, "observer": "ctx-project", "observer_author_id": "123",
+        "access_path": "job_log_tool", "note_url": PROJECT + "/-/issues/10#note_950",
+        "excerpt": f"Workflow {obs['session_id']} stream ended while still CREATED; the turn's tail was lost\n"
+                   f"Run ended with the delegation to {component} still in progress; no result was returned.",
+    }
+    # Historic prose-only blocker: do not edit its saved history to add an observation.
+    run["events"][-1].pop("interruption")
+    return value
+
+
 class InterruptionResumeTests(unittest.TestCase):
     def resume(self, run, value=None, target="E2-1"):
         self.assertTrue(callable(getattr(dev, "resume_interrupted", None)),
@@ -66,6 +84,52 @@ class InterruptionResumeTests(unittest.TestCase):
         self.assertEqual(advice["action"], "reconcile_interruption")
         self.assertEqual((advice["target"], advice["phase"]), ("E2-1", "review"))
         self.assertIn("verify", advice["reason"])
+
+    def test_transferred_log_evidence_without_line_numbers_replays_and_preserves_budgets(self):
+        for operation in ("review", "verify"):
+            run = interrupted(operation)
+            value = transferred_evidence(run)
+            before = deepcopy(run)
+            resumed = self.resume(run, value)
+            dev.verify_journal(resumed)
+            self.assertEqual(run, before)
+            self.assertEqual(resumed["events"][:-1], before["events"])
+            self.assertEqual(resumed["actions"], before["actions"] + 1)
+            self.assertEqual(resumed["nodes"]["E2-1"]["retries"], 1)
+            self.assertEqual(resumed["nodes"]["E2-1"]["repairs"], before["nodes"]["E2-1"]["repairs"])
+            self.assertEqual(dev.claim(resumed, "E2-1")["active"]["phase"], operation)
+            # Enrich a matching structured failure without mutating its original facts.
+            run["events"][-1]["interruption"] = {k: deepcopy(v) for k, v in value["interruption"].items()
+                                                if k != "log_evidence"}
+            run["events"][-1]["interruption"]["evidence_url"] += "#L1976"
+            dev.verify_journal(self.resume(run, value))
+
+    def test_transferred_evidence_rejects_unbound_summary_or_missing_provenance(self):
+        run = interrupted()
+        value = transferred_evidence(run)
+        evidence = value["interruption"]["log_evidence"]
+        for change in ({"version": True}, {"observer": "human-confirmed"}, {"observer_author_id": "0"},
+                       {"access_path": "agent_summary"}, {"excerpt": "Previous agent says this timed out"},
+                       {"excerpt": evidence["excerpt"].replace("Workflow 900", "Workflow 901")},
+                       {"excerpt": evidence["excerpt"].replace("delegation to review", "delegation to browser")},
+                       {"note_url": PROJECT + "/-/issues/11#note_950"},
+                       {"note_url": PROJECT + "/-/issues/10#note_900"},
+                       {"note_url": PROJECT + "/-/issues/10#note_1000"}):
+            changed = deepcopy(value)
+            changed["interruption"]["log_evidence"].update(change)
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.resume(run, changed)
+        for change in ({"evidence_url": PROJECT + "/-/jobs/10901"},
+                       {"cause": "execution_limit", "terminal_reason": "execution_limit", "job_status": "failed"}):
+            changed = deepcopy(value)
+            changed["interruption"].update(change)
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.resume(run, changed)
+        # No structured evidence cannot silently opt into the anchor-free path.
+        changed = deepcopy(value)
+        changed["interruption"].pop("log_evidence")
+        with self.assertRaises(ValueError):
+            self.resume(run, changed)
 
     def test_legacy_unmetered_history_replays_but_already_spends_the_new_cap(self):
         run = interrupted()

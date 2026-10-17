@@ -197,17 +197,15 @@ class ChatAgentRegistrationTests(unittest.TestCase):
         self.assertTrue(project["source_merge_request"].endswith("/merge_requests/67"))
         self.assertEqual(project["published_system_prompt_sha256"],
                          "52ee0cf83afb6a22b214957362a4ebdd9857b4ee447fbe3fd33247fd387d7b64")
-        self.assertNotIn("candidate_catalog_version", project)
-        self.assertNotIn("candidate_status", project)
+        self.assertEqual(project["candidate_catalog_version"], "1.12.0")
+        self.assertIn("publication pending", project["candidate_status"])
         self.assertTrue(project["verification"]["resumable_owner_live"].startswith("pending"))
         self.assertEqual(project["system_prompt_sha256"], hashlib.sha256(prompt).hexdigest())
-        self.assertEqual(project["system_prompt_sha256"], project["published_system_prompt_sha256"])
+        self.assertNotEqual(project["system_prompt_sha256"], project["published_system_prompt_sha256"])
         self.assertEqual(project["catalog_saved_system_prompt_sha256"],
                          "eab7e72c1d24eaffa2d81c3667ba3349ef33e483ba24168fabca615c85a65501")
-        self.assertEqual(project["catalog_saved_system_prompt_sha256"],
-                         hashlib.sha256(prompt.removesuffix(b"\n")).hexdigest())
-        self.assertIn(b"One recovery per target/phase", prompt)
-        self.assertIn(b"costs one journal action", prompt)
+        self.assertIn(b"One verify/review recovery per target/phase", prompt)
+        self.assertIn(b"costs one action plus the next claim", prompt)
         self.assertTrue(project["verification"]["interrupted_phase_recovery_live"].startswith("pending"))
         self.assertLessEqual(len(prompt), 40960)
         self.assertIn(b"resume-interrupted", prompt)

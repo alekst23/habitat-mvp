@@ -152,7 +152,9 @@
         }
       ],
       "catalog_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/automate/flows/1016234",
-      "definition_sha256": "0ec7b23541c187ff438d8379982c10834b5d4fb0702464891d365d93fe405f17",
+      "definition_sha256": "0eb903caebaf43dd212cdbdac5383d9c9225dd57a069b0166c790f6bb6ebf788",
+      "candidate_catalog_version": "1.14.0",
+      "candidate_status": "Workflow-owned interruption evidence handoff; review, merge, sync and publication pending. Published proof below is unchanged.",
       "verification": "Full saved YAML SHA-256 9901677ca09d85b609a98cbfd9db7977df1b525b39276d83812e78428a5fef8a. D-E11-REVIEW-RESUME-1: one recovery per target/phase, verify/review only; transition consumes one journal action plus the subsequent claim. Legacy history replays unchanged and counts toward the cap. Source !67 45d5719b53a54e177c9b61cf99659c4a92633d88 merged main d41315d7f5fe57c0eb38adc4154805b9a6ff9dae after pipeline 2957153072 and independent local review note 4032784410. Coordinator-only sync !68 41c2d0d70b1412de3748b808993fea0037ff11c2 merged ctx/epic-i11 70361edfa0463ee664a5ccbb080c25a8119a01da after pipeline 2957153152 and independent review note 4032785026. Local full suites passed 246/251 tests; independent reviewer passed 38/13 focused tests plus legacy probes. Ticket ctx/ticket-i13 remains 1e86671774206eb0cb7eb4c97867fc91a8c6a401. No product/plan/AC/manifest, CI controls, counters, credentials, notes/checkpoints, application merge, deployment or E11 execution changed. Source-security remains unconfigured and unwaived; maintenance CI is not application acceptance. Live interrupted-review recovery remains pending.",
       "managed_terminal_tokens": {
         "design": [
