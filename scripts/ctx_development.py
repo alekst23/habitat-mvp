@@ -587,6 +587,43 @@ def resume_interrupted(run, target, receipt):
     return _resume_interrupted(run, target, receipt)
 
 
+def validate_interruption_log_handoff(run, receipt, observation):
+    """Consistency only: the consumer must authenticate/read the saved source note.
+
+    The native worker need not repeat the observer's inaccessible log-tool call.
+    Neither claimed author IDs nor matching excerpts establish remote provenance.
+    """
+    evidence = observation["log_evidence"]
+    require(isinstance(evidence, dict) and set(evidence) == {
+        "version", "observer", "observer_author_id", "access_path", "note_url", "excerpt"},
+        "complete structured log evidence handoff required")
+    require(type(evidence["version"]) is int and evidence["version"] == 1
+            and evidence["observer"] in ("ctx-project", "ctx-development", "workflow-maintainer")
+            and isinstance(evidence["observer_author_id"], str)
+            and re.fullmatch(r"[1-9][0-9]*", evidence["observer_author_id"])
+            and evidence["access_path"] in ("job_log_tool", "job_ui"),
+            "actual observer, server author and supported log read path required")
+    source_report(run, evidence["note_url"])
+    note_id = int(evidence["note_url"].rsplit("#note_", 1)[1])
+    require(int(receipt["blocked_report_url"].rsplit("#note_", 1)[1]) < note_id
+            < int(receipt["report_url"].rsplit("#note_", 1)[1]),
+            "evidence handoff must follow the blocker and precede the recovery report")
+    require(observation["cause"] == "stream_lost",
+            "transferred log evidence supports only the observed stream_lost contract")
+    excerpt = evidence["excerpt"]
+    component = "browser" if receipt["phase"] == "verify" else "review"
+    messages = (
+        f"Workflow {observation['session_id']} stream ended while still CREATED; the turn's tail was lost",
+        f"Run ended with the delegation to {component} still in progress; no result was returned.",
+    )
+    require(isinstance(excerpt, str) and len(excerpt) <= 8000
+            and all(any(line.strip().endswith(message) for line in excerpt.splitlines()) for message in messages),
+            "exact session-bound lost-stream and phase-bound missing-result messages required")
+    require(isinstance(observation["evidence_url"], str) and re.fullmatch(
+        re.escape(observation["job_url"]) + r"(?:#L[1-9][0-9]*)?", observation["evidence_url"]),
+        "transferred log evidence must identify the same observed job; line anchor is optional")
+
+
 def _resume_interrupted(run, target, receipt, *, legacy_replay=False):
     """Reopen one interrupted read-only phase; all remote facts need independent readback.
 
@@ -622,9 +659,11 @@ def _resume_interrupted(run, target, receipt, *, legacy_replay=False):
     require(all(receipt[k] is True for k in ("report_readback", "remote_readback", "ownership_verified")),
             "actual report, terminal worker and exclusive ownership readback required")
     observation = receipt["interruption"]
-    require(isinstance(observation, dict) and set(observation) == {
+    fields = {
         "project_id", "session_id", "session_url", "status", "job_url", "job_status",
-        "cause", "terminal_reason", "evidence_url", "detail", "result_absent", "claim"},
+        "cause", "terminal_reason", "evidence_url", "detail", "result_absent", "claim"}
+    require(isinstance(observation, dict) and
+            (set(observation) == fields or (not legacy_replay and set(observation) == fields | {"log_evidence"})),
         "full interrupted session/job observation required")
     base = f"https://gitlab.com/{run['request']['project_path']}/-/"
     sid = observation["session_id"]
@@ -645,15 +684,25 @@ def _resume_interrupted(run, target, receipt, *, legacy_replay=False):
             and observation["job_status"] in (("failed", "canceled", "success") if cause == "stream_lost"
                                              else ("failed", "canceled")),
             "failed/canceled session required; successful wrapper is eligible only for evidenced stream_lost")
-    require(isinstance(observation["evidence_url"], str)
-            and re.fullmatch(re.escape(observation["job_url"]) + r"#L[1-9][0-9]*", observation["evidence_url"]),
-            "interruption evidence must identify a log line in the observed worker job")
+    if "log_evidence" in observation:
+        validate_interruption_log_handoff(run, receipt, observation)
+    else:
+        require(isinstance(observation["evidence_url"], str)
+                and re.fullmatch(re.escape(observation["job_url"]) + r"#L[1-9][0-9]*", observation["evidence_url"]),
+                "interruption evidence must identify a log line in the observed worker job")
     identity = {k: blocked[k] for k in ("run_id", "target", "phase", "attempt", "candidate_sha", "report_url")}
     require(isinstance(observation["claim"], dict) and observation["claim"] == identity
             and type(observation["claim"].get("attempt")) is int,
             "interruption observation must bind the exact blocked claim and its report")
     if "interruption" in blocked:
-        require(observation == blocked["interruption"], "observation conflicts with recorded session/job failure")
+        recorded = blocked["interruption"]
+        # A later authenticated handoff can enrich old evidence, never rewrite the
+        # recorded failure. The job binding above makes locator-only changes safe.
+        enriched = "log_evidence" in observation and "log_evidence" not in recorded
+        omit = {"log_evidence", "evidence_url"} if enriched else set()
+        require({k: v for k, v in observation.items() if k not in omit}
+                == {k: v for k, v in recorded.items() if k not in omit},
+                "observation conflicts with recorded session/job failure")
     for event in run["events"]:
         if "interruption_resume" in event:
             previous = event["receipt"]["interruption"]

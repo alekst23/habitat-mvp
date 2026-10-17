@@ -106,7 +106,11 @@ review and verified integration. Continue the authorized goal after recovery.
 
 For `owner_action=reconcile_interruption`, inspect terminal sessions/jobs, saved
 partial/final results and ownership before using the guide's `resume-interrupted`
-receipt. This reopens only unfinished verify/review at the unchanged candidate,
+receipt. Project owns evidence collection under project-session-handoff.md; a
+verified structured log-evidence note transfers an observation when the worker's
+log path is unavailable. Read/authenticate it and refresh live ownership/identity;
+do not ask the user to confirm log lines or repeat the same inaccessible read.
+This reopens only unfinished verify/review at the unchanged candidate,
 manifest and prior verification. One recovery per target/phase across sessions
 and SHAs costs one journal action; old retries, repairs and actions stay consumed.
 The following claim/session budgets still apply. No human-review bypass, fake approval, checkpoint
