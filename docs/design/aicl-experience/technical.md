@@ -168,7 +168,9 @@ transaction boundaries, replay protection, authentication or capability checks.
 
 ### Verification and wiring
 
-E11-6.AC1 maps F3-S10 and F3-S11. A minimal real-browser journey on the existing
+E11-6.AC1 maps F3-S10 and F3-S11 and requires both test and browser evidence.
+The existing canonical wizard integration test proves the preserved auth/CSRF/tenant
+boundary and CRLF-to-LF storage with bare-CR rejection. A minimal real-browser journey on the existing
 registered test composition covers the shared shell, actual owner projections,
 desktop and 375-pixel usability, form labels and preserved control semantics,
 plus duplicate suppression and honest pending/failed/unknown work feedback.

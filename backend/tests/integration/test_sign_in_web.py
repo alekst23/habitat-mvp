@@ -74,6 +74,7 @@ def test_real_sign_in_is_generic_sets_safe_cookie_and_logout_invalidates_it(real
 
 
 @pytest.mark.ac("E11-3.AC1", code="backend/aicl/creation/service.py:create_instance")
+@pytest.mark.ac("E11-6.AC1", code="backend/aicl/web/routes.py:wizard_create")
 def test_wizard_creates_a_draft_through_the_canonical_service_and_ignores_client_tenant(real_app):
     with TestClient(real_app) as owner_a, TestClient(real_app) as owner_b:
         sign_in(real_app, owner_a, "wizard-a@example.com")
