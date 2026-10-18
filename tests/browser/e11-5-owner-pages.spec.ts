@@ -43,7 +43,7 @@ test('real sign-in, owner pages, gating, confirmation, revocation, isolation and
   await page.getByRole('link', { name: /Create with wizard/i }).click();
   await page.getByLabel(/^name/i).fill('Same Helper');
   await page.getByLabel(/instructions/i).fill('Answer politely');
-  await page.getByLabel(/^inference$/i).check();
+  await page.getByRole('checkbox', { name: /^inference$/i }).check();
   await page.getByRole('button', { name: /create/i }).click();
   await expect(page.getByText(/not active until you activate it/i)).toBeVisible();
 
