@@ -121,11 +121,35 @@ class SourceSecurityTests(unittest.TestCase):
     def test_secret_match_never_survives_normalization(self):
         self.tools.secrets["Results"] = [{"Target": "backend/app.py", "Secrets": [{
             "RuleID": "generic-api-key", "Severity": "HIGH", "StartLine": 1, "Match": SECRET, "Code": SECRET}]}]
-        with self.assertRaisesRegex(build.Blocked, "blocking security findings"):
-            build.source_security(self.root, ENV)
-        text = (self.root / ".ctx/security/gl-secret-detection-report.json").read_text()
-        self.assertNotIn(SECRET, text)
-        self.assertEqual(json.loads(text)["vulnerabilities"][0]["location"]["commit"]["sha"], SHA)
+        normalized = []
+        for artifact_type in ("filesystem", "repository"):
+            with self.subTest(artifact_type=artifact_type):
+                self.tools.secrets["ArtifactType"] = artifact_type
+                self.tools.secrets["Metadata"] = {"Commit": SHA}
+                with self.assertRaisesRegex(build.Blocked, "blocking security findings"):
+                    build.source_security(self.root, ENV)
+                text = (self.root / ".ctx/security/gl-secret-detection-report.json").read_text()
+                self.assertNotIn(SECRET, text)
+                findings = json.loads(text)["vulnerabilities"]
+                self.assertEqual(findings[0]["location"]["commit"]["sha"], SHA)
+                normalized.append(findings)
+        self.assertEqual(normalized[0], normalized[1])
+
+    def test_repository_source_target_and_commit_remain_strict(self):
+        self.tools.secrets.update({"ArtifactType": "repository", "Metadata": {"Commit": SHA}})
+        self.assertEqual(build.source_security(self.root, ENV)["blocking_findings"], 0)
+        original = dict(self.tools.secrets)
+        for changes, reason in (({"ArtifactType": "container_image"}, "wrong artifact type"),
+                                ({"ArtifactType": "unknown"}, "wrong artifact type"),
+                                ({"ArtifactType": None}, "wrong artifact type"),
+                                ({"ArtifactName": "other-checkout"}, "wrong source target"),
+                                ({"Metadata": {"Commit": "b" * 40}}, "another source commit"),
+                                ({"Metadata": {}}, "another source commit")):
+            with self.subTest(changes=changes):
+                self.tools.secrets = {**original, **changes}
+                with self.assertRaisesRegex(build.Blocked, reason):
+                    build.source_security(self.root, ENV)
+                self.assertFalse((self.root / ".ctx/security/gl-secret-detection-report.json").exists())
 
 
     def test_tool_failure_and_version_mismatch_clear_stale_reports_and_never_pass(self):

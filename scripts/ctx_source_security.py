@@ -183,15 +183,23 @@ def dependency_findings(data):
 def trivy_results(data, expected_type):
     require(isinstance(data, dict) and data.get("SchemaVersion") == 2,
             "unsupported or incomplete Trivy report")
-    require(data.get("ArtifactType") == expected_type, "Trivy scanned the wrong artifact type")
+    expected_types = (expected_type,) if isinstance(expected_type, str) else expected_type
+    require(data.get("ArtifactType") in expected_types, "Trivy scanned the wrong artifact type")
     results = data.get("Results", [])
     require(isinstance(results, list), "Trivy result list missing")
     return results
 
 
 def secret_findings(data, sha):
+    # Trivy reports `fs .` as repository for a regular .git directory, but as
+    # filesystem for a linked worktree whose .git is a file. Both must identify
+    # this exact checkout; repository metadata must also bind the candidate SHA.
+    results = trivy_results(data, ("filesystem", "repository"))
+    require(data.get("ArtifactName") == ".", "Trivy scanned the wrong source target")
+    if data["ArtifactType"] == "repository":
+        require(data.get("Metadata", {}).get("Commit") == sha, "Trivy scanned another source commit")
     findings = []
-    for result in trivy_results(data, "filesystem"):
+    for result in results:
         for secret in result.get("Secrets", []):
             location = {"file": source_location(result["Target"]), "commit": {"sha": sha},
                         "start_line": secret["StartLine"]}
