@@ -55,7 +55,8 @@ class SmtpConfig:
 class SmtpMagicLinkSender:
     """Production sender over the operator-configured SMTP server (not Gmail, not a provider adapter).
 
-    Delivery failure is silent to the requester and audited by the caller (the 202 body never changes).
+    Delivery failure is silent to the requester (the 202 body never changes).
+    The caller does not currently record delivery failures in the audit log.
     """
 
     def __init__(self, config: SmtpConfig) -> None:

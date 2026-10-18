@@ -78,8 +78,8 @@ password when the server requires authentication. Quote shell-sensitive values i
 this local file. The current sender uses STARTTLS before login when a username is
 configured; it does not implement implicit TLS/SMTPS. Use a development mailbox
 or an SMTP service you intend to send through. Failed delivery gives the same
-generic sign-in response and records an audit event, so a successful request page
-alone does not prove mail arrived.
+generic sign-in response. Delivery failures are not currently recorded in the audit
+log, so a successful request page alone does not prove mail arrived.
 
 ```sh
 set -a
