@@ -12,6 +12,63 @@ delivery workflow is separate from the customer-facing application. Read
 
 ## Workflow instructions
 
+Current release: **Project v1.12.0 / Development v1.14.0**, published/read back
+2026-10-17 UTC. See the interruption-evidence handoff release at the end of this
+file and the normative Project/session and single-shot guides. Project collects
+and transfers authenticated observed evidence; Development refreshes live gates
+without demanding human log-line confirmation. Earlier release entries below
+are history, not requests to republish or change existing recovery budgets.
+
+Published/read back **Project v1.11.0 / Development v1.13.0** (2026-10-16 UTC).
+Scoped maintenance D-E11-REVIEW-RESUME-1 supersedes the recovery policy below:
+read single-shot-development.md. New `resume-interrupted` transitions allow only
+verify/review, ONCE per target/phase, and consume one journal action before the
+normal subsequent claim. Preserve old events/counters; legacy recoveries replay
+unchanged but count toward this cap. No write-phase or defect recovery, changed
+candidate/manifest/verification, application merge, E11 start or CI waiver.
+Source !67 and coordinator-only E11 sync !68 merged with independent local review
+and passing pipelines 2957153072/2957153152. Full saved prompt/YAML matches source
+45d5719 after final-newline removal; tools/access/triggers unchanged. The ticket
+stays 1e866717; checkpoint 4032513487 is untouched. Live recovery remains pending;
+old release proofs below are historical, not the current transition policy.
+
+Published/read back **Project v1.10.0 / Development v1.12.0** (2026-10-16 UTC):
+read single-shot-development.md's interrupted-phase recovery protocol. Source !64
+and coordinator-only E11 sync !65 passed CI and independent local review and merged.
+`resume-interrupted` reopens only an unfinished read-only phase at the unchanged
+candidate/manifest, after terminal session/job, ownership and missing-result
+verification. Two recoveries per target/phase accumulate across SHAs/sessions;
+old retries, repairs, actions and notes remain unchanged. A failed session can
+have a successful wrapper job with a lost delegation stream; elapsed time alone
+does not prove a hard limit. Reviewers use exact-SHA bounded retrieval and save
+partial progress without claiming approval. Ticket ctx/ticket-i13 stays 1e866717;
+no E11 continuation, checkpoint rewrite, application merge or deployment occurred.
+The source-security application gate remains unconfigured and unwaived. Live
+interrupted-review recovery remains pending. Earlier publication records below
+are historical, not current versions or fresh runtime evidence.
+
+Published/read back **Project v1.9.0 / Development v1.11.0** (2026-10-16 UTC):
+read docs/development/automatic-acceptance.md. Acceptance scope/browser requirements
+come from committed plan/branch/candidate context, not manual pipeline variables.
+Persistent objectives retain budgets/history across sessions; supported evidence,
+maintenance-adoption and human-integration recovery still require actual current-SHA
+CI and independent review. Source !60 merged main f4c7f09; maintenance sync !61
+merged E11 318d2883 and !62 merged the ticket ee86c6b2, all with passing CI and
+independent local reviews. Native Duo reviews failed (502/review lock and 503),
+not native approval. Full saved Project/Development definitions matched reviewed
+source 4f56e11 after final-newline removal; unchanged tools, visibility, enablement,
+service identity and triggers were read back. Numeric consumer 12316920 is retained
+from its reviewed binding, not freshly API-queried; verify live eligibility before use.
+Final ticket marker candidate 1e866717 passed independent full maintenance review
+and local tests. Pipeline 2956291204 finished: workflow checks, 47 application tests
+and E11-2 acceptance passed; browser was expected N/A, not browser execution.
+The pipeline FAILED overall: source-security is unconfigured (exit 2), a remaining
+gate, not a waived check. Maintenance review !59 note 4031054561 is not application
+or native approval. Live journal recovery and independent ticket review remain pending. No E11
+agent continuation, checkpoint/budget reset, application MR merge or deployment is
+authorized by this publication record. Earlier version/publication statements below
+are historical; their enduring scope, evidence and security controls still apply.
+
 Checkpoint identity repair: read docs/development/checkpoint-publication.md.
 GitLab composite OAuth may resolve `/user` to the triggering human. The helper
 verifies the service-account OAuth owner and scoped-user binding using read-only
@@ -256,11 +313,12 @@ green unit-test job. Missing/skipped/stale checks block completion. See
 
 ## Current implementation status
 
-E11-1 through E11-4 are integrated into `ctx/epic-i11`. E11-5 has an
-implemented and independently reviewed ticket candidate; its integration and the
-assembled epic's final acceptance must be verified from current remote evidence.
-See `docs/plan/E11/completion.md`; do not infer completion from older pending plan
-fields or the historical E2 `.ctx/session.json` and verify report. The application
+All five E11 tickets are integrated into `ctx/epic-i11`. E11-5 source
+`5960066639a243e617c17b42630655a7135045fc` passed all mandatory candidate jobs in
+pipeline 2959692439 and independent review (issue #11 note 4036851846), then merged
+through MR !76 at `ce3ddcce189ff923464c216859e6c8b8efaad56e`. Whole-epic acceptance
+and final review are separate gates recorded on draft MR !45. See
+`docs/plan/E11/completion.md`; do not infer readiness from historical E2 receipts. The application
 has real SQLite-backed control behavior, magic-link authentication, wizard/chat
 creation and management pages. OAuth providers, chat model and external work stay
 fake-only. Runtime/provider enablement, PayPal and deployment are outside E11.
@@ -278,12 +336,12 @@ python -m unittest discover -s tests/workflow -v
 python scripts/ctx_workflow.py waves docs/plan/E<epic-issue-iid>/state.json
 ```
 
-The backend verify and acceptance adapters, pinned Playwright dependency, test
-startup command and application browser journeys are implemented. The current
-completion work includes a source-security adapter candidate; its actual CI result
-and independent review must be recorded for the final SHA. Package,
-artifact-security and staging-configuration validation remain separate required
-checks until their real adapters and evidence exist; no deployment is implied.
+The backend verification, acceptance, browser, source-security, packaging,
+artifact-security and configuration-validation adapters are implemented and passed
+real CI at the E11-5 source SHA above. Configuration validation is isolated and
+applies no cloud configuration. Each new epic candidate still requires its own
+mandatory jobs and independent review; source-ticket evidence is not final epic
+acceptance or deployment evidence.
 Workflow self-tests are not application tests. Workflow self-checks run automatically
 on merge requests and the default branch; `CTX_WORKFLOW_CHECKS=1` also enables them
 on other branches. Application checks activate automatically wherever committed
@@ -307,3 +365,27 @@ those require an explicitly scoped foundation/policy change and independent revi
 Never push directly to default, force-push, self-approve, expose secrets or deploy
 from an agent session. Do not add deployment credentials before protected target
 and approver controls have been configured and verified.
+# Interruption evidence handoff release (2026-10-17 UTC)
+
+Project v1.12.0 / Development v1.14.0 are published and enabled, with complete
+saved prompt/YAML readback matching reviewed source de2cec76 after final-newline
+removal. Tools, visibility, service account, triggers and existing limits are
+unchanged. Source !70 passed pipeline 2957542026 and independent local review
+4033373727, merging main d9d78d12. Coordinator-only sync !71 passed pipeline
+2957542093 and review 4033373771, merging ctx/epic-i11 abde5c05. Source/sync local
+suites passed 248/253 tests. Old publication records below remain history.
+
+Project owns evidence collection under docs/development/project-session-handoff.md.
+Development consumes authenticated structured log_evidence under the single-shot
+guide, refreshing live ownership/identity instead of requiring duplicate denied
+log reads or human line-number confirmation. Source note4033375909 preserves the
+directly observed session9621826/job17244915866 messages with honest maintainer
+attribution; exact payload and server author were read back. This is not approval,
+a current ownership grant or passing review. Native consumption remains pending.
+
+No E11 run was started. Ticket1e866717 and checkpoint4032513487, all history/budgets,
+product/plan/AC/manifest and CI controls remain untouched. One recovery per target
+verify/review phase still costs one action plus the next claim; no refunds.
+Application MRs !45/!59 were not merged; source-security stays unwaived. Maintenance
+CI is not application acceptance. Resume the same authorized objective through a
+fresh CTX Project chat; do not ask the user to collect technical evidence.

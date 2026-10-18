@@ -7,7 +7,7 @@ Epic branch: `ctx/epic-i11`
 
 ## Implementation snapshot
 
-E11-1 through E11-4 are integrated into the epic. E11-5 is implemented and reviewed at candidate `55b8c8ea`, with MR !76 awaiting integration in this snapshot. Whole-epic acceptance and closure remain pending. See [completion evidence](completion.md) and the [application guide](../../aicl-mvp.md). The design progress section below preserves the earlier design-phase record.
+All five ticket implementations are integrated into `ctx/epic-i11`. MR !76 merged reviewed source `5960066639a243e617c17b42630655a7135045fc` at `ce3ddcce189ff923464c216859e6c8b8efaad56e` after all source-candidate CI jobs passed. Its application, browser and scoped acceptance checks also passed at the actual integration SHA; this candidate replaces the inherited ticket marker with whole-epic verification scope. Final whole-epic acceptance and independent review remain separate gates, tracked on [MR !45](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/45). See [completion evidence](completion.md) and the [application guide](../../aicl-mvp.md). The design progress section below preserves the earlier design-phase record.
 
 ## Outcome and scope
 
@@ -37,7 +37,7 @@ No PayPal, funding/billing capture, ads, external action execution, BYOA sandbox
 | E11-2 Canonical creation service and web-app tools | #13 | E11-1 | implemented; integrated into epic |
 | E11-3 Authenticated workspace and agent-creation wizard | #14 | E11-1, E11-2 | implemented; integrated into epic |
 | E11-4 Built-in chat agent creation surface | #15 | E11-2 | implemented; integrated into epic |
-| E11-5 AICL web pages, instance management, and cross-surface proof | #16 | E11-3, E11-4 | implemented/reviewed candidate; integration pending |
+| E11-5 AICL web pages, instance management, and cross-surface proof | #16 | E11-3, E11-4 | integrated; post-integration application checks passed |
 
 ## Waves
 
