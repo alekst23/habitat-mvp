@@ -16,27 +16,27 @@ TEMPLATES = {
 {% if error %}<div role="alert"><p>{{ error.error }}{% if error.reason %}: {{ error.reason }}{% endif %}</p>
 <p>{{ error.message }}</p>{% if error.current_version %}<p>Current version: {{ error.current_version }}. Reload and retry.</p>{% endif %}
 {% if error.field_errors %}<ul>{% for e in error.field_errors %}<li>{{ e.field }}: {{ e.code }}</li>{% endfor %}</ul>{% endif %}</div>{% endif %}
-<section aria-label="Agent"><h2>Agent</h2>
+<section><h2>Agent</h2>
 <p>Name: {{ d.snapshot.name }}</p><p>Lifecycle: {{ d.snapshot.lifecycle }}</p><p>Status: {{ d.snapshot.status }}</p>
 <p>Instructions: <span style="white-space: pre-wrap">{{ d.snapshot.instructions }}</span></p>
-{% if d.snapshot.gated_reason %}<p role="status">Gated: <code>{{ d.snapshot.gated_reason }}</code></p>
+{% if d.snapshot.gated_reason %}<p role="status">Gated: <code>{{ d.snapshot.gated_reason }}</code></p>{% endif %}
 <form method="post" action="/instances/{{ d.snapshot.id }}/resolve-gate">{{ hidden }}
-<button type="submit">Re-check and clear</button></form>{% endif %}
+<button type="submit">Re-check and clear</button></form>
 <p>Gated reasons stay until you fix the control and the system re-checks it as permitting work.</p>
 <form method="post" action="/instances/{{ d.snapshot.id }}/lifecycle">{{ hidden }}
 {% for action, label in actions %}<button type="submit" name="action" value="{{ action }}">{{ label }}</button> {% endfor %}</form></section>
 <p>Real provider adapters are not enabled: connections and work in this product are simulated. Revoking a connection detaches it and gates the agents that used it; revocation does not undo actions already taken.</p>
-<section aria-label="Budget"><h2>Budget</h2><table><thead><tr><th>Category</th><th>Window</th><th>Limit</th><th>Settled</th><th>Held</th><th>Available</th></tr></thead><tbody>
+<section><h2>Budget</h2><table><thead><tr><th>Category</th><th>Window</th><th>Limit</th><th>Settled</th><th>Held</th><th>Available</th></tr></thead><tbody>
 {% for cat, windows in d.budget.windows.items() %}{% for w, a in windows.items() %}<tr><td>{{ cat }}</td><td>{{ w }}</td><td>{{ usd(a.limit) }}</td><td>{{ usd(a.settled) }}</td><td>{{ usd(a.held) }}</td><td>{{ usd(a.available) }}</td></tr>{% endfor %}{% endfor %}
 </tbody></table>
 <form method="post" action="/instances/{{ d.snapshot.id }}/limits">{{ hidden }}
 {% for name, label in limit_fields %}<p><label for="{{ name }}">{{ label }}</label> <input id="{{ name }}" name="{{ name }}" type="text" inputmode="decimal" value="{{ limit_values[name] }}"> USD</p>{% endfor %}
 <button type="submit">Save limits</button></form></section>
-<section aria-label="Capabilities"><h2>Capabilities</h2>
+<section><h2>Capabilities</h2>
 <form method="post" action="/instances/{{ d.snapshot.id }}/capabilities">{{ hidden }}
 {% for c, on in d.snapshot.capabilities.items() %}<p><label><input type="checkbox" name="capabilities" value="{{ c }}"{% if on %} checked{% endif %}>{{ c }}</label></p>{% endfor %}
 <button type="submit">Save capabilities</button></form></section>
-<section aria-label="Connections"><h2>Attachments</h2>
+<section><h2>Attachments</h2>
 {% for row in attach_rows %}<div><p>{{ row.capability }}:
 {% if row.attached %}{{ row.attached.connection_display_name }} ({{ row.attached.connection_status }})</p>
 <form method="post" action="/instances/{{ d.snapshot.id }}/attachments/detach">{{ hidden }}<input type="hidden" name="capability" value="{{ row.capability }}"><button type="submit">Detach</button></form>
@@ -45,26 +45,26 @@ TEMPLATES = {
 <select id="conn-{{ row.capability }}" name="connection_id">{% for c in row.options %}<option value="{{ c.id }}">{{ c.display_name }}</option>{% endfor %}</select>
 <button type="submit">Attach</button></form>
 {% else %}not attached; no active connection is available (see Connections).</p>{% endif %}</div>{% else %}<p>Enable a connection-backed capability to attach a connection.</p>{% endfor %}</section>
-<section aria-label="Network domains"><h2>Network domains</h2>
+<section><h2>Network domains</h2>
 {% if d.snapshot.network_domains %}<ul>{% for h in d.snapshot.network_domains %}<li>{{ h }}
 <form method="post" action="/instances/{{ d.snapshot.id }}/domains/remove" style="display:inline">{{ hidden }}<input type="hidden" name="host" value="{{ h }}"><button type="submit">Remove domain</button></form></li>{% endfor %}</ul>
 {% else %}<p>No owner domains.</p>{% endif %}
 <form method="post" action="/instances/{{ d.snapshot.id }}/domains">{{ hidden }}<label for="domain-host">Network.fetch domain</label> <input id="domain-host" name="host" type="text">
 <button type="submit">Add domain</button></form></section>
-<section aria-label="Simulated work"><h2>Simulated work request</h2>
+<section><h2>Simulated work request</h2>
 <p>Simulated: no real provider call is made.</p>
 <form id="work-form" data-instance="{{ d.snapshot.id }}" data-csrf="{{ csrf }}"><label for="work-capability">Capability</label>
 <select id="work-capability" name="capability">{% for c in d.snapshot.capabilities %}<option>{{ c }}</option>{% endfor %}</select>
 <label for="work-minutes">Compute minutes</label> <input id="work-minutes" name="compute_minutes" type="text" inputmode="numeric" value="1">
 <button type="submit">Run simulated work</button></form><p id="work-result" role="status"></p></section>
-<section aria-label="Pending confirmations"><h2>Confirmations</h2>
+<section><h2>Confirmations</h2>
 {% for p in d.pending_actions %}<div class="pending" data-pending="{{ p.id }}" data-csrf="{{ csrf }}"><p>{{ p.capability }}{% for k, v in p.preview.items() %} {{ k }}={{ v }}{% endfor %}</p>
 <button type="button" class="confirm">Confirm</button> <span role="status"></span></div>{% else %}<p>Nothing is waiting for confirmation.</p>{% endfor %}</section>
-<section aria-label="Usage"><h2>Usage (simulated work)</h2>
+<section><h2>Usage (simulated work)</h2>
 {% if d.usage_history %}<table><thead><tr><th>Recorded</th><th>Inference</th><th>Compute</th><th>Compute minutes</th></tr></thead><tbody>
 {% for u in d.usage_history %}<tr><td>{{ u.recorded_at.isoformat() }}</td><td>{{ usd(u.inference_micro_usd) }}</td><td>{{ usd(u.compute_micro_usd) }}</td><td>{{ u.compute_minutes }}</td></tr>{% endfor %}</tbody></table>
 {% else %}<p>No usage yet.</p>{% endif %}</section>
-<section aria-label="Audit"><h2>Audit history</h2>
+<section><h2>Audit history</h2>
 {% if d.audit %}<ol>{% for e in d.audit %}<li>{{ e.event_type }} ({{ e.outcome }}, {{ e.actor_kind }})</li>{% endfor %}</ol>{% else %}<p>No events.</p>{% endif %}</section>
 <script>
 (function () {
