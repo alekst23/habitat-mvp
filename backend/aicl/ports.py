@@ -11,7 +11,7 @@ from aicl.settings import Settings
 
 # E11-1 requires only the clock; each owning ticket appends its own port names (E11-2 below).
 REQUIRED_PORTS: tuple[str, ...] = ("clock", "secret_store", "credential_broker", "provider_oauth",
-                                   "work_executor", "resolver", "magic_link_sender")
+                                   "work_executor", "resolver", "magic_link_sender", "chat_model")
 
 # port name -> factory(settings) building the leaf port for the active mode; tickets register theirs.
 PORT_REGISTRY: dict[str, Callable[[Settings], object]] = {}
@@ -29,6 +29,7 @@ class Ports(BaseModel):
     work_executor: object  # E11-2
     resolver: object  # E11-2
     magic_link_sender: object  # E11-3
+    chat_model: object  # E11-4
 
 
 def build_ports(settings: Settings) -> Ports:
