@@ -1,0 +1,3 @@
+# Reviewed scanner versions; Trivy is checksum-pinned in scripts/ctx_security_tools.py.
+bandit==1.9.4
+pip-audit==2.10.1

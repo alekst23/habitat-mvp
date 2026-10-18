@@ -212,9 +212,11 @@ def run_browser(root, environment=None):
         print("Browser not applicable to this checked context; no browser pass claimed.")
         return 0
     require((root / "package-lock.json").is_file(), "browser foundation missing: package-lock.json")
-    if (root / "backend/requirements.txt").is_file():
+    if (root / "backend").is_dir():
+        require((root / "backend/requirements.lock").is_file(),
+                "browser foundation missing: backend/requirements.lock")
         subprocess.run([sys.executable, "-m", "pip", "install", "--disable-pip-version-check",
-                        "-r", "backend/requirements.txt"], cwd=root, env=env, check=True)
+                        "--require-hashes", "-r", "backend/requirements.lock"], cwd=root, env=env, check=True)
     subprocess.run(["npm", "ci"], cwd=root, env=env, check=True)
     version = subprocess.check_output(["node", "-p", 'require("@playwright/test/package.json").version'],
                                       cwd=root, env=env, text=True).strip()

@@ -4,7 +4,7 @@ shared `require_csrf` dependency; they never accept a tenant or owner from the c
 from __future__ import annotations
 
 import uuid
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlsplit
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -18,6 +18,7 @@ from aicl.creation.models import TEMPLATE_ID_DEFAULT, CreateInstanceRequest
 from aicl.creation.routes import field_errors_from
 from aicl.creation.service import create_instance
 from aicl.web.pages import render
+from aicl.web.views import SqliteProjectionService
 
 
 class FormCsrfShim:
@@ -89,6 +90,13 @@ def web_router(ctx) -> APIRouter:
 
     @router.post("/auth/verify")
     async def verify(request: Request):
+        public = urlsplit(ctx.settings.public_base_url)
+        expected_origin = f"{public.scheme}://{public.netloc}"
+        # A valid link proves email ownership, not that this browser intended to sign in.
+        # Require the same-origin confirmation form, including before a session exists.
+        if (request.headers.get("origin") != expected_origin
+                or request.headers.get("sec-fetch-site") == "cross-site"):
+            raise AiclError("denied", "same-origin sign-in confirmation required", reason="check_unavailable")
         form = await request.form()
         result = service.verify(str(form.get("token", "")), request.cookies.get(SESSION_COOKIE))
         if result is None:
@@ -110,10 +118,8 @@ def web_router(ctx) -> APIRouter:
         auth = signed_in(request)
         if auth is None:
             return RedirectResponse("/", status_code=303)
-        with ctx.db.reader() as conn:
-            rows = conn.execute("SELECT name, lifecycle FROM agent_instance WHERE tenant_id = ? ORDER BY created_at",
-                                (auth.tenant_id,)).fetchall()
-        return _page("workspace", title="Your workspace", instances=[dict(r) for r in rows],
+        view = SqliteProjectionService(ctx.db, ctx.clock, ctx.settings.hold_stale_seconds).workspace(auth)
+        return _page("workspace", title="Your workspace", instances=view.instances,
                      csrf=ctx.csrf_verifier.token_for(auth.session_id))
 
     def wizard_form(auth, status=200, **values):

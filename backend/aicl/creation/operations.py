@@ -162,10 +162,21 @@ class SqliteInstanceOperations:
                                                   instance_id, connection_id, reason, details))
 
     def _bump(self, conn: Connection, auth: AuthContext, instance_id: str, **columns: object) -> None:
-        sets = "".join(f"{name} = ?, " for name in columns)
-        conn.execute(f"UPDATE agent_instance SET {sets}version = version + 1, updated_at = ? "
+        updates = {
+            'lifecycle': 'UPDATE agent_instance SET lifecycle = ? WHERE id = ? AND tenant_id = ?',
+            'network_domains': 'UPDATE agent_instance SET network_domains = ? WHERE id = ? AND tenant_id = ?',
+            'inference_daily_micro_usd': 'UPDATE agent_instance SET inference_daily_micro_usd = ? WHERE id = ? AND tenant_id = ?',
+            'inference_monthly_micro_usd': 'UPDATE agent_instance SET inference_monthly_micro_usd = ? WHERE id = ? AND tenant_id = ?',
+            'compute_daily_micro_usd': 'UPDATE agent_instance SET compute_daily_micro_usd = ? WHERE id = ? AND tenant_id = ?',
+            'compute_monthly_micro_usd': 'UPDATE agent_instance SET compute_monthly_micro_usd = ? WHERE id = ? AND tenant_id = ?',
+        }
+        if not columns.keys() <= updates.keys():
+            raise ValueError("unsupported instance update column")
+        for column, value in columns.items():
+            conn.execute(updates[column], (value, instance_id, auth.tenant_id))
+        conn.execute("UPDATE agent_instance SET version = version + 1, updated_at = ? "
                      "WHERE id = ? AND tenant_id = ?",
-                     (*columns.values(), to_iso(self.clock.now()), instance_id, auth.tenant_id))
+                     (to_iso(self.clock.now()), instance_id, auth.tenant_id))
 
     def _reevaluate(self, conn: Connection, auth: AuthContext, instance_id: str) -> None:
         from aicl.control.instances import _fetch

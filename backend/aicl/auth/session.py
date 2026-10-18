@@ -119,8 +119,11 @@ class SqliteSignInService:
         return to_iso(now.fromtimestamp(epoch - epoch % WINDOW_SECONDS, tz=now.tzinfo))
 
     def _limited(self, conn, scope: str, key_hash: str, column: str, limit: int, window: str, now) -> bool:
-        count = conn.execute(f"SELECT count(*) FROM magic_link WHERE {column} = ? AND created_at >= ?",
-                             (key_hash, window)).fetchone()[0]
+        queries = {
+            "email_hash": "SELECT count(*) FROM magic_link WHERE email_hash = ? AND created_at >= ?",
+            "requested_ip_hash": "SELECT count(*) FROM magic_link WHERE requested_ip_hash = ? AND created_at >= ?",
+        }
+        count = conn.execute(queries[column], (key_hash, window)).fetchone()[0]
         if count < limit:
             return False
         fresh = conn.execute("INSERT OR IGNORE INTO link_rate_window (scope, key_hash, window_start) VALUES (?,?,?)",

@@ -33,7 +33,7 @@ from aicl.control.auth import AuthContext
 from aicl.control.budget import Estimate, Hold, MeasuredUsage, NoUsage, SqliteBudgetPort, Usage, _hold, _usage
 from aicl.control.confirmation import CONFIRMED_CAPABILITIES, SqliteConfirmationStore, payload_digest
 from aicl.control.errors import AiclError
-from aicl.control.instances import CATALOG_CAPABILITIES, GateContext, SqliteInstanceRepository
+from aicl.control.instances import CATALOG_CAPABILITIES, GateContext, SqliteInstanceRepository, _fetch
 from aicl.creation.service import NOT_IMPLEMENTED
 from aicl.db import Database, from_iso, to_iso
 from aicl.network.policy import FIXED_NETWORK_POLICY, authorize_destination
@@ -240,7 +240,8 @@ class SqliteWorkGate:
         if capability in CAPABILITY_SCOPES:
             attachment_id = self._check_connection(instance, capability)
         destination = self._check_network(instance, request)
-        hold, result = self._reserve_and_consume(auth, request, digest, computed, confirmation_id)
+        hold, result = self._reserve_and_consume(auth, request, digest, computed, confirmation_id,
+                                                instance, attachment_id)
         return self._dispatch(auth, request, hold, attachment_id, destination)
 
     def _check_confirmation(self, auth, instance, request, computed) -> str:
@@ -312,9 +313,29 @@ class SqliteWorkGate:
             gate = ("network_denied", GateContext((capability,), hashlib.sha256(host.encode()).hexdigest()[:12]))
         raise Denied("network_denied", gate=gate, rule=decision.rule or decision.reason)
 
-    def _reserve_and_consume(self, auth, request, digest, computed, confirmation_id):
+    def _reserve_and_consume(self, auth, request, digest, computed, confirmation_id, checked, attachment_id):
         try:
             with self.db.transaction() as conn:
+                # This write transaction is the dispatch authorization boundary. Owner changes
+                # committed before it must win; network resolution stays outside the DB lock.
+                current = _fetch(conn, auth, request.instance_id)
+                if auth.expires_at <= self.clock.now():
+                    raise Denied("check_unavailable")
+                if current.lifecycle != "active":
+                    raise Denied("instance_not_active")
+                grant = conn.execute("SELECT enabled FROM capability_grant WHERE instance_id = ? AND capability = ?",
+                                     (current.id, request.capability)).fetchone()
+                if grant is None or not grant["enabled"]:
+                    raise Denied("capability_disabled",
+                                 gate=("capability_disabled", GateContext((request.capability,), None)))
+                if current.gated_reason is not None:
+                    reason = ("connection_unavailable" if current.gated_reason.startswith("connection_")
+                              else current.gated_reason)
+                    raise Denied(reason)
+                if current.version != checked.version:
+                    raise Denied("check_unavailable")  # retry with the owner's current policy
+                if attachment_id is not None and self._check_connection(current, request.capability) != attachment_id:
+                    raise Denied("check_unavailable")
                 hold = self.budget.reserve(conn, request.instance_id, request.work_id, request.estimate)
                 self.recorder.reserved(conn, auth, hold)
                 if confirmation_id is not None and not self.confirmations.consume_confirmation(
@@ -449,7 +470,7 @@ class SqliteHoldReconciler:
 
     def _handle(self, row: dict) -> None:
         auth = AuthContext(row["owner_id"], row["tenant_id"], "system", self.clock.now())
-        found = self.executor.lookup(row["work_id"])
+        found = self.executor.lookup(row["id"])
         if isinstance(found, StillUnknown) or found.status == "unknown":
             if row["state"] == "held":
                 self._mark_unknown(auth, row)

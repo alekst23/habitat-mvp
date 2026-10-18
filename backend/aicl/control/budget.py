@@ -169,16 +169,21 @@ class SqliteBudgetPort:
     def _amounts(self, conn: Connection, instance, now: datetime):
         day, month = now.strftime("%Y-%m-%d"), now.strftime("%Y-%m")
         out: dict[str, dict[str, WindowAmounts]] = {}
-        for category in ("inference", "compute"):
-            out[category] = {}
-            for window, column, key in (("day", "window_day", day), ("month", "window_month", month)):
-                settled = conn.execute(f"SELECT COALESCE(SUM({category}_micro_usd),0) FROM budget_usage "
-                                       f"WHERE instance_id = ? AND {column} = ?", (instance["id"], key)).fetchone()[0]
-                held = conn.execute(f"SELECT COALESCE(SUM({category}_micro_usd),0) FROM budget_hold WHERE "
-                                    f"instance_id = ? AND {column} = ? AND state IN ('held','unknown')",
-                                    (instance["id"], key)).fetchone()[0]
+        for window, key in (("day", day), ("month", month)):
+            params = (instance["id"], window, key)
+            settled = conn.execute(
+                "SELECT COALESCE(SUM(inference_micro_usd),0), COALESCE(SUM(compute_micro_usd),0) "
+                "FROM budget_usage WHERE instance_id = ? "
+                "AND CASE ? WHEN 'day' THEN window_day ELSE window_month END = ?", params).fetchone()
+            held = conn.execute(
+                "SELECT COALESCE(SUM(inference_micro_usd),0), COALESCE(SUM(compute_micro_usd),0) "
+                "FROM budget_hold WHERE instance_id = ? "
+                "AND CASE ? WHEN 'day' THEN window_day ELSE window_month END = ? "
+                "AND state IN ('held','unknown')", params).fetchone()
+            for index, category in enumerate(("inference", "compute")):
                 limit = instance[f"{category}_{'daily' if window == 'day' else 'monthly'}_micro_usd"]
-                out[category][window] = WindowAmounts(limit, settled, held, max(0, limit - settled - held))
+                out.setdefault(category, {})[window] = WindowAmounts(
+                    limit, settled[index], held[index], max(0, limit - settled[index] - held[index]))
         return out
 
     def _transition(self, conn: Connection, row, target: str, now: datetime) -> Hold:

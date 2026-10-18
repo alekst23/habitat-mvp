@@ -7,13 +7,94 @@
   "epic_branch": "ctx/epic-i11",
   "next_ticket_number": 6,
   "tickets": [
-    {"id":"E11-1","issue_iid":12,"title":"AICL domain and control foundation","depends_on":[],"wave":1,"status":"pending","branch":"ctx/ticket-i12"},
-    {"id":"E11-2","issue_iid":13,"title":"Canonical creation service and web-app tools","depends_on":["E11-1"],"wave":2,"status":"pending","branch":"ctx/ticket-i13"},
-    {"id":"E11-3","issue_iid":14,"title":"Authenticated workspace and agent-creation wizard","depends_on":["E11-1","E11-2"],"wave":3,"status":"pending","branch":"ctx/ticket-i14"},
-    {"id":"E11-4","issue_iid":15,"title":"Built-in chat agent creation surface","depends_on":["E11-2"],"wave":3,"status":"pending","branch":"ctx/ticket-i15"},
-    {"id":"E11-5","issue_iid":16,"title":"AICL web pages, instance management, and cross-surface proof","depends_on":["E11-3","E11-4"],"wave":4,"status":"pending","branch":"ctx/ticket-i16"}
+    {
+      "id": "E11-1",
+      "issue_iid": 12,
+      "title": "AICL domain and control foundation",
+      "depends_on": [],
+      "wave": 1,
+      "status": "pending",
+      "branch": "ctx/ticket-i12",
+      "implementation": {
+        "status": "integrated",
+        "source_sha": "279eb2b51734375e38a05a9833c96594d7411b9c",
+        "evidence": "docs/plan/E11/completion.md",
+        "epic_sha": "e03888e1c7a6996a0bba76269c5e921c35327921"
+      }
+    },
+    {
+      "id": "E11-2",
+      "issue_iid": 13,
+      "title": "Canonical creation service and web-app tools",
+      "depends_on": [
+        "E11-1"
+      ],
+      "wave": 2,
+      "status": "pending",
+      "branch": "ctx/ticket-i13",
+      "implementation": {
+        "status": "integrated",
+        "source_sha": "1e86671774206eb0cb7eb4c97867fc91a8c6a401",
+        "evidence": "docs/plan/E11/completion.md",
+        "epic_sha": "924835f36cb80eb89602e0ce4908a8f33f950bac"
+      }
+    },
+    {
+      "id": "E11-3",
+      "issue_iid": 14,
+      "title": "Authenticated workspace and agent-creation wizard",
+      "depends_on": [
+        "E11-1",
+        "E11-2"
+      ],
+      "wave": 3,
+      "status": "pending",
+      "branch": "ctx/ticket-i14",
+      "implementation": {
+        "status": "integrated",
+        "source_sha": "eb8ef67447cb6c77995ebf28917d5d06e647f6b3",
+        "evidence": "docs/plan/E11/completion.md",
+        "epic_sha": "f696424d4535459575d02befca6239e0a8dbe649"
+      }
+    },
+    {
+      "id": "E11-4",
+      "issue_iid": 15,
+      "title": "Built-in chat agent creation surface",
+      "depends_on": [
+        "E11-2"
+      ],
+      "wave": 3,
+      "status": "pending",
+      "branch": "ctx/ticket-i15",
+      "implementation": {
+        "status": "integrated",
+        "source_sha": "31a0a623ce6e1cb680b59da98f05b9fd22f3c5f7",
+        "evidence": "docs/plan/E11/completion.md",
+        "epic_sha": "6f276d91fbf517295db009263c194ee3315b4328"
+      }
+    },
+    {
+      "id": "E11-5",
+      "issue_iid": 16,
+      "title": "AICL web pages, instance management, and cross-surface proof",
+      "depends_on": [
+        "E11-3",
+        "E11-4"
+      ],
+      "wave": 4,
+      "status": "pending",
+      "branch": "ctx/ticket-i16",
+      "implementation": {
+        "status": "reviewed_candidate",
+        "source_sha": "55b8c8eaf92cf8095f9ae6189a2702ac5fc9f4c8",
+        "evidence": "docs/plan/E11/completion.md",
+        "mr_iid": 76
+      }
+    }
   ],
-  "last_operation":"ctx-epic-new",
-  "last_updated":"2026-10-13",
-  "design_status":"pending"
+  "last_operation": "ctx-epic-docs",
+  "last_updated": "2026-10-17",
+  "design_status": "pending",
+  "status_note": "Legacy workflow statuses are retained pending reconciliation of complete source/integration/pipeline/review receipts. Implementation observations describe actual code progression; whole-epic acceptance and closure remain pending."
 }

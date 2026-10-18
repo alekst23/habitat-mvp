@@ -2,11 +2,13 @@
 
 ## Project context
 
-Read `docs/habitat-mvp.md` for the current product specification: a hosted
-marketing-agent application with onboarding, delegated actions, and USD budgets.
-The GitLab workflow builds and operates that application; it is separate from
-the customer-facing agents. Read `docs/hackathon-gitlab-workflows.md` for the
-nine-stage delivery plan.
+Read `docs/plan/E11/_epic.md` and `docs/design/README.md` for the current AICL
+MVP scope and contracts, `docs/aicl-mvp.md` for running the application, and
+`docs/plan/E11/completion.md` for candidate-specific evidence. E11 implements owner
+controls and creation/management pages with simulated provider/work execution;
+`docs/habitat-mvp.md` is the historical marketing/PayPal proposal. The GitLab
+delivery workflow is separate from the customer-facing application. Read
+`docs/hackathon-gitlab-workflows.md` for the nine-stage delivery plan.
 
 ## Workflow instructions
 
@@ -254,14 +256,18 @@ green unit-test job. Missing/skipped/stale checks block completion. See
 
 ## Current implementation status
 
-The earlier planning flow ran successfully. CTX Planning now replaces that entry
-point with chat; CTX Design supports detailed design interviews. Their read-only
-chat behavior is live-tested, but approved planning writes still need a live test.
-Design saved E2 artifacts in MR !8; this repair addresses their incomplete contracts
-and inconsistent state/acceptance mappings, rather than claiming save alone suffices.
-Revised development/delivery definitions have separate publication/live-validation
-status in the implementation guide. Local workflow validation, dependency-wave
-planning and fail-closed evidence adapters are provided.
+E11-1 through E11-4 are integrated into `ctx/epic-i11`. E11-5 has an
+implemented and independently reviewed ticket candidate; its integration and the
+assembled epic's final acceptance must be verified from current remote evidence.
+See `docs/plan/E11/completion.md`; do not infer completion from older pending plan
+fields or the historical E2 `.ctx/session.json` and verify report. The application
+has real SQLite-backed control behavior, magic-link authentication, wizard/chat
+creation and management pages. OAuth providers, chat model and external work stay
+fake-only. Runtime/provider enablement, PayPal and deployment are outside E11.
+
+Historical catalog publication and live-validation records above and in the
+implementation guides remain evidence for their named revisions. They do not
+certify a newer application candidate or grant new execution/merge authority.
 
 Workflow development commands (Python 3.12):
 
@@ -272,17 +278,17 @@ python -m unittest discover -s tests/workflow -v
 python scripts/ctx_workflow.py waves docs/plan/E<epic-issue-iid>/state.json
 ```
 
-Application install/test/build/scan/deployment adapters are not configured yet.
-The acceptance validator and browser CI harness exist; the latter still needs the
-application, its pinned Playwright dependency, startup command and real UI tests.
-Establish reviewed argument arrays and evidence writers in `.gitlab/ctx/commands.yml`
-as part of the application foundation. `python scripts/ctx_workflow.py run verify`
-currently returns blocked (exit 2), correctly. Workflow self-tests are not application
-tests. Workflow self-checks run automatically on merge requests and the default
-branch; `CTX_WORKFLOW_CHECKS=1` also enables them on other branches. Application
-checks activate automatically wherever committed version-2 plans exist.
-Until adapters are configured, their jobs fail closed. Scope/manifest/browser needs
-come from committed plan/branch identity, not manually supplied pipeline variables.
+The backend verify and acceptance adapters, pinned Playwright dependency, test
+startup command and application browser journeys are implemented. The current
+completion work includes a source-security adapter candidate; its actual CI result
+and independent review must be recorded for the final SHA. Package,
+artifact-security and staging-configuration validation remain separate required
+checks until their real adapters and evidence exist; no deployment is implied.
+Workflow self-tests are not application tests. Workflow self-checks run automatically
+on merge requests and the default branch; `CTX_WORKFLOW_CHECKS=1` also enables them
+on other branches. Application checks activate automatically wherever committed
+version-2 plans exist. Unconfigured adapters fail closed. Scope/manifest/browser
+needs come from committed plan/branch identity, not manually supplied pipeline variables.
 Read docs/development/acceptance-evidence.md. The candidate-data file
 `.gitlab/ctx/verification-context.json` is the narrow exception to workflow-policy
 write restrictions: ticket implementation runs `scripts/ctx_ci_context.py prepare`

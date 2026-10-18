@@ -32,7 +32,8 @@ def sign_in(app, client: TestClient, email: str) -> None:
     assert captured.status_code == 200, captured.text
     token = LINK_TOKEN.search(captured.text).group(1)
     client.get("/auth/verify", params={"token": token})  # GET only renders a form: it must not consume the link
-    done = client.post("/auth/verify", data={"token": token}, follow_redirects=False)
+    done = client.post("/auth/verify", data={"token": token}, follow_redirects=False,
+                       headers={"origin": app.state.ctx.settings.public_base_url})
     assert done.status_code in (200, 302, 303), done.text
 
 
@@ -60,7 +61,8 @@ def test_real_sign_in_is_generic_sets_safe_cookie_and_logout_invalidates_it(real
     with TestClient(real_app) as owner:
         owner.post("/auth/magic-link", data={"email": "cookie@example.com"})
         token = LINK_TOKEN.search(owner.get("/__test__/last-magic-link", params={"email": "cookie@example.com"}).text).group(1)
-        signed = owner.post("/auth/verify", data={"token": token}, follow_redirects=False)
+        signed = owner.post("/auth/verify", data={"token": token}, follow_redirects=False,
+                            headers={"origin": real_app.state.ctx.settings.public_base_url})
         header = " ".join(signed.headers.get_list("set-cookie")).lower()
         assert "aicl_session=" in header and "httponly" in header and "samesite=lax" in header
         assert "max-age=28800" in header and "path=/" in header and "secure" not in header  # test mode only
@@ -102,3 +104,23 @@ def test_wizard_creates_a_draft_through_the_canonical_service_and_ignores_client
                             headers={**csrf_headers(real_app, owner_b), "origin": origin})
         assert read.status_code == 404 and read.json()["error"] == "not_found"
         assert "Helper" in owner_a.get("/workspace").text and "Helper" not in owner_b.get("/workspace").text
+
+
+@pytest.mark.ac("E11-3.AC1", code="backend/aicl/web/routes.py:web_router")
+def test_magic_link_cannot_sign_another_browser_into_attackers_account(real_app):
+    with TestClient(real_app) as visitor:
+        visitor.post("/auth/magic-link", data={"email": "attacker@example.com"})
+        captured = visitor.get("/__test__/last-magic-link", params={"email": "attacker@example.com"})
+        token = LINK_TOKEN.search(captured.text).group(1)
+        origin = real_app.state.ctx.settings.public_base_url
+        for headers in ({}, {"origin": "https://attacker.example"}, {"origin": "null"},
+                        {"origin": origin, "sec-fetch-site": "cross-site"}):
+            rejected = visitor.post("/auth/verify", data={"token": token}, headers=headers,
+                                    follow_redirects=False)
+            assert rejected.status_code == 403
+            assert "set-cookie" not in rejected.headers
+            assert visitor.get("/workspace", follow_redirects=False).status_code == 303
+        # Rejection did not consume the link: an intentional same-origin confirmation still works.
+        accepted = visitor.post("/auth/verify", data={"token": token}, headers={"origin": origin},
+                                follow_redirects=False)
+        assert accepted.status_code == 303 and "set-cookie" in accepted.headers

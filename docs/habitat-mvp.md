@@ -1,7 +1,7 @@
 # Habitat hackathon MVP
 
 Date: October 5, 2026  
-Status: Current MVP scope and design proposal. This document describes intended behavior, not completed implementation. It replaces the October 4 bring-your-own-agent scope, which remains in git history.
+Status: Historical October 5 marketing/PayPal proposal, retained for traceability. The current implemented MVP scope is [E11: AICL](plan/E11/_epic.md); see the [application guide](aicl-mvp.md) and [completion evidence](plan/E11/completion.md). The behavior below is the earlier proposal, not a claim about the E11 implementation. It replaced the October 4 bring-your-own-agent scope, which remains in git history.
 
 Habitat lets a small business owner set up a trustworthy AI agent that does real work for them, within a budget they control. The owner describes what they want in plain language. Habitat's onboarding agent configures the account and the working agent while the page updates in front of them. The owner never sees infrastructure; they see what the agent is doing, what it costs, and what it is waiting for them to approve.
 

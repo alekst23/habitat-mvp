@@ -12,7 +12,7 @@ from aicl.control.budget import Estimate, MeasuredUsage
 from aicl.control.errors import AiclError
 from aicl.control.instances import Limits
 from aicl.settings import Settings
-from aicl.work.models import ExecutorOutcome, StillUnknown, WorkRequest
+from aicl.work.models import AuthorizedWork, ExecutorOutcome, StillUnknown, WorkRequest
 from aicl.work.ports import FakeWorkExecutor
 from support import STARTUP_FAILURES, Abort, work_id
 
@@ -39,7 +39,8 @@ def request(inst, n, sim=None, estimate=EST, payload_extra=None):
 def record(env, inst, n):
     with env.db.reader() as conn:
         (table,) = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%work_request%'")]
-        return conn.execute(f"SELECT * FROM {table} WHERE work_id = ?", (work_id(n),)).fetchone()
+        return conn.execute(f"SELECT * FROM {table} WHERE tenant_id = ? AND work_id = ?",
+                            (inst.tenant_id, work_id(n))).fetchone()
 
 
 def day(env, inst):
@@ -145,19 +146,23 @@ def test_reconciler_run_once_settles_releases_and_leaves_still_unknown_blocking(
     env, ex, gate, auth, inst = setup(build_env, hold_stale_seconds=900)
     rec = seams.hold_reconciler(env, ex)
     gate.authorize_and_dispatch(auth, request(inst, 1, {"outcome": "unknown"}))  # executor stored an unknown outcome
-    ex.outcomes[work_id(1)] = ExecutorOutcome("succeeded", MeasuredUsage(0, 0, 1))  # later known
+    with env.db.transaction() as conn:  # simulator later learns the measured outcome
+        conn.execute("UPDATE executor_journal SET status = 'succeeded', input_tokens = 0, output_tokens = 0, "
+                     "compute_minutes = 1 WHERE hold_id = ?", (record(env, inst, 1)["hold_id"],))
     rec.run_once()
     assert record(env, inst, 1)["outcome"] == "succeeded" and day(env, inst).settled == 5000 and day(env, inst).held == 0
     assert "budget.reconciled" in types(env, auth, inst)
 
     gate.authorize_and_dispatch(auth, request(inst, 2, {"outcome": "unknown"}))
-    ex.outcomes.pop(work_id(2))
-    ex.started.add(work_id(2))  # started, no recorded result => still_unknown: hold stays and keeps blocking
-    assert isinstance(ex.lookup(work_id(2)), StillUnknown)
+    hold2 = record(env, inst, 2)["hold_id"]
+    with env.db.transaction() as conn:  # durable start without a recorded result
+        conn.execute("UPDATE executor_journal SET status = 'started' WHERE hold_id = ?", (hold2,))
+    assert isinstance(ex.lookup(hold2), StillUnknown)
     rec.run_once()
     assert env.budget.read_budget(inst.id).blocking_hold_count == 1 and day(env, inst).held == 10000
     assert gate.authorize_and_dispatch(auth, request(inst, 3)).denial_reason == "reconciliation_pending"
-    ex.started.discard(work_id(2))  # the executor now reports not_started: release the unknown hold with no usage
+    with env.db.transaction() as conn:  # simulator later proves there was no effect
+        conn.execute("UPDATE executor_journal SET status = 'not_started' WHERE hold_id = ?", (hold2,))
     rec.run_once()
     assert env.budget.read_budget(inst.id).blocking_hold_count == 0 and day(env, inst).held == 0
 
@@ -172,9 +177,9 @@ def test_reconciler_run_once_settles_releases_and_leaves_still_unknown_blocking(
     assert day(env, inst).held == 0 and env.budget.read_budget(inst.id).blocking_hold_count == 0
     ex2 = FakeWorkExecutor()
     with env.db.transaction() as conn:  # stale held whose work did start and finished: reconcile with measured usage
-        env.budget.reserve(conn, inst.id, work_id(11), EST)
-    ex2.started.add(work_id(11))
-    ex2.outcomes[work_id(11)] = ExecutorOutcome("succeeded", MeasuredUsage(0, 0, 2))
+        hold11 = env.budget.reserve(conn, inst.id, work_id(11), EST)
+    ex2.execute(AuthorizedWork(work_id(11), inst.id, "inference", {"sim": {"compute_minutes": 2}},
+                               hold11.id, None, None))
     env.clock.advance(timedelta(seconds=901))
     seams.hold_reconciler(env, ex2).run_once()
     assert day(env, inst).settled == 5000 + 10000 and day(env, inst).held == 0
@@ -250,3 +255,38 @@ def test_startup_rejects_non_fake_modes_and_registers_e11_2_hooks_in_order(base_
     assert len(routes.ROUTE_FACTORIES) >= 1 and len(hooks.STARTUP_HOOKS) == 3  # sweeper first, then reconciler, then E11-3 purge (O-3)
     names = [getattr(h, "__name__", type(h).__name__).lower() for h in hooks.STARTUP_HOOKS]
     assert "sweep" in names[0] and "reconcil" in names[1], names
+
+
+@pytest.mark.ac("E11-2.AC1", code="backend/aicl/work/ports.py:FakeWorkExecutor")
+def test_restarted_executor_keeps_unknown_hold_and_same_work_id_is_tenant_isolated(build_env):
+    env, ex, gate, auth, inst = setup(build_env)
+    unknown = gate.authorize_and_dispatch(auth, request(inst, 101, {"outcome": "unknown"}))
+    assert unknown.outcome == "unknown" and day(env, inst).held == 10000
+
+    # A fresh executor has no process memory, but must retain the first tenant's unknown result.
+    restarted = FakeWorkExecutor()
+    seams.hold_reconciler(env, restarted).run_once()
+    assert day(env, inst).held == 10000 and day(env, inst).settled == 0
+
+    # work_id is tenant-scoped: another tenant's identical key cannot settle the first tenant's hold.
+    other_auth, other = env.new_instance(capabilities=("inference",))
+    seams.instance_operations(env).set_lifecycle(other_auth, other.id, 1, "activate")
+    other_gate = seams.work_gate(env, restarted, None)
+    done = other_gate.authorize_and_dispatch(other_auth, request(other, 101, {"compute_minutes": 1}))
+    assert done.outcome == "succeeded" and day(env, other).settled == 5000
+    seams.hold_reconciler(env, restarted).run_once()
+    assert day(env, inst).held == 10000 and day(env, inst).settled == 0
+
+
+@pytest.mark.ac("E11-2.AC1", code="backend/aicl/work/ports.py:FakeWorkExecutor")
+def test_executor_journal_upgrade_preserves_preexisting_uncertain_work(build_env):
+    env, ex, gate, auth, inst = setup(build_env)
+    gate.authorize_and_dispatch(auth, request(inst, 103, {"outcome": "unknown"}))
+    # Recreate the previous schema's state: durable work/hold, but no durable executor journal.
+    with env.db.transaction() as conn:
+        conn.execute("DROP TABLE executor_journal")
+        conn.execute("DELETE FROM schema_migration WHERE version = '0008_executor_journal'")
+    env.db.migrate()
+    seams.hold_reconciler(env, FakeWorkExecutor(db=env.db)).run_once()
+    assert day(env, inst).held == 10000 and day(env, inst).settled == 0
+    assert env.budget.read_budget(inst.id).blocking_hold_count == 1

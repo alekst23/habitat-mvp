@@ -15,7 +15,7 @@ from aicl.connections.ports import AesGcmSecretStore, FakeProviderOAuth
 from aicl.connections.service import SqliteConnectionService, SqliteCredentialBroker, SqliteRevocationSweeper
 from aicl.control.budget import SqliteBudgetPort
 from aicl.control.confirmation import SqliteConfirmationStore
-from aicl.db import LazyDatabase
+from aicl.db import Database, LazyDatabase
 from aicl.network.policy import FakeResolver
 from aicl.settings import Settings, SettingsError
 from aicl.work.gate import SqliteHoldReconciler, SqliteWorkGate
@@ -52,7 +52,7 @@ def components_for(settings: Settings) -> Components:
         oauth = FakeProviderOAuth()
         resolver = FakeResolver(PROVIDER_HOSTS)
         broker = SqliteCredentialBroker(db, clock, oauth, store, resolver)
-        built = Components(store, oauth, resolver, broker, FakeWorkExecutor(broker))
+        built = Components(store, oauth, resolver, broker, FakeWorkExecutor(broker, Database(settings.database_url)))
         _BY_SETTINGS[id(settings)] = (settings, built)
         return built
 

@@ -5,6 +5,10 @@ Source issue: #11
 Epic issue: #11  
 Epic branch: `ctx/epic-i11`
 
+## Implementation snapshot
+
+E11-1 through E11-4 are integrated into the epic. E11-5 is implemented and reviewed at candidate `55b8c8ea`, with MR !76 awaiting integration in this snapshot. Whole-epic acceptance and closure remain pending. See [completion evidence](completion.md) and the [application guide](../../aicl-mvp.md). The design progress section below preserves the earlier design-phase record.
+
 ## Outcome and scope
 
 A signed-in owner creates and manages configurable instances of predefined agent templates through one canonical creation model. The first-party creation surfaces are a web wizard, web-app tools, and built-in chat. “WebMCP” means web-app tools, not a public MCP API.
@@ -19,7 +23,7 @@ Default instances begin with a name, free-form instructions, and enabled AICL ca
 - owner-authorized Gmail and Reddit OAuth connections, stored outside agent context and injected only by the relevant AICL component; and
 - outbound network policy with an allow-list as the baseline. Wildcard deny rules are not a substitute for an allow-list and are deferred unless a concrete use case requires them.
 
-Limit units (integer micro-USD), connection scopes, consent/revocation behavior, the network-policy schema and the capability-to-domain mapping are specified in the feature technical documents under `docs/design/` (design specified, independent review pending).
+Limit units (integer micro-USD), connection scopes, consent/revocation behavior, the network-policy schema and the capability-to-domain mapping are specified in the feature technical documents under `docs/design/` (implemented candidate; final epic acceptance pending).
 
 ## Exclusions
 
@@ -29,11 +33,11 @@ No PayPal, funding/billing capture, ads, external action execution, BYOA sandbox
 
 | Ticket | Issue | Dependencies | State |
 |---|---|---|---|
-| E11-1 AICL domain and control foundation | #12 | — | design specified; review pending |
-| E11-2 Canonical creation service and web-app tools | #13 | E11-1 | design specified; review pending |
-| E11-3 Authenticated workspace and agent-creation wizard | #14 | E11-1, E11-2 | design specified; review pending |
-| E11-4 Built-in chat agent creation surface | #15 | E11-2 | design specified; review pending |
-| E11-5 AICL web pages, instance management, and cross-surface proof | #16 | E11-3, E11-4 | design specified; review pending |
+| E11-1 AICL domain and control foundation | #12 | — | implemented; integrated into epic |
+| E11-2 Canonical creation service and web-app tools | #13 | E11-1 | implemented; integrated into epic |
+| E11-3 Authenticated workspace and agent-creation wizard | #14 | E11-1, E11-2 | implemented; integrated into epic |
+| E11-4 Built-in chat agent creation surface | #15 | E11-2 | implemented; integrated into epic |
+| E11-5 AICL web pages, instance management, and cross-surface proof | #16 | E11-3, E11-4 | implemented/reviewed candidate; integration pending |
 
 ## Waves
 
@@ -49,7 +53,7 @@ No PayPal, funding/billing capture, ads, external action execution, BYOA sandbox
 - Layout scope includes landing, workspace, create wizard, agent list, agent detail/status, and built-in chat.
 - The previous E2/PayPal direction is historical and remains unclosed for traceability.
 
-## Design progress
+## Historical design progress
 
 Status: design specified (a review candidate, not Design complete). Repair cycle 1 of 3 (mode=design-repair) addressed independent review findings DR-1 to DR-12 and DR-15 from issue #11 note 4008793549. Repair cycle 2 of 3 addressed DR-3, DR-4, DR-16 to DR-23 from the fresh review in note 4008945367 (documents only). Repair cycle 3 of 3 (final) addressed DR-3, DR-18, DR-22 to DR-29 from the third review in note 4009267488 (documents only). Design interpretation of D11-8 (D11-8 itself is unchanged): the persisted network gate is only the owner-resolvable allow-list miss (`host_not_allowed` for `network.fetch`), because a gate nobody can resolve would contradict "returns after the owner resolves that control"; a structurally invalid destination denies that request, is audited with its rule and persists no gate. The scenario mapping of F1-S5, F1-S6 and F1-S9 now also lists E11-2.AC1 (scenario field only). DR-13 (verify/browser command adapters, maintainer-authorized foundation change) and DR-14 (provider enablement, kept disabled with its stated safeguard) remain later gates and are not actioned. Execution status in `state.json` is unchanged (all tickets pending, `design_status` pending); dependencies, waves, AC ids, statements, ui flags and methods, and decisions D11-1 to D11-13 are unchanged.
 

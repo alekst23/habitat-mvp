@@ -128,9 +128,11 @@ class SqliteConnectionService:
         except Exception:
             raise _oauth_denied("exchange_failed") from None
         requested = tuple(json.loads(row["scopes"]))
-        if not set(requested) <= set(tokens.granted_scopes):
-            raise AiclError("validation_failed", "requested access was not granted",
-                            field_errors=[{"field": "scope", "code": "scope_missing"}])
+        requested_scopes, granted_scopes = set(requested), set(tokens.granted_scopes)
+        if granted_scopes != requested_scopes:
+            reason = "scope_missing" if requested_scopes - granted_scopes else "scope_mismatch"
+            raise AiclError("validation_failed", "granted access does not match requested access",
+                            field_errors=[{"field": "scope", "code": reason}])
         connection_id = str(uuid.uuid4())
         expires = min(tokens.expires_at, now + ACCESS_TOKEN_LIFETIME)
         refs: dict[str, str] = {}

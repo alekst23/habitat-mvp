@@ -99,7 +99,7 @@ def test_oauth_accepts_only_matching_single_use_state_pkce_and_exact_scopes(worl
     auth, _ = env.new_instance()
     stranger, _ = env.new_instance()
     conn, begun = connect(env, svc, auth)
-    assert conn.status == "active" and conn.provider == "gmail" and SEND in conn.granted_scopes and conn.secret_ref
+    assert conn.status == "active" and conn.provider == "gmail" and conn.granted_scopes == (SEND,) and conn.secret_ref
     assert conn.owner_id == auth.owner_id and "access_token" not in repr(conn)
     url = begun["authorization_url"] if isinstance(begun, dict) else begun
     query = parse_qs(urlparse(url).query)
@@ -138,6 +138,30 @@ def test_oauth_accepts_only_matching_single_use_state_pkce_and_exact_scopes(worl
     assert attempts() == 2
     denies(lambda: svc.begin_oauth(auth, "gmail", ("reddit.post",)), "validation_failed")  # capability/provider mismatch
     denies(lambda: svc.begin_oauth(auth, "gmail", ("network.fetch",)), "validation_failed")
+
+
+@pytest.mark.ac("E11-2.AC1", code="backend/aicl/connections/ports.py:ConnectionService")
+def test_oauth_rejects_extra_scopes_before_saving_credentials(world, monkeypatch):
+    env, store, _, _, _ = world()
+    auth, _ = env.new_instance()
+    oauth = FakeProviderOAuth(grant_scopes=(SEND, READ))
+    svc = seams.connection_service(env, oauth, store)
+    state = state_of(svc.begin_oauth(auth, "gmail", ("gmail.send",)))
+    saved_fields = []
+    original_put = store.put
+
+    def record_put(owner_id, connection_id, field, plaintext):
+        saved_fields.append(field)
+        return original_put(owner_id, connection_id, field, plaintext)
+
+    monkeypatch.setattr(store, "put", record_put)
+    error = denies(lambda: svc.complete_oauth(auth, state, "fake-code-ok"), "validation_failed")
+    assert error.extra["field_errors"] == [{"field": "scope", "code": "scope_mismatch"}]
+    assert saved_fields == []
+    with env.db.reader() as conn:
+        assert conn.execute("SELECT count(*) FROM connection").fetchone()[0] == 0
+        assert conn.execute("SELECT count(*) FROM connection_secret").fetchone()[0] == 0
+    assert "connection.created" not in [e.event_type for e in env.audit.list_for_owner(auth)]
 
 
 @pytest.mark.ac("E11-2.AC1", code="backend/aicl/creation/operations.py:InstanceOperations")
