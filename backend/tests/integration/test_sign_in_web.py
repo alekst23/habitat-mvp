@@ -78,7 +78,7 @@ def test_wizard_creates_a_draft_through_the_canonical_service_and_ignores_client
     with TestClient(real_app) as owner_a, TestClient(real_app) as owner_b:
         sign_in(real_app, owner_a, "wizard-a@example.com")
         sign_in(real_app, owner_b, "wizard-b@example.com")
-        form = {"idempotency_key": KEY, "name": "Helper", "instructions": "be kind", "capabilities": ["inference"],
+        form = {"idempotency_key": KEY, "name": "Helper", "instructions": "be kind\r\nkeep owners informed", "capabilities": ["inference"],
                 "tenant_id": "00000000-0000-4000-8000-00000000dead", "owner_id": "evil"}
         headers = csrf_headers(real_app, owner_a)
         assert owner_a.post("/agents/new", data=form, headers={"origin": headers["origin"]}).status_code == 403  # CSRF
@@ -87,8 +87,9 @@ def test_wizard_creates_a_draft_through_the_canonical_service_and_ignores_client
 
         auth_a = real_app.state.ctx.auth_provider.resolve(dict(owner_a.cookies))
         with real_app.state.ctx.db.reader() as conn:
-            inst = conn.execute("SELECT id, tenant_id, owner_id, lifecycle FROM agent_instance WHERE name = 'Helper'").fetchall()
+            inst = conn.execute("SELECT id, tenant_id, owner_id, lifecycle, instructions FROM agent_instance WHERE name = 'Helper'").fetchall()
             assert len(inst) == 1 and inst[0]["lifecycle"] == "draft"
+            assert inst[0]["instructions"] == "be kind\nkeep owners informed"  # HTML textarea CRLF becomes canonical LF
             assert inst[0]["tenant_id"] == inst[0]["owner_id"] == auth_a.owner_id  # derived from the session, not the form
             surface = conn.execute("SELECT details FROM audit_event WHERE event_type = 'instance.created'").fetchone()
             assert json.loads(surface["details"])["surface"] == "wizard"
@@ -96,6 +97,10 @@ def test_wizard_creates_a_draft_through_the_canonical_service_and_ignores_client
         denied = owner_a.post("/agents/new", data={**form, "idempotency_key": "wiz_" + "b" * 32, "name": "   "},
                               headers=headers)  # field error denial, nothing created
         assert denied.status_code in (200, 422) and "name" in denied.text
+        invalid_control = owner_a.post(
+            "/agents/new", data={**form, "idempotency_key": "wiz_" + "c" * 32, "instructions": "bare\rcarriage return"},
+            headers=headers)
+        assert invalid_control.status_code == 422 and "control_character" in invalid_control.text
         with real_app.state.ctx.db.reader() as conn:
             assert conn.execute("SELECT count(*) FROM agent_instance").fetchone()[0] == 1
 

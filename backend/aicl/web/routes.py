@@ -138,7 +138,10 @@ def web_router(ctx) -> APIRouter:
     @router.post("/agents/new", response_class=HTMLResponse)
     async def wizard_create(request: Request, auth=Depends(csrf)):
         form = await request.form()  # tenant_id / owner_id fields, if any, are never read
-        name, instructions = str(form.get("name", "")), str(form.get("instructions", ""))
+        name = str(form.get("name", ""))
+        # Browsers serialize textarea newlines as CRLF. The canonical contract
+        # accepts LF and still rejects other control characters, including bare CR.
+        instructions = str(form.get("instructions", "")).replace("\r\n", "\n")
         selected = [str(c) for c in form.getlist("capabilities")]
         try:
             built = CreateInstanceRequest(

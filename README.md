@@ -31,12 +31,24 @@ configuration, routes, checks and operational limits.
 
 ## Implementation and acceptance
 
-E11-1 through E11-4 are integrated into `ctx/epic-i11`. E11-5 has an implemented,
-reviewed candidate in MR !76; its integration and the assembled epic's final
-acceptance are still pending in this documentation snapshot. See the
-[E11 evidence record](docs/plan/E11/completion.md) for source identities and the
-remaining gates. A ticket's passing checks do not certify the entire epic or a
-deployment.
+E11-1 through E11-5 are integrated and verified at
+`ca4e172241a484c174ce37e4a8642aabd511945a`. All eleven mandatory jobs passed in
+[pipeline 2959718088](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2959718088),
+with a separate [whole-epic review](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4036886044).
+MR !45 remains draft, unmerged to main and undeployed. The
+[E11 evidence record](docs/plan/E11/completion.md) preserves the integration history.
+
+The separately requested [E11-6 UI refinement](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/work_items/19)
+is developed on `codex/e11-ui-polish`. It adds responsive navigation, workspace
+cards and status summaries, grouped owner controls, readable activity, and explicit
+pending/uncertain request feedback. Its current review and CI must be assessed
+separately from the completed five-ticket baseline.
+
+In the owner UI, use **Budgets**, **Capabilities** and **Activity** to jump between
+controls. **Simulated work request** sends the selected capability and compute
+minutes; it does not accept model tokens or an email body. After a result, use its
+reload link to see persisted usage, gates or pending confirmations. An uncertain
+result disables repeat submission until the page is reloaded and activity checked.
 
 ## Repository guide
 

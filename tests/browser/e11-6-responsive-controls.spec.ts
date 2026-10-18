@@ -1,0 +1,180 @@
+import { test, expect, Page } from '@playwright/test';
+
+// E11-6.AC1: presentation regression boundary over the same real application as E11-3/4/5.
+// Seeded identity is test-only. Creation, limits, activation and settled work use the real server.
+// Only the explicit unknown-result and lost-response cases below mock the HTTP boundary;
+// they prove browser recovery behavior, not provider execution or backend reconciliation.
+test('responsive owner controls preserve real work and handle pending or uncertain results safely',
+  { annotation: { type: 'ac', description: 'E11-6.AC1' } }, async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  expect((await page.request.post('/__test__/seed-session', { data: { fixture: 'owner-a' } })).status()).toBe(200);
+  await page.goto('/workspace');
+  await page.getByRole('link', { name: /Create with wizard/i }).click();
+  // Valid boundary-length content must wrap rather than disappear behind a clipped card.
+  const agentName = 'ResponsiveControls'.padEnd(80, 'x');
+  await page.getByLabel(/^Name$/).fill(agentName);
+  const instructions = 'Keep the owner informed.\n' + 'Boundaries'.repeat(50);
+  await page.getByLabel(/^Instructions$/).fill(instructions);
+  await page.getByRole('checkbox', { name: 'inference', exact: true }).check();
+  await page.getByRole('button', { name: 'Create', exact: true }).click();
+  await page.setViewportSize({ width: 375, height: 1000 });
+  await contained(page, '375px created agent');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('link', { name: /Review agent controls/i }).click();
+  expect(await page.getByText(instructions, { exact: true }).innerText()).toBe(instructions);
+  const instancePath = new URL(page.url()).pathname;
+  expect(instancePath).toMatch(/^\/instances\/[0-9a-f-]{36}$/);
+  await page.getByLabel('Inference daily', { exact: true }).fill('1');
+  await page.getByLabel('Inference monthly', { exact: true }).fill('10');
+  await page.getByLabel('Compute daily', { exact: true }).fill('1');
+  await page.getByLabel('Compute monthly', { exact: true }).fill('10');
+  await page.getByRole('button', { name: 'Save limits', exact: true }).click();
+  await page.getByRole('button', { name: 'Activate', exact: true }).click();
+  await expect(page.getByText('No usage yet.', { exact: true })).toBeVisible();
+
+  const workUrl = `**${instancePath}/work-requests`;
+  const form = page.locator('#work-form');
+  const submit = form.getByRole('button');
+  const result = page.locator('#work-result');
+  let submissions = 0;
+  page.on('request', request => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === `${instancePath}/work-requests`) {
+      submissions += 1;
+    }
+  });
+
+  // Reject invalid minutes locally, before creating any work request or usage.
+  await page.getByLabel('Compute minutes', { exact: true }).fill('1.5');
+  await submit.click();
+  await expect(result).toHaveText('Enter a non-negative whole number of compute minutes.');
+  expect(submissions).toBe(0);
+  await page.reload();
+  await expect(page.getByText('No usage yet.', { exact: true })).toBeVisible();
+
+  // Delay one genuine request, submit again while it is pending, then release it to the real server.
+  let releaseResponse!: () => void;
+  let sawRequest!: () => void;
+  const responseGate = new Promise<void>(resolve => { releaseResponse = resolve; });
+  const requestSeen = new Promise<void>(resolve => { sawRequest = resolve; });
+  await page.route(workUrl, async route => {
+    sawRequest();
+    await responseGate;
+    await route.continue();
+  });
+  await submit.click();
+  await requestSeen;
+  await expect(submit).toBeDisabled();
+  await expect(form).toHaveAttribute('aria-busy', 'true');
+  await expect(result).toContainText('Checking permissions and budget');
+  await form.dispatchEvent('submit');
+  expect(submissions).toBe(1);
+  releaseResponse();
+  await expect(result).toContainText('Result: succeeded.');
+  await expect(submit).toBeEnabled();
+  await expect(form).not.toHaveAttribute('aria-busy');
+  await page.unroute(workUrl);
+  await result.getByRole('link', { name: 'Reload to see usage, gates and confirmations.' }).click();
+  await expect(page.locator('#activity table tbody tr')).toHaveCount(1);
+  await expect(page.locator('#activity table tbody tr')).toContainText('0.005000');
+  await expect(page.getByText('budget.settled', { exact: true })).toBeVisible();
+
+  // An explicitly unknown result must not invite another submission while the owner checks activity.
+  await page.route(workUrl, route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ outcome: 'unknown', hold_state: 'unknown' }),
+  }));
+  await submit.click();
+  await expect(result).toContainText('Result: unknown.');
+  await expect(result).toContainText('reservation remains held');
+  await expect(submit).toBeDisabled();
+  await form.dispatchEvent('submit');
+  expect(submissions).toBe(2);
+  await page.unroute(workUrl);
+  await result.getByRole('link', { name: 'Reload to see usage, gates and confirmations.' }).click();
+  await expect(submit).toBeEnabled();
+  await expect(page.locator('#activity table tbody tr')).toHaveCount(1);
+
+  // A lost response is uncertain, not a license to retry automatically or claim success.
+  await page.route(workUrl, route => route.abort('failed'));
+  await submit.click();
+  await expect(result).toContainText('The request result could not be verified.');
+  await expect(result).toContainText('It may have been processed.');
+  await expect(submit).toBeDisabled();
+  await form.dispatchEvent('submit');
+  expect(submissions).toBe(3);
+  await page.unroute(workUrl);
+  await result.getByRole('link', { name: 'Reload and check activity.' }).click();
+  await expect(submit).toBeEnabled();
+  await expect(page.locator('#activity table tbody tr')).toHaveCount(1);
+
+  async function contained(p: Page, label: string) {
+    await expect(p.getByRole('main')).toBeVisible();
+    await expect(p.getByRole('heading', { level: 1 })).toBeVisible();
+    const nav = p.getByRole('navigation', { name: 'Main navigation', exact: true });
+    for (const name of ['Workspace', 'Create an agent', 'Connections']) {
+      await expect(nav.getByRole('link', { name, exact: true })).toBeVisible();
+    }
+    const layout = await p.evaluate(() => {
+      const width = document.documentElement.clientWidth;
+      const overflow = Array.from(document.querySelectorAll<HTMLElement>(
+        'main input:not([type="hidden"]), main textarea, main select, main button',
+      )).filter(element => {
+        const box = element.getBoundingClientRect();
+        return box.width > 0 && (box.left < -1 || box.right > width + 1);
+      }).map(element => element.id || element.textContent?.trim() || element.tagName);
+      const clippedText = Array.from(document.querySelectorAll<HTMLElement>(
+        'main h1, main .agent-card h3, main .created-card h2, main p[style*="white-space"], .breadcrumb span:last-child',
+      )).filter(element => {
+        const box = element.getBoundingClientRect();
+        let left = Math.max(0, box.left);
+        let right = Math.min(width, box.right);
+        for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+          if (['hidden', 'clip'].includes(getComputedStyle(ancestor).overflowX)) {
+            const clip = ancestor.getBoundingClientRect();
+            left = Math.max(left, clip.left);
+            right = Math.min(right, clip.right);
+          }
+        }
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        return Array.from(range.getClientRects()).some(fragment => fragment.left < left - 2 || fragment.right > right + 2);
+      }).map(element => ({ element: element.tagName, text: element.textContent?.slice(0, 90) }));
+      return { width, documentWidth: document.documentElement.scrollWidth, overflow, clippedText };
+    });
+    expect(layout.documentWidth, `${label}: page must not scroll horizontally`).toBeLessThanOrEqual(layout.width + 1);
+    expect(layout.overflow, `${label}: form controls remain inside the viewport`).toEqual([]);
+    expect(layout.clippedText, `${label}: names and instructions remain readable within their containers`).toEqual([]);
+  }
+
+  // Dense tables may scroll within their own containers; page content and actionable controls must fit.
+  for (const width of [1440, 375]) {
+    await page.setViewportSize({ width, height: 1000 });
+    for (const path of ['/workspace', '/agents/new', instancePath, '/connections', '/chat']) {
+      await page.goto(path);
+      await contained(page, `${width}px ${path}`);
+      if (path === '/agents/new') {
+        await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
+        await expect(page.getByLabel('Instructions', { exact: true })).toBeVisible();
+        await expect(page.getByRole('checkbox', { name: 'inference', exact: true })).toBeVisible();
+      } else if (path === instancePath) {
+        const sections = page.getByRole('navigation', { name: 'Agent sections', exact: true });
+        for (const name of ['Overview', 'Budgets', 'Capabilities', 'Activity']) {
+          await expect(sections.getByRole('link', { name, exact: true })).toBeVisible();
+        }
+        await expect(page.getByLabel('Compute minutes', { exact: true })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Run simulated work', exact: true })).toBeEnabled();
+        await testInfo.attach(`owner-controls-${width}px`, { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
+      } else if (path === '/connections') {
+        await expect(page.getByRole('button', { name: 'Connect Gmail', exact: true })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Connect Reddit', exact: true })).toBeVisible();
+      } else if (path === '/chat') {
+        await expect(page.getByLabel('Message', { exact: true })).toBeVisible();
+      }
+    }
+    await page.getByRole('navigation', { name: 'Main navigation', exact: true }).getByRole('link', { name: 'Connections', exact: true }).click();
+    await expect(page).toHaveURL(/\/connections$/);
+    await page.getByRole('navigation', { name: 'Main navigation', exact: true }).getByRole('link', { name: 'Workspace', exact: true }).click();
+    await expect(page).toHaveURL(/\/workspace$/);
+  }
+  await page.getByRole('link', { name: agentName, exact: true }).click();
+});
