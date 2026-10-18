@@ -5,9 +5,21 @@ Source issue: #11
 Epic issue: #11  
 Epic branch: `ctx/epic-i11`
 
-## Implementation snapshot
+## Original five-ticket implementation snapshot (historical)
 
 All five ticket implementations are integrated into `ctx/epic-i11`. MR !76 merged reviewed source `5960066639a243e617c17b42630655a7135045fc` at `ce3ddcce189ff923464c216859e6c8b8efaad56e` after all source-candidate CI jobs passed. Its application, browser and scoped acceptance checks also passed at the actual integration SHA; this candidate replaces the inherited ticket marker with whole-epic verification scope. Final whole-epic acceptance and independent review remain separate gates, tracked on [MR !45](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/45). See [completion evidence](completion.md) and the [application guide](../../aicl-mvp.md). The design progress section below preserves the earlier design-phase record.
+
+## UI refinement follow-on (E11-6)
+
+The completed five-ticket baseline `ca4e172241a484c174ce37e4a8642aabd511945a`
+passed final CI and independent review; its exact saved receipts are linked in
+[E11-6](E11-6.md#verified-baseline-and-separate-handoff). A new owner-UI refinement
+is in progress as [issue #19](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/work_items/19)
+on `codex/e11-ui-polish`, depending on E11-5. It appends F3-S10/F3-S11 and
+E11-6.AC1 without changing the original criteria, 36 scenarios or receipts. The
+expanded plan has six criteria and 38 scenarios; new candidate-specific
+verification and review are required. E11-6 is not integrated. Main remains
+unmerged and the application remains undeployed with simulated providers.
 
 ## Outcome and scope
 
@@ -38,6 +50,7 @@ No PayPal, funding/billing capture, ads, external action execution, BYOA sandbox
 | E11-3 Authenticated workspace and agent-creation wizard | #14 | E11-1, E11-2 | implemented; integrated into epic |
 | E11-4 Built-in chat agent creation surface | #15 | E11-2 | implemented; integrated into epic |
 | E11-5 AICL web pages, instance management, and cross-surface proof | #16 | E11-3, E11-4 | integrated; post-integration application checks passed |
+| E11-6 Responsive owner workspace and control UI | #19 | E11-5 | implementation in progress; not integrated |
 
 ## Waves
 
@@ -45,6 +58,7 @@ No PayPal, funding/billing capture, ads, external action execution, BYOA sandbox
 2. E11-2
 3. E11-3 and E11-4
 4. E11-5
+5. E11-6 (separate UI follow-on)
 
 ## Planning decisions
 

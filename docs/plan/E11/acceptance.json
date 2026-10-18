@@ -49,6 +49,15 @@
     "test",
     "browser"
    ]
+  },
+  {
+   "id": "E11-6.AC1",
+   "scenario": "F3-S10,F3-S11",
+   "statement": "Responsive owner pages expose truthful controls and shared navigation at desktop and 375px without changing authentication, canonical creation or control semantics; asynchronous actions show pending, failed and unknown outcomes and suppress accidental duplicate submissions.",
+   "ui": true,
+   "methods": [
+    "browser"
+   ]
   }
  ]
 }

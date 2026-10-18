@@ -29,7 +29,8 @@
    "tickets": [
     "E11-3",
     "E11-4",
-    "E11-5"
+    "E11-5",
+    "E11-6"
    ],
    "spec": "docs/design/aicl-experience/spec.md",
    "technical": "docs/design/aicl-experience/technical.md"
@@ -288,10 +289,32 @@
   }
  ],
  "wiring": {
-  "ticket": "E11-5",
+  "ticket": "E11-6",
   "criteria": [
-   "E11-5.AC1"
-  ]
+   "E11-6.AC1"
+  ],
+  "note": "Current final presentation/composition regression checkpoint after E11-5 integration. Reuses the existing production-wired application and preserves the E11-5.AC1 proof."
  },
- "decisions": []
+ "decisions": [],
+ "historical_wiring": [
+  {
+   "ticket": "E11-5",
+   "criteria": [
+    "E11-5.AC1"
+   ],
+   "baseline_sha": "ca4e172241a484c174ce37e4a8642aabd511945a",
+   "note": "Original five-ticket wiring checkpoint; its criterion and recorded evidence remain unchanged."
+  }
+ ],
+ "presentation_refinement": {
+  "ticket": "E11-6",
+  "technical_section": "docs/design/aicl-experience/technical.md#ui-refinement-e11-6",
+  "source_paths": [
+   "backend/aicl/web/pages.py",
+   "backend/aicl/web/manage_pages.py",
+   "backend/aicl/web/styles.py",
+   "backend/aicl/web/routes.py"
+  ],
+  "contract_preparation": "Existing render contexts, projections, form and JSON contracts are reused without schema, port or business-logic changes. The wizard adapter normalizes HTML textarea CRLF pairs to LF before canonical validation, preserving bare CR rejection; new typed stubs are not applicable."
+ }
 }

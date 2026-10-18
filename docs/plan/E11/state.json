@@ -5,7 +5,7 @@
   "epic_issue_iid": 11,
   "source_issue_iid": 11,
   "epic_branch": "ctx/epic-i11",
-  "next_ticket_number": 6,
+  "next_ticket_number": 7,
   "tickets": [
     {
       "id": "E11-1",
@@ -151,12 +151,30 @@
         "epic_scope_status": "failed",
         "integration_gate_note": "Application verification, browser and E11-5 acceptance passed at the actual merge SHA. The inherited E11-5 marker intentionally fails the whole-epic scope gate; no overall post-integration pipeline pass is claimed. The reviewed source candidate passed all mandatory jobs in pipeline 2959692439."
       }
+    },
+    {
+      "id": "E11-6",
+      "issue_iid": 19,
+      "depends_on": [
+        "E11-5"
+      ],
+      "status": "pending",
+      "title": "Responsive owner workspace and control UI",
+      "wave": 5,
+      "branch": "codex/e11-ui-polish",
+      "implementation": {
+        "status": "in_progress",
+        "baseline_sha": "ca4e172241a484c174ce37e4a8642aabd511945a",
+        "integrated": false,
+        "evidence": "docs/plan/E11/E11-6.md",
+        "note": "Local Codex implementation. Workflow status remains pending because no native Duo session is claimed; no session URL or integration receipt is invented."
+      }
     }
   ],
-  "last_operation": "ctx-epic-docs",
+  "last_operation": "ctx-ticket-design",
   "last_updated": "2026-10-18",
   "design_status": "specified",
-  "status_note": "All five tickets are integrated into ctx/epic-i11 with reconciled source, integration, application-verification and independent-review receipts. Historical overall pipeline failures remain recorded. Final whole-epic verification and independent review must be recorded on MR !45 at the post-documentation SHA. Historical checkpoint counters are unchanged.",
+  "status_note": "The original five-ticket E11 baseline ca4e172 passed final whole-epic CI and independent review, recorded in E11-6.md. E11-6 is a separate in-progress UI refinement on codex/e11-ui-polish, not integrated or verified by the baseline receipts. Historical completion metadata and E11-1 through E11-5 receipts are preserved.",
   "completion": {
     "status": "awaiting_whole_epic_verification",
     "epic_mr_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/45",
@@ -164,5 +182,6 @@
     "final_evidence_location": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/45",
     "default_branch_merged": false,
     "deployed": false
-  }
+  },
+  "baseline_status_note": "All five tickets are integrated into ctx/epic-i11 with reconciled source, integration, application-verification and independent-review receipts. Historical overall pipeline failures remain recorded. Final whole-epic verification and independent review must be recorded on MR !45 at the post-documentation SHA. Historical checkpoint counters are unchanged."
 }

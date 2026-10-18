@@ -87,3 +87,97 @@ Authoritative table: [architecture.md](../architecture.md#consolidated-configura
 ## Verification pointers
 
 E11-3 proves F3-S1, F3-S2, F3-S8 and the wizard half of F3-S3 and F3-S5 with integration tests (token TTL, single use, hash storage under the identity key, no-existence-leak equality, pre-authentication audit events with null identity and no owner-reader exposure, cookie flags, logout, `HmacCsrfVerifier`, cross-tenant `not_found`) and one browser journey with the real magic-link flow. E11-4 proves F3-S6 and the chat half of F3-S3 with unit tests of the state machine, tool allow-list, schema rejection and the idempotency-key pattern and length, plus a browser chat journey that signs in through the seeded test session. E11-5 proves F3-S4, F3-S7 and F3-S9 and the wiring criterion with the production-wired browser journeys above.
+
+
+## UI refinement (E11-6)
+
+### Presentation contract
+
+The UI refinement consumes the existing `WorkspaceView`, `InstanceDetailView`,
+`ConnectionsView`, wizard/chat contexts and structured errors described above.
+The service and route layers remain the producers; Jinja templates and the small
+browser handlers remain consumers. The presentation changes
+`backend/aicl/web/pages.py`, `backend/aicl/web/manage_pages.py`, and the new
+repository-owned `backend/aicl/web/styles.py` stylesheet constant. The only route
+adapter change is CRLF-to-LF normalization of the wizard instructions field in
+`backend/aicl/web/routes.py`, as specified below. There are no
+new backend models, ports, settings, migrations, provider adapters or routes, so
+new typed contract stubs are not applicable.
+
+`pages.py` owns a shared public/authenticated base shell. The authenticated shell
+provides Workspace, Create an agent and Connections navigation; child templates
+select an active page and provide the heading, subtitle and actions. Public pages
+retain the landing and email-link entry flow. The shell advertises the simulated
+environment. Styles use local system fonts and repository-owned inline SVGs; no
+external font, script, image or CDN request is introduced. All untrusted names,
+instructions, messages, errors, domain names and provider data remain autoescaped.
+The stylesheet is trusted source concatenated into the base template, never
+untrusted template data or a blanket `safe` escape bypass.
+
+Workspace totals derive only from the supplied owner-scoped instance collection.
+Active lifecycle counts are labeled as subject to controls rather than claiming
+work eligibility. Gated status remains distinct from lifecycle. Budget amounts
+retain six-decimal USD precision and the distinction between limits, settled
+usage and held reservations. Connections and simulated work retain truthful fake
+provider wording and revocation limitations. Empty states explain actual state;
+no example records or invented activity/metrics are shown.
+
+At desktop and 375 CSS pixels, all page actions remain reachable. Forms use
+associated labels, visible keyboard focus, semantic headings and buttons, and
+status regions for action feedback. Narrow tables scroll inside their own
+container rather than widening the page. Long owner text wraps safely. Visual
+presentation changes no server field names, HTTP methods/actions, CSRF tokens,
+expected versions, idempotency keys, tenant derivation, canonical creation calls
+or confirmation authorization.
+
+### Wizard textarea transport normalization
+
+HTML form submission serializes textarea newlines as CRLF even when the owner
+entered ordinary line breaks. The canonical instructions contract permits LF and
+tab but rejects a bare CR as a control character. The wizard route therefore
+normalizes only each CRLF pair to LF before constructing `CreateInstanceRequest`;
+it does not strip or normalize bare CR, change other characters, or relax
+canonical validation. This is a boundary conversion from HTML transport to the
+existing text contract, with no schema, route signature or business-rule change.
+The browser regression submits multiline instructions through the real wizard
+and verifies the created agent displays the line breaks correctly instead of a
+spurious `instructions: control_character` denial.
+
+### Asynchronous action feedback
+
+The simulated-work handler submits the existing work request schema and uses a
+single newly generated work ID for one intentional submission. It validates the
+minute field as a non-negative safe integer before sending, disables its submit
+button synchronously, sets `aria-busy`, and exposes an accessible in-flight
+message. A second submit event while disabled does nothing. Existing JSON
+`outcome`, `reason`, `error` and optional `message` fields are rendered as text;
+known denials remain denials. A returned `unknown` outcome explains the retained
+reservation and keeps repeat submission disabled in that view. A network or
+unreadable-response failure cannot prove whether work ran: it stays disabled and
+asks the owner to reload and check activity. No automatic retry is issued. A
+known terminal result links back to the actual instance page so refreshed usage,
+gates and confirmations can be read from the server.
+
+Confirmation and connection-begin controls likewise prevent simultaneous repeated
+clicks and show in-flight and failure feedback. A confirmation response is never
+reported as executed work; successful confirmation keeps its one-use semantics
+and tells the owner to resubmit the same work request through the existing flow.
+Connection setup still navigates only to the authorization URL returned by the
+existing authenticated OAuth endpoint. Neither handler changes server-side
+transaction boundaries, replay protection, authentication or capability checks.
+
+### Verification and wiring
+
+E11-6.AC1 maps F3-S10 and F3-S11. A minimal real-browser journey on the existing
+registered test composition covers the shared shell, actual owner projections,
+desktop and 375-pixel usability, form labels and preserved control semantics,
+plus duplicate suppression and honest pending/failed/unknown work feedback.
+Response interception may exercise transport failure and uncertain UI states;
+such cases are presentation evidence only and do not replace the existing real
+service and gate journeys. Existing E11-3, E11-4 and E11-5 browser journeys remain
+unchanged regression evidence for sign-in, canonical creation, tenant isolation
+and the actual management entry points. The expanded plan's current final wiring
+checkpoint moves to E11-6 because it consumes the fully integrated E11-5 pages;
+E11-5.AC1 and all earlier wiring evidence remain intact. Final E11-6 verification
+and independent review must name its own new candidate SHA and acceptance hash;
+the completed five-ticket baseline is not evidence for the new UI revision.
