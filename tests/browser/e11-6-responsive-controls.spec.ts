@@ -163,7 +163,26 @@ test('responsive owner controls preserve real work and handle pending or uncerta
         }
         await expect(page.getByLabel('Compute minutes', { exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: 'Run simulated work', exact: true })).toBeEnabled();
-        await testInfo.attach(`owner-controls-${width}px`, { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
+        const amounts = await page.locator('#budgets table td').evaluateAll(cells => cells
+          .filter(cell => /^\d+\.\d{6}$/.test(cell.textContent?.trim() || ''))
+          .map(cell => {
+            const lineTops = new Set<number>();
+            const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+            for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+              if (!text.textContent?.trim()) continue;
+              const range = document.createRange();
+              range.selectNodeContents(text);
+              for (const fragment of range.getClientRects()) {
+                if (fragment.width > 0) lineTops.add(Math.round(fragment.top));
+              }
+            }
+            return { amount: cell.textContent?.trim(), lines: lineTops.size };
+          }));
+        expect(amounts.length).toBeGreaterThan(0);
+        expect(amounts.filter(amount => amount.lines !== 1), `${width}px: budget amounts remain on one readable line`).toEqual([]);
+        const screenshot = testInfo.outputPath(`owner-controls-${width}px.png`);
+        await page.screenshot({ path: screenshot, fullPage: true });
+        await testInfo.attach(`owner-controls-${width}px`, { path: screenshot, contentType: 'image/png' });
       } else if (path === '/connections') {
         await expect(page.getByRole('button', { name: 'Connect Gmail', exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: 'Connect Reddit', exact: true })).toBeVisible();

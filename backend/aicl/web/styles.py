@@ -186,6 +186,7 @@ CSS = r"""
   #budget-units { margin-bottom: 16px; }
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .data-table { min-width: 450px; }
+  .data-table td { white-space: nowrap; overflow-wrap: normal; }
   .limit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
   .inline-form { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
   .inline-form .field, .inline-form > input:not([type=hidden]), .inline-form > select { flex: 1; min-width: 130px; }
