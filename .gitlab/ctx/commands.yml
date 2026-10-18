@@ -13,11 +13,11 @@ commands:
     argv: ["python", "scripts/ctx_source_security.py"]
     timeout_seconds: 900
   package:
-    argv: null
+    argv: ["python", "scripts/ctx_package.py", "package"]
     timeout_seconds: 900
   artifact-security:
-    argv: null
+    argv: ["python", "scripts/ctx_package.py", "artifact-security"]
     timeout_seconds: 900
   configure:
-    argv: null
+    argv: ["python", "scripts/ctx_package.py", "configure"]
     timeout_seconds: 900

@@ -71,8 +71,32 @@ ctx:epic-scope:
   script:
     - python scripts/ctx_ci_context.py require-whole-epic
 
+# Docker jobs build/read the candidate archive only; no registry or cloud authority.
+.ctx-docker:
+  image: docker:28.5.1-cli
+  services:
+    - name: docker:28.5.1-dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: /certs
+    DOCKER_TLS_VERIFY: "1"
+    DOCKER_CERT_PATH: /certs/client
+  before_script:
+    - apk add --no-cache python3 py3-pip git
+    - python3 -m venv .ctx/venv
+    - export PATH="$CI_PROJECT_DIR/.ctx/venv/bin:$CI_PROJECT_DIR/.ctx/bin:$PATH"
+    - python -m pip install --disable-pip-version-check -r requirements-workflow.txt
+    - python scripts/ctx_security_tools.py trivy
+
 ctx:package:
-  extends: .ctx-check
+  extends: [.ctx-check, .ctx-docker]
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths: [.ctx/reports/, .ctx/package/, .ctx/security/]
+    reports:
+      cyclonedx: .ctx/security/gl-sbom-container.cdx.json
   stage: package
   needs: ["ctx:verify", "ctx:acceptance", "ctx:source-security"]
   script:
@@ -80,13 +104,27 @@ ctx:package:
 
 ctx:artifact-security:
   extends: .ctx-check
+  before_script:
+    - python -m pip install --disable-pip-version-check -r requirements-workflow.txt
+    - python scripts/ctx_security_tools.py trivy
+    - export PATH="$PWD/.ctx/bin:$PATH"
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths: [.ctx/reports/, .ctx/security/]
+    reports:
+      container_scanning: .ctx/security/gl-container-scanning-report.json
   stage: artifact-security
   needs: ["ctx:verify", "ctx:acceptance", "ctx:source-security", "ctx:package"]
   script:
     - python scripts/ctx_workflow.py run artifact-security
 
 ctx:configure:
-  extends: .ctx-check
+  extends: [.ctx-check, .ctx-docker]
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths: [.ctx/reports/, .ctx/deploy/]
   stage: configure
   needs: ["ctx:verify", "ctx:acceptance", "ctx:source-security", "ctx:package", "ctx:artifact-security"]
   script:

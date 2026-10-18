@@ -183,3 +183,18 @@ WAL database. This prototype has no accepted deployment, restore drill, monitori
 service or production payment path. PayPal/funding, live model/tool integrations,
 an autonomous runner and external MCP are follow-on work outside E11. Current
 ticket and epic acceptance status is recorded [with the E11 evidence](plan/E11/completion.md).
+
+## Packaged runtime validation
+
+The reviewed Dockerfile pins its Python base image and installs the hashed backend
+lock. The container runs as UID 10001, with one worker and SQLite at
+`/data/habitat.sqlite`; hosting must supply persistent storage, HTTPS ingress,
+SMTP and runtime secrets. The runtime rejects test mode and only the reviewed
+fake provider/executor/chat modes are accepted.
+
+CI saves the image archive and CycloneDX SBOM, scans that immutable image, then
+loads it for a composition check with no network and temporary secrets/storage.
+The resulting staging manifest explicitly records `validation_only: true` and
+`applied: false`, plus unverified external services. This is build and configuration
+validation, not a deployed Google Cloud environment. A runner supporting Docker
+28.5.1 DinD with TLS is required; no registry or cloud credential is required.

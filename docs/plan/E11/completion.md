@@ -27,14 +27,45 @@ The continuation source is [issue #11 checkpoint 4036669857](https://gitlab.com/
 history and counters; starting a new session does not reset them. Do not use the
 older E2 `.ctx/session.json` or October 6 verify report as E11 evidence.
 
+## Codex continuation — 2026-10-18
+
+The continuation repairs six independently reproduced defects: executor state
+lost on restart, cross-tenant executor outcome collisions, dispatch ignoring a
+persisted gate after budget rollover, owner-policy changes racing reservation,
+cross-origin magic-link sign-in, and OAuth accepting grants beyond the requested
+scopes. The simulator now journals starts/outcomes
+by hold ID, authorization is rechecked inside the reservation transaction, and
+sign-in confirmation requires the configured origin. The backend dependency lock
+contains patched versions and is used by both verification and browser jobs.
+
+On recovered application candidate `cb114ccaec3d57466f3755daf2a4bb96b5928bf0`,
+local checks passed: 71 backend tests and all three browser journeys. The current
+workflow suite passed 267 tests, including failure-oriented source/package adapter
+checks. Independent repair recheck passed 21 focused tests; the additional OAuth repair
+passed eight connection tests and independent recheck. The full backend suite
+then passed 72 tests at application commit `5eca333`; package adapter changes
+were checked separately. The local dependency
+audit found no known vulnerabilities; Bandit found no errors or medium/high
+findings (five low findings retained); the local secret scan found no secrets.
+These are local development/review results, not GitLab CI acceptance receipts.
+
+The scoped delivery adapters build a Docker archive and CycloneDX SBOM as CI
+artifacts, scan the exact archived image, and validate its production-auth runtime
+composition with networking disabled and temporary secrets/storage. Source SAST
+blocks medium or higher findings; dependency, secret and container scans block
+all findings. Missing tools, incomplete coverage or digest mismatches block the
+pipeline. Configuration validation does not apply configuration: cloud hosts,
+TLS ingress, SMTP delivery, permanent secrets and persistent-volume operations
+remain unproven. No registry/cloud credentials or deployment job are added.
+
 ## Remaining completion work
 
 1. Reconcile [MR !76](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/76)
    into the epic using the permitted integration path and record its actual merge
    identity. Ticket integration has not been attested by this document.
-2. Complete the explicitly scoped source-security foundation and independent
-   review, retaining the merge controls. An unconfigured mandatory check cannot be
-   reported as passing or silently bypassed.
+2. Obtain actual CI evidence and independent review for the scoped source-security,
+   package, artifact-security and configuration-validation adapters. Local scanner
+   or synthetic adapter tests do not replace the mandatory pipeline.
 3. Reconcile the assembled application's documentation, prepare whole-epic
    verification context, then run fresh backend, browser and acceptance checks for
    every E11 criterion at the final candidate SHA. Ticket-only evidence is not the
