@@ -10,7 +10,7 @@ import pytest
 
 import seams
 from aicl.connections.models import CAPABILITY_SCOPES
-from aicl.connections.ports import FakeProviderOAuth, SecretUnavailable
+from aicl.connections.ports import AesGcmSecretStore, FakeProviderOAuth, SecretUnavailable
 from aicl.control.errors import AiclError
 from aicl.control.instances import GateContext, Limits
 from aicl.network.policy import FakeResolver
@@ -284,6 +284,37 @@ def test_broker_checks_before_reading_secrets_refreshes_and_never_returns_creden
     markers = {secret, *[t for t in secret.replace(":", " ").replace(",", " ").split() if len(t) >= 8]}
     blob = repr((result, handle, env.audit.list_for_owner(auth), caplog.text))
     assert not any(m in blob for m in markers), "credential leaked into a result, audit event or log"
+
+
+@pytest.mark.ac("E11-2.AC1", code="backend/aicl/connections/ports.py:CredentialBroker")
+def test_refresh_cannot_restore_credentials_after_completed_revocation(world, monkeypatch):
+    env, _, oauth, _, ops = world()
+    store = SpyStore(AesGcmSecretStore(KEY, env.db))
+    svc = seams.connection_service(env, oauth, store)
+    auth, inst = env.new_instance(limits=Limits(), capabilities=("gmail.send",))
+    connection, _ = connect(env, svc, auth)
+    ops.attach_connection(auth, inst.id, 1, "gmail.send", connection.id)
+    broker = seams.credential_broker(env, oauth, store, FakeResolver({"gmail.googleapis.com": ["142.250.0.1"]}))
+    work = AuthorizedWork("work_" + "3" * 30, inst.id, "gmail.send", {}, "hold", "attachment-id",
+                          "https://gmail.googleapis.com/gmail/v1/users/me/messages/send")
+    env.clock.advance(timedelta(days=2))
+    refresh = oauth.refresh
+
+    def revoke_before_refresh_returns(provider, token):
+        tokens = refresh(provider, token)
+        revoked = svc.revoke_connection(auth, connection.id)
+        assert revoked.connection.secret_ref is None
+        return tokens
+
+    monkeypatch.setattr(oauth, "refresh", revoke_before_refresh_returns)
+    error = denies(lambda: broker.call(work, "gmail.messages.send"), "denied")
+    assert error.extra["reason"] == "connection_unavailable"
+    with env.db.reader() as conn:
+        row = conn.execute("SELECT status, secret_ref FROM connection WHERE id = ?", (connection.id,)).fetchone()
+        assert row["status"] == "revoked" and row["secret_ref"] is None
+        assert conn.execute("SELECT count(*) FROM secret_blob WHERE destroyed_at IS NULL").fetchone()[0] == 0
+    assert ("refresh", "gmail") in oauth.calls and ("revoke", "gmail") in oauth.calls
+    assert ("call", "gmail") not in oauth.calls
 
 
 @pytest.mark.ac("E11-2.AC1", code="backend/aicl/connections/ports.py:CredentialBroker")

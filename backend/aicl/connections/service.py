@@ -324,6 +324,13 @@ class SqliteCredentialBroker:
             raise self._deny("connection_unavailable") from None
         new_expiry = min(tokens.expires_at, self.clock.now() + ACCESS_TOKEN_LIFETIME)
         with self.db.transaction() as conn:
+            # Refresh runs outside the write transaction. Revoke or another refresh
+            # may have won meanwhile; stale results must not recreate credentials.
+            current = conn.execute("SELECT status, version, secret_ref FROM connection WHERE id = ?",
+                                   (connection_id,)).fetchone()
+            if (current is None or current["status"] != "active" or current["version"] != row["version"]
+                    or current["secret_ref"] != row["secret_ref"] or self._refs(conn, connection_id) != refs):
+                raise self._deny("connection_unavailable")
             for field, value in (("access_token", tokens.access_token), ("expires_at", to_iso(new_expiry))):
                 new_ref = self.store.put(owner, connection_id, field, value.encode())
                 old_ref = refs[field]

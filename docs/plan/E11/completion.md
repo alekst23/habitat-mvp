@@ -109,6 +109,19 @@ before execution, and Trivy source reports accept both linked-worktree filesyste
 and full-checkout repository forms while checking target and repository commit.
 These repairs preserve blocking findings, source identity and artifact-digest gates.
 
+## Assembled-epic repair
+
+The independent whole-epic review found [R9](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4036869038):
+an expired-token refresh could restore credential references after completed
+owner revocation. The broker now rechecks active status, connection version and
+the original secret-reference set inside the refresh-write transaction before
+storing any credentials. A deterministic real-SQLite/fake-provider regression
+failed before the repair and passed afterward, proving revoked status, a null
+secret reference, zero live credential blobs and no subsequent provider call.
+Independent recheck passed 23 connection/work-gate/outcome tests. The earlier
+E11-5 source pipeline does not cover this later repair; the repaired epic requires
+fresh whole-epic CI and a separate final review.
+
 ## Final whole-epic handoff
 
 All five implementations are now in the epic. The post-documentation candidate
