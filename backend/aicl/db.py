@@ -67,11 +67,13 @@ class Database:
             for sql_file in sorted(MIGRATIONS_DIR.glob("*.sql")):
                 if sql_file.stem in applied:
                     continue
-                script = (f"BEGIN IMMEDIATE;\n{sql_file.read_text()}\n"
-                          f"INSERT INTO schema_migration (version, applied_at) "
-                          f"VALUES ('{sql_file.stem}', '{to_iso(datetime.now(timezone.utc))}');\nCOMMIT;")
+                # Migration SQL is reviewed repository source; metadata stays parameterized.
+                script = "BEGIN IMMEDIATE;\n" + sql_file.read_text()
                 try:
                     conn.executescript(script)
+                    conn.execute("INSERT INTO schema_migration (version, applied_at) VALUES (?, ?)",
+                                 (sql_file.stem, to_iso(datetime.now(timezone.utc))))
+                    conn.execute("COMMIT")
                 except BaseException:
                     if conn.in_transaction:
                         conn.execute("ROLLBACK")

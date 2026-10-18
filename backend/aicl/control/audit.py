@@ -96,18 +96,19 @@ class SqliteAuditLog:
              event.instance_id, event.connection_id, event.reason, json.dumps(details, sort_keys=True), to_iso(now)))
         return replace(event, details=details, seq=cursor.lastrowid, id=event_id, occurred_at=from_iso(to_iso(now)))
 
-    def _list(self, where: str, args: tuple, after_seq, limit) -> list[AuditEvent]:
-        clause, params = where, list(args)
-        if after_seq is not None:
-            clause += " AND seq > ?"
-            params.append(after_seq)
-        params.append(max(1, min(int(limit), MAX_PAGE)))
-        with Database.current().snapshot_reader() as conn:  # readers see committed events only
-            rows = conn.execute(f"SELECT * FROM audit_event WHERE {clause} ORDER BY seq DESC LIMIT ?", params)
-            return [_to_event(r) for r in rows]
+    def _list(self, scope: str, args: tuple, after_seq, limit) -> list[AuditEvent]:
+        queries = {
+            "instance": "SELECT * FROM audit_event WHERE tenant_id = ? AND instance_id = ? "
+                        "AND (? IS NULL OR seq > ?) ORDER BY seq DESC LIMIT ?",
+            "owner": "SELECT * FROM audit_event WHERE tenant_id = ? AND owner_id = ? "
+                     "AND (? IS NULL OR seq > ?) ORDER BY seq DESC LIMIT ?",
+        }
+        params = (*args, after_seq, after_seq, max(1, min(int(limit), MAX_PAGE)))
+        with Database.current().snapshot_reader() as conn:
+            return [_to_event(r) for r in conn.execute(queries[scope], params)]
 
     def list_for_instance(self, auth, instance_id, after_seq=None, limit=MAX_PAGE):
-        return self._list("tenant_id = ? AND instance_id = ?", (auth.tenant_id, instance_id), after_seq, limit)
+        return self._list("instance", (auth.tenant_id, instance_id), after_seq, limit)
 
     def list_for_owner(self, auth, after_seq=None, limit=MAX_PAGE):
-        return self._list("tenant_id = ? AND owner_id = ?", (auth.tenant_id, auth.owner_id), after_seq, limit)
+        return self._list("owner", (auth.tenant_id, auth.owner_id), after_seq, limit)

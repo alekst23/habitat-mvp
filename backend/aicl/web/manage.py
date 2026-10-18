@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from markupsafe import Markup, escape
+from markupsafe import Markup
 
 from aicl.connections.models import CAPABILITY_SCOPES
 from aicl.control.csrf import require_csrf
@@ -66,9 +66,11 @@ def manage_router(ctx) -> APIRouter:
         return ctx.auth_provider.resolve(dict(request.cookies))
 
     def hidden_fields(auth, version: int | None = None) -> Markup:
-        token = escape(ctx.csrf_verifier.token_for(auth.session_id))
-        extra = Markup(f'<input type="hidden" name="expected_version" value="{int(version)}">') if version else ""
-        return Markup(f'<input type="hidden" name="csrf_token" value="{token}">') + extra
+        token = ctx.csrf_verifier.token_for(auth.session_id)
+        fields = Markup('<input type="hidden" name="csrf_token" value="{}">').format(token)
+        if version is not None:
+            fields += Markup('<input type="hidden" name="expected_version" value="{}">').format(int(version))
+        return fields
 
     def detail_page(auth, instance_id: str, status: int = 200, error: AiclError | None = None, notice: str = "",
                     posted: dict | None = None) -> HTMLResponse:
