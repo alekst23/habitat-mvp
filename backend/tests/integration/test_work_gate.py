@@ -76,35 +76,47 @@ def attach_gmail(env, ops, auth, inst, caps=("gmail.send",)):
 
 
 @pytest.mark.ac("E11-2.AC1", code="backend/aicl/work/ports.py:FakeWorkExecutor")
-def test_fake_executor_records_started_first_is_deterministic_and_looks_up_honestly():
-    ex = FakeWorkExecutor()
-    assert ex.lookup("never-seen-work-id").status == "not_started"  # unseen => not_started (safe to release)
+def test_fake_executor_records_started_first_is_deterministic_and_looks_up_honestly(build_env):
+    env = build_env()
+    auth, inst = env.new_instance()
+    ex = FakeWorkExecutor(db=env.db)
+    assert ex.lookup("never-seen-hold-id").status == "not_started"
 
-    def work(n, payload):
-        return AuthorizedWork(work_id(n), "i", "inference", payload, "h", None, None)
+    def work(n, payload, capability="inference"):
+        with env.db.transaction() as conn:
+            hold = env.budget.reserve(conn, inst.id, work_id(n), EST)
+        return AuthorizedWork(work_id(n), inst.id, capability, payload, hold.id, None, None)
 
-    out = ex.execute(work(1, {"sim": {"input_tokens": 10, "output_tokens": 20, "compute_minutes": 3}}))
+    first = work(1, {"sim": {"input_tokens": 10, "output_tokens": 20, "compute_minutes": 3}})
+    out = ex.execute(first)
     assert out.status == "succeeded" and out.measured_usage == MeasuredUsage(10, 20, 3)
-    assert work_id(1) in ex.started and ex.lookup(work_id(1)) == out  # stored by work_id
-    assert ex.execute(work(2, {})).measured_usage == MeasuredUsage(0, 0, 0)  # defaults
+    assert first.hold_id in ex.started and ex.lookup(first.hold_id) == out
+    assert FakeWorkExecutor(db=env.db).execute(first) == out  # durable idempotency after restart
+    assert ex.execute(work(2, {})).measured_usage == MeasuredUsage(0, 0, 0)
     assert ex.execute(work(3, {"sim": {"outcome": "failed", "compute_minutes": 1}})).status == "failed"
     assert ex.execute(work(4, {"sim": {"outcome": "unknown"}})).status == "unknown"
     assert ex.execute(work(5, {"sim": {"outcome": "not_started"}})).status == "not_started"
-    ex.started.add(work_id(6))  # started with no recorded result (crash mid-work)
-    assert ex.lookup(work_id(6)).__class__.__name__ == "StillUnknown"
 
     seen = []
-    probe = FakeWorkExecutor()
-    original = probe.outcomes
 
-    class Spy(dict):
-        def __setitem__(self, key, value):
-            seen.append(key in probe.started)  # `started` must already hold the work_id when an outcome is stored
-            super().__setitem__(key, value)
+    class CrashBroker:
+        def call(self, authorized, operation):
+            # A separate executor sees the committed start before a provider side effect.
+            seen.append(FakeWorkExecutor(db=env.db).lookup(authorized.hold_id).__class__.__name__)
+            raise TimeoutError("interrupted before outcome storage")
 
-    probe.outcomes = Spy(original)
-    probe.execute(work(7, {}))
-    assert seen == [True]
+    crash = FakeWorkExecutor(CrashBroker(), env.db)
+    sixth = work(6, {}, "gmail.read")
+    with pytest.raises(TimeoutError):
+        crash.execute(sixth)
+    assert seen == ["StillUnknown"]
+    assert FakeWorkExecutor(db=env.db).lookup(sixth.hold_id).__class__.__name__ == "StillUnknown"
+
+    # An unseen stale hold can be released, but the recorded not-started verdict fences delayed execution.
+    seventh = work(7, {}, "gmail.read")
+    assert ex.lookup(seventh.hold_id).status == "not_started"
+    assert crash.execute(seventh).status == "not_started"
+    assert seen == ["StillUnknown"]  # no provider call after the not-started verdict
 
 
 @pytest.mark.ac("E11-2.AC1", code="backend/aicl/work/gate.py:WorkAuthorization")

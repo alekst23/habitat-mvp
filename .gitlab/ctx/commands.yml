@@ -10,7 +10,7 @@ commands:
     argv: ["python", "scripts/ctx_acceptance.py"]
     timeout_seconds: 30
   source-security:
-    argv: null
+    argv: ["python", "scripts/ctx_source_security.py"]
     timeout_seconds: 900
   package:
     argv: null

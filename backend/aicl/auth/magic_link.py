@@ -1,9 +1,10 @@
 """MagicLinkSender port, CaptureMagicLinkSender and SmtpMagicLinkSender (aicl-experience/technical.md
 "SessionAuthProvider and magic-link sign-in", owner E11-3).
 
-Contract stubs only. `CaptureMagicLinkSender` is the test-only fake (records `{email, link}` in memory);
-`SmtpMagicLinkSender` is the application's one real outbound edge and is deliberately unimplemented here:
-no network call, no credential. Neither is registered in PORT_REGISTRY/REQUIRED_PORTS; E11-3 does that.
+`CaptureMagicLinkSender` records `{email, link}` in memory in the guarded test composition.
+`SmtpMagicLinkSender` delivers sign-in mail through operator-configured SMTP; it is the application's
+one real outbound edge. The composition selects and registers the sender through the magic_link_sender
+port. Provider OAuth and work execution remain separate fake-only adapters.
 """
 
 from __future__ import annotations

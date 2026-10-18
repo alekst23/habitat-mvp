@@ -23,7 +23,7 @@ ctx:verify:
   stage: verify
   before_script:
     - python -m pip install --disable-pip-version-check -r requirements-workflow.txt
-    - if [ -f backend/requirements.txt ]; then python -m pip install --disable-pip-version-check -r backend/requirements.txt; fi
+    - if [ -d backend ]; then python -m pip install --disable-pip-version-check --require-hashes -r backend/requirements.lock; fi
   script:
     - python scripts/ctx_workflow.py run verify
 
@@ -41,8 +41,23 @@ ctx:source-security:
   extends: .ctx-check
   stage: source-security
   needs: ["ctx:verify", "ctx:acceptance"]
+  before_script:
+    - python -m pip install --disable-pip-version-check -r requirements-workflow.txt -r requirements-security.txt
+    - python scripts/ctx_security_tools.py trivy
+    - export PATH="$PWD/.ctx/bin:$PATH"
   script:
     - python scripts/ctx_workflow.py run source-security
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - .ctx/reports/
+      - .ctx/acceptance.json
+      - .ctx/security/
+    reports:
+      sast: .ctx/security/gl-sast-report.json
+      dependency_scanning: .ctx/security/gl-dependency-scanning-report.json
+      secret_detection: .ctx/security/gl-secret-detection-report.json
 
 # Keep ticket-scoped integration evidence available on an open draft epic MR,
 # but do not permit that MR into default until full-epic scope is selected/passed.

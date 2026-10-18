@@ -122,6 +122,25 @@ class ContextTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "browser foundation missing"):
             context.run_browser(self.root, self.env)
 
+    def test_browser_requires_hashed_backend_lock_before_running_tools(self):
+        resolved = context.resolve_context(self.root, self.env)
+        self.save("package-lock.json", {})
+        (self.root / "backend").mkdir()
+        (self.root / "backend/requirements.txt").write_text("example==1.0\n")
+        with patch.object(context, "resolve_context", return_value=resolved), \
+                patch.object(context.subprocess, "run") as run:
+            with self.assertRaisesRegex(ValueError, "backend/requirements.lock"):
+                context.run_browser(self.root, self.env)
+            run.assert_not_called()
+        (self.root / "backend/requirements.lock").write_text("example==1.0 --hash=sha256:" + "a" * 64 + "\n")
+        with patch.object(context, "resolve_context", return_value=resolved), \
+                patch.object(context.subprocess, "run", return_value=subprocess.CompletedProcess([], 7)) as run, \
+                patch.object(context.subprocess, "check_output", return_value="1.63.0\n"):
+            self.assertEqual(context.run_browser(self.root, self.env), 7)
+        self.assertEqual(run.call_args_list[0].args[0], [sys.executable, "-m", "pip", "install",
+                         "--disable-pip-version-check", "--require-hashes", "-r", "backend/requirements.lock"])
+        self.assertTrue(run.call_args_list[0].kwargs["check"])
+
     def test_default_requires_full_epic_and_manifest_cannot_escape_repository(self):
         self.git("switch", "-qc", "ctx/epic-i11")
         env = {**self.env, "CI_COMMIT_BRANCH": "ctx/epic-i11"}
