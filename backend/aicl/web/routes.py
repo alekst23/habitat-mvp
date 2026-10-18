@@ -18,6 +18,7 @@ from aicl.creation.models import TEMPLATE_ID_DEFAULT, CreateInstanceRequest
 from aicl.creation.routes import field_errors_from
 from aicl.creation.service import create_instance
 from aicl.web.pages import render
+from aicl.web.views import SqliteProjectionService
 
 
 class FormCsrfShim:
@@ -110,10 +111,8 @@ def web_router(ctx) -> APIRouter:
         auth = signed_in(request)
         if auth is None:
             return RedirectResponse("/", status_code=303)
-        with ctx.db.reader() as conn:
-            rows = conn.execute("SELECT name, lifecycle FROM agent_instance WHERE tenant_id = ? ORDER BY created_at",
-                                (auth.tenant_id,)).fetchall()
-        return _page("workspace", title="Your workspace", instances=[dict(r) for r in rows],
+        view = SqliteProjectionService(ctx.db, ctx.clock, ctx.settings.hold_stale_seconds).workspace(auth)
+        return _page("workspace", title="Your workspace", instances=view.instances,
                      csrf=ctx.csrf_verifier.token_for(auth.session_id))
 
     def wizard_form(auth, status=200, **values):

@@ -22,9 +22,9 @@ TEMPLATES = {
     "invalid": """{% extends "base" %}{% block body %}<p>This link is invalid or expired.</p>
 <p><a href="/auth/sign-in">Request a new link</a></p>{% endblock %}""",
     "workspace": """{% extends "base" %}{% block body %}
-{% if instances %}<ul>{% for i in instances %}<li>{{ i.name }} ({{ i.lifecycle }})</li>{% endfor %}</ul>
+{% if instances %}<ul>{% for i in instances %}<li><a href="/instances/{{ i.id }}">{{ i.name }}</a> ({{ i.lifecycle }}{% if i.status == "gated" %}, gated: {{ i.gated_reason or "reconciling" }}{% endif %})</li>{% endfor %}</ul>
 {% else %}<p>You have no agents yet.</p>{% endif %}
-<p><a href="/agents/new">Create with wizard</a> <a href="/chat">Create with chat</a></p>
+<p><a href="/agents/new">Create with wizard</a> <a href="/chat">Create with chat</a> <a href="/connections">Connections</a></p>
 <form method="post" action="/auth/logout"><input type="hidden" name="csrf_token" value="{{ csrf }}">
 <button type="submit">Sign out</button></form>{% endblock %}""",
     "wizard": """{% extends "base" %}{% block body %}

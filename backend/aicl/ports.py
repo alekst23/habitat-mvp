@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict
 
 from aicl.clock import Clock, SystemClock
 from aicl.settings import Settings
+from aicl.web.proof import CompositionIncomplete
 
 # E11-1 requires only the clock; each owning ticket appends its own port names (E11-2 below).
 REQUIRED_PORTS: tuple[str, ...] = ("clock", "secret_store", "credential_broker", "provider_oauth",
@@ -33,11 +34,17 @@ class Ports(BaseModel):
 
 
 def build_ports(settings: Settings) -> Ports:
-    """Validate exactly REQUIRED_PORTS (an unregistered later-ticket port never fails startup)."""
+    """Build exactly REQUIRED_PORTS. `clock` defaults to SystemClock; any other required port without a registered
+    factory fails startup as `composition incomplete: <port>` (E11-5, F-1)."""
     built = {}
     for name in REQUIRED_PORTS:
         factory = PORT_REGISTRY.get(name)
-        built[name] = factory(settings) if factory is not None else SystemClock()
+        if factory is not None:
+            built[name] = factory(settings)
+        elif name == "clock":
+            built[name] = SystemClock()
+        else:
+            raise CompositionIncomplete(f"composition incomplete: {name}")
     return Ports(**built)
 
 
