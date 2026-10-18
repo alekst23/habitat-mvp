@@ -96,8 +96,8 @@ def test_build_ports_requires_exactly_the_clock_and_ignores_later_ticket_ports(b
 
 @pytest.mark.ac("E11-1.AC1", code="backend/aicl/app.py:create_app")
 def test_create_app_migrates_imports_prices_starts_with_empty_extension_points_and_gates_test_routes(base_env, tmp_path):
-    # design-mandated extensions: E11-2's two routers, E11-3's web router plus E11-4's chat router; sweeper, reconciler, magic-link purge
-    assert len(routes.ROUTE_FACTORIES) == 4 and len(hooks.STARTUP_HOOKS) == 3
+    # design-mandated extensions: E11-2's two routers, E11-3's web router, E11-4's chat router plus E11-5's manage router; sweeper, reconciler, magic-link purge
+    assert len(routes.ROUTE_FACTORIES) == 5 and len(hooks.STARTUP_HOOKS) == 3
 
     dev = create_app(Settings.from_env(base_env))
     with TestClient(dev) as client:
