@@ -1,0 +1,320 @@
+{
+ "version": 2,
+ "epic": "E11",
+ "status": "specified",
+ "features": [
+  {
+   "id": "aicl-control-plane",
+   "purpose": "Instance control, lifecycle, USD budget enforcement, audit, confirmation primitives, the application composition foundation, and the canonical creation service and web-app tools",
+   "tickets": [
+    "E11-1",
+    "E11-2"
+   ],
+   "spec": "docs/design/aicl-control-plane/spec.md",
+   "technical": "docs/design/aicl-control-plane/technical.md"
+  },
+  {
+   "id": "connection-network-policy",
+   "purpose": "Secure owner connections, OAuth, credential broker, outbound authorization and the single work dispatch gate",
+   "tickets": [
+    "E11-2",
+    "E11-5"
+   ],
+   "spec": "docs/design/connection-network-policy/spec.md",
+   "technical": "docs/design/connection-network-policy/technical.md"
+  },
+  {
+   "id": "aicl-experience",
+   "purpose": "Owner-facing creation and management surfaces",
+   "tickets": [
+    "E11-3",
+    "E11-4",
+    "E11-5",
+    "E11-6"
+   ],
+   "spec": "docs/design/aicl-experience/spec.md",
+   "technical": "docs/design/aicl-experience/technical.md"
+  }
+ ],
+ "contracts": [
+  {
+   "id": "AuthContext",
+   "owner": "E11-1",
+   "consumers": [
+    "E11-2",
+    "E11-3",
+    "E11-4",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "AgentInstance",
+   "owner": "E11-1",
+   "consumers": [
+    "E11-2",
+    "E11-3",
+    "E11-4",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "BudgetPort",
+   "owner": "E11-1",
+   "consumers": [
+    "E11-2",
+    "E11-4",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "PriceTable",
+   "owner": "E11-1",
+   "consumers": [
+    "E11-2",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "AuditEvent",
+   "owner": "E11-1",
+   "consumers": [
+    "E11-2",
+    "E11-3",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "ActionConfirmation",
+   "owner": "E11-1",
+   "consumers": [
+    "E11-2",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "CsrfVerifier",
+   "owner": "E11-1",
+   "consumers": [
+    "E11-2",
+    "E11-3",
+    "E11-4",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "AppComposition",
+   "owner": "E11-1",
+   "consumers": [
+    "E11-2",
+    "E11-3",
+    "E11-4",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "CreateInstanceRequest",
+   "owner": "E11-2",
+   "consumers": [
+    "E11-3",
+    "E11-4",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "CreateInstanceResult",
+   "owner": "E11-2",
+   "consumers": [
+    "E11-3",
+    "E11-4",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "InstanceSnapshot",
+   "owner": "E11-2",
+   "consumers": [
+    "E11-3",
+    "E11-4",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "InstanceOperations",
+   "owner": "E11-2",
+   "note": "E11-4 is listed only because it consumes InstanceSnapshot and the create path; chat holds no reference to the owner-UI mutation operations (set_lifecycle, set_capability, set_limits, domain, attach, resolve_gate)",
+   "consumers": [
+    "E11-3",
+    "E11-4",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "WebAppToolSchemas",
+   "owner": "E11-2",
+   "consumers": [
+    "E11-4",
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-control-plane/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "Connection",
+   "owner": "E11-2",
+   "consumers": [
+    "E11-5"
+   ],
+   "document": "docs/design/connection-network-policy/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "ConnectionAttachment",
+   "owner": "E11-2",
+   "consumers": [
+    "E11-3",
+    "E11-4",
+    "E11-5"
+   ],
+   "document": "docs/design/connection-network-policy/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "NetworkPolicy",
+   "owner": "E11-2",
+   "consumers": [
+    "E11-5"
+   ],
+   "document": "docs/design/connection-network-policy/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "CredentialBroker",
+   "owner": "E11-2",
+   "consumers": [
+    "E11-5"
+   ],
+   "document": "docs/design/connection-network-policy/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "ProviderOAuthPort",
+   "owner": "E11-2",
+   "consumers": [
+    "E11-5"
+   ],
+   "document": "docs/design/connection-network-policy/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "WorkAuthorization",
+   "owner": "E11-2",
+   "consumers": [
+    "E11-5"
+   ],
+   "document": "docs/design/connection-network-policy/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "WorkExecutorPort",
+   "owner": "E11-2",
+   "consumers": [
+    "E11-5"
+   ],
+   "document": "docs/design/connection-network-policy/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "SessionAuthProvider",
+   "owner": "E11-3",
+   "consumers": [
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-experience/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  },
+  {
+   "id": "ChatModelPort",
+   "owner": "E11-4",
+   "consumers": [
+    "E11-5"
+   ],
+   "document": "docs/design/aicl-experience/technical.md",
+   "status": "specified",
+   "stub_phase": "development-design"
+  }
+ ],
+ "wiring": {
+  "ticket": "E11-6",
+  "criteria": [
+   "E11-6.AC1"
+  ],
+  "note": "Current final presentation/composition regression checkpoint after E11-5 integration. Reuses the existing production-wired application and preserves the E11-5.AC1 proof."
+ },
+ "decisions": [],
+ "historical_wiring": [
+  {
+   "ticket": "E11-5",
+   "criteria": [
+    "E11-5.AC1"
+   ],
+   "baseline_sha": "ca4e172241a484c174ce37e4a8642aabd511945a",
+   "note": "Original five-ticket wiring checkpoint; its criterion and recorded evidence remain unchanged."
+  }
+ ],
+ "presentation_refinement": {
+  "ticket": "E11-6",
+  "technical_section": "docs/design/aicl-experience/technical.md#ui-refinement-e11-6",
+  "source_paths": [
+   "backend/aicl/web/pages.py",
+   "backend/aicl/web/manage_pages.py",
+   "backend/aicl/web/styles.py",
+   "backend/aicl/web/routes.py"
+  ],
+  "contract_preparation": "Existing render contexts, projections, form and JSON contracts are reused without schema, port or business-logic changes. The wizard adapter normalizes HTML textarea CRLF pairs to LF before canonical validation, preserving bare CR rejection; new typed stubs are not applicable."
+ }
+}

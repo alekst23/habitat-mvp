@@ -4,20 +4,20 @@ version: 1
 # Each command must write its evidence to CTX_OUTPUT (see the implementation guide).
 commands:
   verify:
-    argv: null
+    argv: ["python", "scripts/ctx_verify_backend.py"]
     timeout_seconds: 900
   acceptance:
     argv: ["python", "scripts/ctx_acceptance.py"]
     timeout_seconds: 30
   source-security:
-    argv: null
+    argv: ["python", "scripts/ctx_source_security.py"]
     timeout_seconds: 900
   package:
-    argv: null
+    argv: ["python", "scripts/ctx_package.py", "package"]
     timeout_seconds: 900
   artifact-security:
-    argv: null
+    argv: ["python", "scripts/ctx_package.py", "artifact-security"]
     timeout_seconds: 900
   configure:
-    argv: null
+    argv: ["python", "scripts/ctx_package.py", "configure"]
     timeout_seconds: 900

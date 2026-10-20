@@ -1,93 +1,75 @@
-# Showcase
+# Habitat owner-control MVP
 
-Transcend Hackathon Showcase workspace for @administrator106 (DevPost: alekst23). Visit the [onboarding issue](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/work_items/1) to get started.
+Habitat's Configurable AI Control Layer lets an owner create and manage a Default
+agent instance through a wizard or built-in chat. The owner controls capabilities,
+daily/monthly inference and compute budgets, connections, network domains and
+per-action confirmations. The application shows usage, gating and redacted history.
 
-## Getting started
+This E11 implementation is a control-plane prototype: chat is scripted, OAuth
+providers and work execution are simulated, and no model call or Gmail/Reddit
+action is performed. SMTP sign-in delivery is the one configurable real outbound
+edge. PayPal, a running autonomous agent and deployment are outside E11.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+The stable baseline includes the responsive E11-6 owner UI and the proposed PayPal
+funding/purchase designs. See the [itemized implementation backlog](docs/paypal-mvp-backlog.md)
+for the next release. PayPal and real inference remain unimplemented.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## Run locally
 
-## Add your files
+Use Python 3.12 from the repository root:
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
+```sh
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --require-hashes -r backend/requirements.lock
+PYTHONPATH=backend python -m aicl.test_server
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase.git
-git branch -M main
-git push -uf origin main
-```
 
-## Integrate with your tools
+Open <http://127.0.0.1:4173>, request a sign-in link for `demo@example.test`, then
+open <http://127.0.0.1:4173/__test__/last-magic-link?email=demo%40example.test>
+and follow the captured link. Confirm sign-in to reach the workspace. This local
+test composition needs no SMTP account and removes its temporary database on exit.
 
-* [Set up project integrations](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/settings/integrations)
+The [application guide](docs/aicl-mvp.md) covers the full demo, persistent local
+configuration, routes, checks and operational limits.
 
-## Collaborate with your team
+## Implementation and acceptance
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+E11-1 through E11-5 are integrated and verified at
+`ca4e172241a484c174ce37e4a8642aabd511945a`. All eleven mandatory jobs passed in
+[pipeline 2959718088](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2959718088),
+with a separate [whole-epic review](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4036886044).
+That pipeline records the five-ticket baseline before E11-6. The
+[E11 evidence record](docs/plan/E11/completion.md) preserves the integration history.
 
-## Test and Deploy
+The separately requested [E11-6 UI refinement](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/work_items/19)
+was developed on `codex/e11-ui-polish`. It adds responsive navigation, workspace
+cards and status summaries, grouped owner controls, readable activity, and explicit
+pending/uncertain request feedback. Application source `419e77b` passed its separate
+review and [pipeline 2960426331](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2960426331),
+including 73 backend tests and four browser journeys. The combined stable-main
+integration is tracked by [MR !45](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/45).
+Its current pipeline records integration evidence; no deployment is implied.
 
-Use the built-in continuous integration in GitLab.
+In the owner UI, use **Budgets**, **Capabilities** and **Activity** to jump between
+controls. **Simulated work request** sends the selected capability and compute
+minutes; it does not accept model tokens or an email body. After a result, use its
+reload link to see persisted usage, gates or pending confirmations. An uncertain
+result disables repeat submission until the page is reloaded and activity checked.
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+## Repository guide
 
-***
+- [Stable baseline and itemized PayPal MVP updates](docs/paypal-mvp-backlog.md)
+- [Current E11 scope and decisions](docs/plan/E11/_epic.md)
+- [Design index and contracts](docs/design/README.md)
+- [Application setup and operation](docs/aicl-mvp.md)
+- [PayPal target demo script and implementation gaps](docs/hackathon-demo-script.md)
+- [PayPal funding design for agent inference and resources](docs/design/paypal-funding/spec.md)
+- [Agent purchases through PayPal](docs/design/agent-purchases/spec.md)
+- [PayPal demo readiness and control rehearsal findings](docs/hackathon-demo-rehearsal.md)
+- [Development and evidence workflow](docs/development/ctx-contract.md)
+- [Historical marketing-agent proposal](docs/habitat-mvp.md)
 
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+This repository is the Transcend Hackathon Showcase workspace. The earlier E2
+PayPal/marketing proposal remains for traceability; it is not the implemented
+E11 scope.

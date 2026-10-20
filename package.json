@@ -1,0 +1,12 @@
+{
+  "name": "habitat",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Browser-harness manifest only; start:test runs python -m aicl.test_server; browser tests live in tests/browser.",
+  "scripts": {
+    "start:test": "PYTHONPATH=backend python -m aicl.test_server"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

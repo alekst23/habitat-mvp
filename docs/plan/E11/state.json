@@ -3,17 +3,185 @@
   "project_id": "87329027",
   "epic": "E11",
   "epic_issue_iid": 11,
-  "source_issue_iid": 10,
+  "source_issue_iid": 11,
   "epic_branch": "ctx/epic-i11",
-  "next_ticket_number": 6,
+  "next_ticket_number": 7,
   "tickets": [
-    {"id":"E11-1","issue_iid":12,"title":"AICL domain and control foundation","depends_on":[],"wave":1,"status":"pending","branch":"ctx/ticket-i12"},
-    {"id":"E11-2","issue_iid":13,"title":"Canonical creation service and web-app tools","depends_on":["E11-1"],"wave":2,"status":"pending","branch":"ctx/ticket-i13"},
-    {"id":"E11-3","issue_iid":14,"title":"Authenticated workspace and agent-creation wizard","depends_on":["E11-1","E11-2"],"wave":3,"status":"pending","branch":"ctx/ticket-i14"},
-    {"id":"E11-4","issue_iid":15,"title":"Built-in chat agent creation surface","depends_on":["E11-2"],"wave":3,"status":"pending","branch":"ctx/ticket-i15"},
-    {"id":"E11-5","issue_iid":16,"title":"AICL web pages, instance management, and cross-surface proof","depends_on":["E11-3","E11-4"],"wave":4,"status":"pending","branch":"ctx/ticket-i16"}
+    {
+      "id": "E11-1",
+      "issue_iid": 12,
+      "title": "AICL domain and control foundation",
+      "depends_on": [],
+      "wave": 1,
+      "status": "done",
+      "branch": "ctx/ticket-i12",
+      "implementation": {
+        "status": "integrated",
+        "source_sha": "279eb2b51734375e38a05a9833c96594d7411b9c",
+        "evidence": "docs/plan/E11/completion.md",
+        "epic_sha": "e03888e1c7a6996a0bba76269c5e921c35327921",
+        "mr_iid": 48
+      },
+      "integration": {
+        "source_sha": "279eb2b51734375e38a05a9833c96594d7411b9c",
+        "epic_sha": "e03888e1c7a6996a0bba76269c5e921c35327921",
+        "pipeline_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2954829815",
+        "review_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4025550508",
+        "source_pipeline_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2953437016",
+        "mr_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/48",
+        "application_checks_status": "passed",
+        "pipeline_status": "failed",
+        "historical_gate_note": "Original application and scoped acceptance checks passed; required browser checks passed where applicable. The overall historical pipeline failed because source-security was unconfigured. Ticket-scoped post-integration pipelines for E11-2 through E11-4 also failed the expected whole-epic scope gate. These are historical integration receipts, not a current all-gates pass."
+      }
+    },
+    {
+      "id": "E11-2",
+      "issue_iid": 13,
+      "title": "Canonical creation service and web-app tools",
+      "depends_on": [
+        "E11-1"
+      ],
+      "wave": 2,
+      "status": "done",
+      "branch": "ctx/ticket-i13",
+      "implementation": {
+        "status": "integrated",
+        "source_sha": "1e86671774206eb0cb7eb4c97867fc91a8c6a401",
+        "evidence": "docs/plan/E11/completion.md",
+        "epic_sha": "924835f36cb80eb89602e0ce4908a8f33f950bac",
+        "mr_iid": 59
+      },
+      "integration": {
+        "source_sha": "1e86671774206eb0cb7eb4c97867fc91a8c6a401",
+        "epic_sha": "924835f36cb80eb89602e0ce4908a8f33f950bac",
+        "pipeline_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2957796410",
+        "review_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4033617895",
+        "source_pipeline_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2956291204",
+        "mr_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/59",
+        "application_checks_status": "passed",
+        "pipeline_status": "failed",
+        "historical_gate_note": "Original application and scoped acceptance checks passed; required browser checks passed where applicable. The overall historical pipeline failed because source-security was unconfigured. Ticket-scoped post-integration pipelines for E11-2 through E11-4 also failed the expected whole-epic scope gate. These are historical integration receipts, not a current all-gates pass."
+      }
+    },
+    {
+      "id": "E11-3",
+      "issue_iid": 14,
+      "title": "Authenticated workspace and agent-creation wizard",
+      "depends_on": [
+        "E11-1",
+        "E11-2"
+      ],
+      "wave": 3,
+      "status": "done",
+      "branch": "ctx/ticket-i14",
+      "implementation": {
+        "status": "integrated",
+        "source_sha": "eb8ef67447cb6c77995ebf28917d5d06e647f6b3",
+        "evidence": "docs/plan/E11/completion.md",
+        "epic_sha": "f696424d4535459575d02befca6239e0a8dbe649",
+        "mr_iid": 74
+      },
+      "integration": {
+        "source_sha": "eb8ef67447cb6c77995ebf28917d5d06e647f6b3",
+        "epic_sha": "f696424d4535459575d02befca6239e0a8dbe649",
+        "pipeline_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2959001096",
+        "review_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4035017893",
+        "source_pipeline_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2958641778",
+        "mr_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/74",
+        "application_checks_status": "passed",
+        "pipeline_status": "failed",
+        "historical_gate_note": "Original application and scoped acceptance checks passed; required browser checks passed where applicable. The overall historical pipeline failed because source-security was unconfigured. Ticket-scoped post-integration pipelines for E11-2 through E11-4 also failed the expected whole-epic scope gate. These are historical integration receipts, not a current all-gates pass."
+      }
+    },
+    {
+      "id": "E11-4",
+      "issue_iid": 15,
+      "title": "Built-in chat agent creation surface",
+      "depends_on": [
+        "E11-2"
+      ],
+      "wave": 3,
+      "status": "done",
+      "branch": "ctx/ticket-i15",
+      "implementation": {
+        "status": "integrated",
+        "source_sha": "31a0a623ce6e1cb680b59da98f05b9fd22f3c5f7",
+        "evidence": "docs/plan/E11/completion.md",
+        "epic_sha": "6f276d91fbf517295db009263c194ee3315b4328",
+        "mr_iid": 75
+      },
+      "integration": {
+        "source_sha": "31a0a623ce6e1cb680b59da98f05b9fd22f3c5f7",
+        "epic_sha": "6f276d91fbf517295db009263c194ee3315b4328",
+        "pipeline_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2959386324",
+        "review_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4036328305",
+        "source_pipeline_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2959108569",
+        "mr_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/75",
+        "application_checks_status": "passed",
+        "pipeline_status": "failed",
+        "historical_gate_note": "Original application and scoped acceptance checks passed; required browser checks passed where applicable. The overall historical pipeline failed because source-security was unconfigured. Ticket-scoped post-integration pipelines for E11-2 through E11-4 also failed the expected whole-epic scope gate. These are historical integration receipts, not a current all-gates pass."
+      }
+    },
+    {
+      "id": "E11-5",
+      "issue_iid": 16,
+      "title": "AICL web pages, instance management, and cross-surface proof",
+      "depends_on": [
+        "E11-3",
+        "E11-4"
+      ],
+      "wave": 4,
+      "status": "done",
+      "branch": "ctx/ticket-i16",
+      "implementation": {
+        "status": "integrated",
+        "source_sha": "5960066639a243e617c17b42630655a7135045fc",
+        "evidence": "docs/plan/E11/completion.md",
+        "mr_iid": 76,
+        "epic_sha": "ce3ddcce189ff923464c216859e6c8b8efaad56e"
+      },
+      "integration": {
+        "source_sha": "5960066639a243e617c17b42630655a7135045fc",
+        "epic_sha": "ce3ddcce189ff923464c216859e6c8b8efaad56e",
+        "pipeline_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2959700441",
+        "review_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/issues/11#note_4036851846",
+        "source_pipeline_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2959692439",
+        "mr_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/76",
+        "application_checks_status": "passed",
+        "epic_scope_status": "failed",
+        "integration_gate_note": "Application verification, browser and E11-5 acceptance passed at the actual merge SHA. The inherited E11-5 marker intentionally fails the whole-epic scope gate; no overall post-integration pipeline pass is claimed. The reviewed source candidate passed all mandatory jobs in pipeline 2959692439."
+      }
+    },
+    {
+      "id": "E11-6",
+      "issue_iid": 19,
+      "depends_on": [
+        "E11-5"
+      ],
+      "status": "pending",
+      "title": "Responsive owner workspace and control UI",
+      "wave": 5,
+      "branch": "codex/e11-ui-polish",
+      "implementation": {
+        "status": "in_progress",
+        "baseline_sha": "ca4e172241a484c174ce37e4a8642aabd511945a",
+        "integrated": false,
+        "evidence": "docs/plan/E11/E11-6.md",
+        "note": "Local Codex implementation. Workflow status remains pending because no native Duo session is claimed; no session URL or integration receipt is invented."
+      }
+    }
   ],
-  "last_operation":"ctx-epic-new",
-  "last_updated":"2026-10-13",
-  "design_status":"pending"
+  "last_operation": "ctx-ticket-design",
+  "last_updated": "2026-10-18",
+  "design_status": "specified",
+  "status_note": "The original five-ticket E11 baseline ca4e172 passed final whole-epic CI and independent review, recorded in E11-6.md. E11-6 is a separate in-progress UI refinement on codex/e11-ui-polish, not integrated or verified by the baseline receipts. Historical completion metadata and E11-1 through E11-5 receipts are preserved.",
+  "completion": {
+    "status": "awaiting_whole_epic_verification",
+    "epic_mr_url": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/45",
+    "required_scope": "E11",
+    "final_evidence_location": "https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/45",
+    "default_branch_merged": false,
+    "deployed": false
+  },
+  "baseline_status_note": "All five tickets are integrated into ctx/epic-i11 with reconciled source, integration, application-verification and independent-review receipts. Historical overall pipeline failures remain recorded. Final whole-epic verification and independent review must be recorded on MR !45 at the post-documentation SHA. Historical checkpoint counters are unchanged."
 }

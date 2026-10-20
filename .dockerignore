@@ -1,0 +1,10 @@
+*
+!backend/
+!backend/requirements.lock
+!backend/aicl/
+!backend/aicl/**
+**/__pycache__
+**/*.pyc
+**/.env*
+**/*.sqlite*
+**/*.db
