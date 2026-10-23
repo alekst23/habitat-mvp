@@ -70,6 +70,8 @@ class Settings(BaseModel):
     render_max_dispatches: int = 100
     scheduler_token: SecretStr = SecretStr("")
     worker_token: SecretStr = SecretStr("")
+    browser_service_url: str = ""
+    browser_service_token: SecretStr = SecretStr("")
     public_base_url: str = "http://127.0.0.1:4173"
     database_url: str
     session_secret: str
@@ -85,6 +87,7 @@ class Settings(BaseModel):
     provider_mode: str = "fake"
     executor_mode: str = "fake"
     chat_model_mode: str = "fake"
+    assistant_max_spend_micro_usd: int = 1_000_000
     inference_mode: str = "mock"
     openai_api_key: SecretStr = SecretStr("")
     inference_max_spend_micro_usd: int = 1_000_000
@@ -160,12 +163,50 @@ class Settings(BaseModel):
         return self
 
     @model_validator(mode="after")
+    def validate_browser_configuration(self) -> "Settings":
+        url, token = self.browser_service_url, self.browser_service_token.get_secret_value()
+        if not url and not token:
+            return self
+        if not url:
+            raise SettingsError("AICL_BROWSER_SERVICE_URL", "is required with the browser service token")
+        try:
+            parsed = urlparse(url)
+            host, port = parsed.hostname or "", parsed.port
+            private = bool(re.fullmatch(r"[a-z][a-z0-9-]{0,62}(?:\.internal)?", host)) and host != "localhost"
+            local = self.environment in ("development", "test") and host in ("127.0.0.1", "localhost", "::1")
+            valid = (parsed.scheme == "http" and (private or local)
+                     and not parsed.username and not parsed.password and "@" not in parsed.netloc
+                     and parsed.path in ("", "/") and not parsed.query and not parsed.fragment
+                     and "?" not in url and "#" not in url and "\\" not in url
+                     and not any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in url)
+                     and (port is None or 1 <= port <= 65535))
+        except ValueError:
+            valid = False
+        if not valid:
+            raise SettingsError("AICL_BROWSER_SERVICE_URL", "must be a clean private Render http origin, or loopback in development/test")
+        if (not 32 <= len(token) <= 1024 or not token.isascii() or token.startswith(("CHANGE_ME", "YOUR_"))
+                or any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in token)):
+            raise SettingsError("AICL_BROWSER_SERVICE_TOKEN", "must contain 32–1024 non-placeholder ASCII characters without whitespace")
+        others = (self.session_secret, self.identity_hmac_key, self.secret_encryption_key,
+                  self.worker_token.get_secret_value(), self.scheduler_token.get_secret_value(),
+                  self.access_link_token.get_secret_value(), self.openai_api_key.get_secret_value(),
+                  self.payment_token.get_secret_value(), self.paypal_client_secret.get_secret_value(),
+                  self.paypal_purchase_client_secret.get_secret_value())
+        if token in others:
+            raise SettingsError("AICL_BROWSER_SERVICE_TOKEN", "must differ from owner, worker, payment and model credentials")
+        return self
+
+    @model_validator(mode="after")
     def validate_inference_configuration(self) -> "Settings":
+        if self.chat_model_mode not in ("fake", "openai"):
+            raise SettingsError("AICL_CHAT_MODEL_MODE", "must be fake or openai")
+        if not 1 <= self.assistant_max_spend_micro_usd <= 10_000_000:
+            raise SettingsError("AICL_ASSISTANT_MAX_SPEND_MICRO_USD", "must be between 1 and 10000000")
         if self.inference_mode not in ("mock", "openai"):
             raise SettingsError("AICL_INFERENCE_MODE", "must be mock or openai")
         if not 1 <= self.inference_max_spend_micro_usd <= 10_000_000:
             raise SettingsError("AICL_INFERENCE_MAX_SPEND_MICRO_USD", "must be between 1 and 10000000")
-        if self.inference_mode == "mock":
+        if self.inference_mode == "mock" and self.chat_model_mode == "fake":
             return self
         if not self.workflow_enabled:
             raise SettingsError("AICL_INFERENCE_MODE", "openai requires development, test or explicit hosted workflow mode")
@@ -287,8 +328,7 @@ class Settings(BaseModel):
 
         modes = {}
         for name, key, extra in (("AICL_PROVIDER_MODE", "provider_mode", "; provider enablement is not recorded"),
-                                 ("AICL_EXECUTOR_MODE", "executor_mode", ""),
-                                 ("AICL_CHAT_MODEL_MODE", "chat_model_mode", "")):
+                                 ("AICL_EXECUTOR_MODE", "executor_mode", "")):
             value = env.get(name) or "fake"
             if value != "fake":
                 raise SettingsError(name, "only fake is accepted" + extra)
@@ -309,6 +349,8 @@ class Settings(BaseModel):
             render_max_dispatches=integer("AICL_RENDER_MAX_DISPATCHES", 100, 1, 1000),
             scheduler_token=SecretStr(env.get("AICL_SCHEDULER_TOKEN") or ""),
             worker_token=SecretStr(env.get("AICL_WORKER_TOKEN") or ""),
+            browser_service_url=env.get("AICL_BROWSER_SERVICE_URL") or "",
+            browser_service_token=SecretStr(env.get("AICL_BROWSER_SERVICE_TOKEN") or ""),
             session_secret=session_secret, identity_hmac_key=identity_key, secret_encryption_key=encryption_key,
             price_table_path=get("AICL_PRICE_TABLE_PATH"),
             session_ttl_seconds=integer("AICL_SESSION_TTL_SECONDS", 28800, 300, 604800),
@@ -317,6 +359,8 @@ class Settings(BaseModel):
             reconcile_interval_seconds=reconcile, hold_stale_seconds=hold_stale,
             executor_timeout_seconds=executor_timeout,
             inference_mode=env.get("AICL_INFERENCE_MODE") or "mock",
+            chat_model_mode=env.get("AICL_CHAT_MODEL_MODE") or "fake",
+            assistant_max_spend_micro_usd=integer("AICL_ASSISTANT_MAX_SPEND_MICRO_USD", 1_000_000, 1, 10_000_000),
             openai_api_key=SecretStr(env.get("OPENAI_API_KEY") or ""),
             inference_max_spend_micro_usd=integer("AICL_INFERENCE_MAX_SPEND_MICRO_USD", 1_000_000, 1, 10_000_000),
             payment_api_url=payment_api_url, payment_token=SecretStr(payment_token),

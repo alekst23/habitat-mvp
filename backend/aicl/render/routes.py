@@ -24,11 +24,27 @@ class Completion(Attempt):
     validation: dict
 
 
+class OwnerRequest(Task):
+    workflow_run_id: str = Field(min_length=1, max_length=64)
+    kind: str = Field(min_length=1, max_length=32)
+    title: str = Field(min_length=1, max_length=160)
+    reason: str = Field(min_length=1, max_length=2000)
+    details: dict = Field(default_factory=dict)
+    dedupe_key: str = Field(min_length=1, max_length=128)
+
+
+class BrowserPage(Task):
+    workflow_run_id: str = Field(min_length=1, max_length=64)
+    request_id: str = Field(min_length=1, max_length=64)
+    url: str = Field(min_length=1, max_length=2048)
+
+
 def render_router(ctx):
     router = APIRouter(prefix="/internal/render", include_in_schema=False)
     if ctx.settings.workflow_execution_mode != "render":
         return router
-    service = RenderExecution(workflow_service(ctx))
+    from aicl.browser.factory import browser_broker
+    service = RenderExecution(workflow_service(ctx), browser=browser_broker(ctx))
 
     def identity(secret):
         def check(request: Request):
@@ -64,6 +80,20 @@ def render_router(ctx):
     @router.post("/jobs/{dispatch_id}/complete-attempt", dependencies=[Depends(worker)])
     def complete(dispatch_id: str, body: Completion):
         return service.complete_attempt(dispatch_id, body.task_run_id, body.attempt_id, body.validation)
+
+    @router.post("/jobs/{dispatch_id}/owner-request", dependencies=[Depends(worker)])
+    def request_owner(dispatch_id: str, body: OwnerRequest):
+        return service.request_owner(dispatch_id, body.task_run_id, body.workflow_run_id,
+                                     body.kind, body.title, body.reason, body.details, body.dedupe_key)
+
+    @router.post("/jobs/{dispatch_id}/browser/page", dependencies=[Depends(worker)])
+    def browser_page(dispatch_id: str, body: BrowserPage):
+        return service.browser_page(dispatch_id, body.task_run_id, body.workflow_run_id,
+                                    body.request_id, body.url)
+
+    @router.post("/jobs/{dispatch_id}/browser/prepare", dependencies=[Depends(worker)])
+    def browser_prepare(dispatch_id: str, body: Attempt):
+        return service.browser_prepare(dispatch_id, body.task_run_id, body.attempt_id)
 
     @router.post("/jobs/{dispatch_id}/finish", dependencies=[Depends(worker)])
     def finish(dispatch_id: str, body: Task):

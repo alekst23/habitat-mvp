@@ -18,6 +18,7 @@ from aicl.creation.operations import SqliteInstanceOperations
 from aicl.db import from_iso, to_iso
 from aicl.workflow.ad_scenario import AdWorkflowMixin, SCENARIO, ad_content
 from aicl.workflow.inference_service import WorkflowInference, provenance, uses_model
+from aicl.browser.task_config import BROWSER_SCENARIO, normalize_browser_task
 
 _MAX_VERSIONS = 5
 _KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
@@ -92,7 +93,7 @@ class MockWorkflowService(AdWorkflowMixin):
         if not isinstance(data, dict):
             raise AiclError("validation_failed", "Complete the workflow configuration.")
         scenario_id = data.get("scenario", "generic")
-        if scenario_id not in ("generic", SCENARIO):
+        if scenario_id not in ("generic", SCENARIO, BROWSER_SCENARIO):
             raise AiclError("validation_failed", "Choose a supported workflow example.")
         goal = self._text(data.get("goal"), "Goal", 2000)
         inputs = self._text(data.get("inputs", ""), "Inputs", 4000, optional=True)
@@ -134,7 +135,12 @@ class MockWorkflowService(AdWorkflowMixin):
                 raise AiclError("validation_failed", "The PocketPlan example needs its campaign plan, ad creative and performance report.")
             if any(spec["purchase_required"] for spec in normalized):
                 raise AiclError("validation_failed", "PocketPlan outputs exist independently of campaign purchase approval.")
-        return {"scenario": scenario_id, "goal": goal, "inputs": inputs, "deliverables": normalized, "cadence": cadence, "timezone": timezone}
+        result = {"scenario": scenario_id, "goal": goal, "inputs": inputs, "deliverables": normalized, "cadence": cadence, "timezone": timezone}
+        if scenario_id == BROWSER_SCENARIO:
+            if keys != {"purchase_proposal"} or any(spec["purchase_required"] for spec in normalized):
+                raise AiclError("validation_failed", "Browser work needs one purchase proposal deliverable, with no dependency on completing a purchase.")
+            result["browser_task"] = normalize_browser_task(data.get("browser_task"))
+        return result
 
     def _next_due(self, config, after):
         local = after.astimezone(ZoneInfo(config["timezone"]))
@@ -149,8 +155,8 @@ class MockWorkflowService(AdWorkflowMixin):
 
     def save_config(self, auth, instance_id, data, expected_version):
         normalized = self._normalize(data)
-        if self.execution_mode == "render" and normalized["scenario"] != SCENARIO:
-            raise AiclError("validation_failed", "This release runs the reviewed PocketPlan marketing agent. Choose the app marketing example before saving.")
+        if self.execution_mode == "render" and normalized["scenario"] not in (SCENARIO, BROWSER_SCENARIO):
+            raise AiclError("validation_failed", "Choose the reviewed app marketing example or browser purchase workflow before saving.")
         if type(expected_version) is not int or expected_version < 1:
             raise AiclError("validation_failed", "A configuration version is required.")
         with self.db.transaction() as conn:
@@ -186,8 +192,8 @@ class MockWorkflowService(AdWorkflowMixin):
                 return config
             if enabled:
                 self._require_demo_active(conn, auth)
-                if self.execution_mode == "render" and (config.get("scenario") != SCENARIO or self.inference is None):
-                    raise AiclError("validation_failed", "Render scheduling requires the reviewed PocketPlan marketing configuration and enabled model inference.")
+                if self.execution_mode == "render" and (config.get("scenario") not in (SCENARIO, BROWSER_SCENARIO) or self.inference is None):
+                    raise AiclError("validation_failed", "Render scheduling requires a reviewed app marketing or browser purchase workflow and enabled model inference.")
                 inst = self._instance(conn, auth, instance_id)
                 if inst["lifecycle"] in ("draft", "paused"):
                     SqliteInstanceOperations(self.db, self.clock).set_lifecycle(
@@ -284,12 +290,16 @@ class MockWorkflowService(AdWorkflowMixin):
         return "\n\n".join(parts)
 
     def _produce(self, conn, auth, job, *, already_charged=False):
+        if job["state"] in ("waiting_owner", "owner_declined"):
+            return
         self.commerce._controls(conn, auth, job["instance_id"])
         latest = self._latest(conn, job["id"])
         version = latest["version"] + 1 if latest else 1
         if version > _MAX_VERSIONS:
             raise AiclError("denied", "This example has reached its five-version limit. Configure a new job to change scope.", reason="revision_limit")
         snapshot, spec = json.loads(job["config_json"]), json.loads(job["spec_json"])
+        if snapshot.get("scenario") == "browser_purchase" and (self.execution_mode != "render" or self.inference is None):
+            raise AiclError("denied", "Browser work requires the scheduled worker and configured inference.", reason="unsupported_workflow")
         if self.inference and uses_model(snapshot, spec):
             self.inference.stage(conn, auth, job, version, latest["feedback"] if latest else "")
             return
@@ -312,6 +322,8 @@ class MockWorkflowService(AdWorkflowMixin):
         self.commerce._event(conn, auth, job["instance_id"], "commerce.run_completed", run_id=job["id"], action=state, version=version)
 
     def _continue(self, conn, auth, job):
+        if job["state"] == "waiting_owner":
+            return self._resume_owner_job(conn, auth, job)
         if self._ad_activate(conn, auth, job):
             return  # A campaign can start after funding; output already exists.
         if self._latest(conn, job["id"]):
@@ -323,6 +335,53 @@ class MockWorkflowService(AdWorkflowMixin):
         if not purchase or purchase["state"] != "paid" or not purchase["fulfillment_json"]:
             raise AiclError("denied", "Complete checkout and resource delivery before continuing.", reason="payment_incomplete")
         self._produce(conn, auth, job)
+
+    def _resume_owner_job(self, conn, auth, job):
+        from aicl.owner_requests.service import OwnerRequestService
+        requests = OwnerRequestService(self)
+        if requests.pending_for_job(conn, job["id"]) or conn.execute(
+                "SELECT 1 FROM owner_request WHERE workflow_run_id=? AND status='declined'", (job["id"],)).fetchone():
+            raise AiclError("denied", "This job still needs an owner response.", reason="owner_request_pending")
+        resolved = conn.execute("SELECT * FROM owner_request WHERE workflow_run_id=? AND status='resolved' ORDER BY rowid DESC LIMIT 1", (job["id"],)).fetchone()
+        if resolved is None:
+            raise AiclError("denied", "A verified owner response is required.", reason="owner_request_pending")
+        self._require_demo_active(conn, auth)
+        config = self._config(conn, auth, job["instance_id"])
+        if not config["enabled"]:
+            raise AiclError("denied", "Enable the agent schedule before continuing this waiting job.", reason="schedule_paused")
+        self.commerce._controls(conn, auth, job["instance_id"])
+        paused_state = resolved["paused_state"]
+        if paused_state in ("inference_unknown", "inference_failed"):
+            raise AiclError("denied", "Resolve the previous provider outcome before resuming work.", reason="reconciliation_pending")
+        conn.execute("UPDATE mock_workflow_run SET state=?,blocked_reason=NULL,updated_at=? WHERE id=?", (paused_state, to_iso(self.clock.now()), job["id"]))
+        restored = self._job(conn, auth, job["id"])
+        if paused_state == "waiting_purchase":
+            self._continue(conn, auth, restored)
+        else:
+            self._produce(conn, auth, restored)
+
+    def owner_request_resolved(self, auth, job_id, continuation):
+        """Stage a durable continuation; provider I/O happens after commit."""
+        if continuation not in ("now", "schedule"):
+            raise AiclError("validation_failed", "Choose now or the next scheduled run.")
+        with self.db.transaction() as conn:
+            job = self._job(conn, auth, job_id)
+            if job["state"] != "waiting_owner":
+                return
+            conn.execute("UPDATE mock_workflow_run SET continuation=?,updated_at=? WHERE id=?", (continuation, to_iso(self.clock.now()), job_id))
+            if continuation == "schedule":
+                return
+            try:
+                with self.db.transaction():
+                    if self.execution_mode == "render":
+                        from aicl.render.service import RenderExecution
+                        RenderExecution(self).enqueue_owner_continuation(conn, auth, job)
+                    else:
+                        self._resume_owner_job(conn, auth, job)
+            except AiclError as error:
+                # The answer is retained even when a current budget, pause or
+                # permission prevents execution. A later schedule rechecks it.
+                self._record_block(conn, auth, job, error)
 
     def _record_block(self, conn, auth, job, error):
         reason = error.message
@@ -353,7 +412,10 @@ class MockWorkflowService(AdWorkflowMixin):
                 # First give existing work its next opportunity, retaining its original requirements.
                 existing_jobs = conn.execute("SELECT * FROM mock_workflow_run WHERE instance_id=? ORDER BY rowid", (instance_id,)).fetchall()
                 for job in existing_jobs:
-                    if job["state"] not in ("waiting_purchase", "needs_work", "changes_requested", "inference_blocked", "inference_failed"):
+                    if job["state"] not in ("waiting_purchase", "waiting_owner", "needs_work", "changes_requested", "inference_blocked", "inference_failed"):
+                        continue
+                    if job["state"] == "waiting_owner" and conn.execute(
+                            "SELECT 1 FROM owner_request WHERE workflow_run_id=? AND status IN ('pending','declined')", (job["id"],)).fetchone():
                         continue
                     purchase = self._current_purchase(conn, job)
                     if job["state"] == "waiting_purchase" and purchase and purchase["state"] in ("declined", "cancelled"):
@@ -363,7 +425,7 @@ class MockWorkflowService(AdWorkflowMixin):
                         continue
                     try:
                         with self.db.transaction():
-                            if job["state"] == "waiting_purchase":
+                            if job["state"] in ("waiting_purchase", "waiting_owner"):
                                 self._continue(conn, auth, job)
                             else:
                                 self._produce(conn, auth, job)
@@ -374,8 +436,11 @@ class MockWorkflowService(AdWorkflowMixin):
                 if config.get("scenario") == SCENARIO:
                     outcomes.extend(self._advance_ads(conn, auth, config, occurrence_id, expected_due))
                 for spec in ([] if config.get("scenario") == SCENARIO else config["deliverables"]):
+                    if config.get("scenario") == "browser_purchase" and conn.execute(
+                            "SELECT 1 FROM mock_workflow_run WHERE instance_id=? AND spec_key=? AND state IN ('generating','running','inference_blocked','inference_failed','inference_unknown')", (instance_id, spec["key"])).fetchone():
+                        continue
                     pending = conn.execute("SELECT 1 FROM mock_workflow_run WHERE instance_id=? AND spec_key=? "
-                                           "AND state IN ('waiting_purchase','needs_work','submitted','changes_requested')", (instance_id, spec["key"])).fetchone()
+                                           "AND state IN ('waiting_purchase','waiting_owner','owner_declined','needs_work','submitted','changes_requested')", (instance_id, spec["key"])).fetchone()
                     if pending:
                         continue
                     try:
@@ -383,9 +448,12 @@ class MockWorkflowService(AdWorkflowMixin):
                             reusable = conn.execute("SELECT 1 FROM mock_commerce_purchase WHERE instance_id=? AND state='paid' AND fulfillment_json IS NOT NULL AND json_extract(fulfillment_json,'$.kind') IS NOT 'prepaid_ad_credit' LIMIT 1", (instance_id,)).fetchone()
                             needs_purchase = spec["purchase_required"] and not reusable
                             brief = {"product_name": spec["name"], "audience": (config["inputs"] or "The agent owner")[:240], "goal": config["goal"][:600]}
-                            commerce_run = self.commerce._start_workflow_run(conn, auth, instance_id, f"wf:{occurrence_id}:{spec['key']}", brief, purchase_required=needs_purchase)
+                            commerce_run = self.commerce._start_workflow_run(conn, auth, instance_id, f"wf:{occurrence_id}:{spec['key']}", brief, purchase_required=needs_purchase,
+                                                                          charge=config.get("scenario") != "browser_purchase")
                             run_id = _id()
                             snapshot = {key: config[key] for key in ("goal", "inputs", "deliverables", "cadence", "timezone", "version", "scenario")}
+                            if config.get("scenario") == "browser_purchase":
+                                snapshot["browser_task"] = config["browser_task"]
                             conn.execute("INSERT INTO mock_workflow_run (id,instance_id,occurrence_id,commerce_run_id,spec_key,config_version,config_json,spec_json,state,created_at,updated_at) "
                                          "VALUES (?,?,?,?,?,?,?,?,?,?,?)", (run_id, instance_id, occurrence_id, commerce_run["id"], spec["key"], config["version"], _canonical(snapshot), _canonical(spec), "waiting_purchase" if needs_purchase else "running", now, now))
                             job = self._job(conn, auth, run_id)
@@ -446,6 +514,9 @@ class MockWorkflowService(AdWorkflowMixin):
                 raise AiclError("invalid_transition", "Only a validated, submitted version can be reviewed.")
             if decision == "request_changes" and row["version"] >= _MAX_VERSIONS:
                 raise AiclError("denied", "This example has reached its five-version limit. Configure a new job to change scope.", reason="revision_limit")
+            if decision == "request_changes" and json.loads(job["config_json"]).get("scenario") == "browser_purchase":
+                from aicl.browser.proposals import BrowserPurchaseProposalService
+                BrowserPurchaseProposalService(self).invalidate(auth, job["id"])
             now = to_iso(self.clock.now())
             conn.execute("UPDATE mock_workflow_deliverable SET state=?,feedback=?,reviewed_at=? WHERE id=?", (state, feedback, now, deliverable_id))
             conn.execute("UPDATE mock_workflow_run SET state=?,updated_at=? WHERE id=?", (state, now, job["id"]))
@@ -605,6 +676,24 @@ class MockWorkflowService(AdWorkflowMixin):
         })
         return item
 
+    def _browser_purchase_review_projection(self, conn, auth, row):
+        """Display a proposed purchase without representing it as an order."""
+        job = self._run_projection(conn, auth, self._job(conn, auth, row["workflow_run_id"]))
+        output = conn.execute("SELECT id,version,state FROM mock_workflow_deliverable WHERE id=? AND workflow_run_id=?",
+                              (row["deliverable_id"], job["id"])).fetchone()
+        return {"id": row["id"], "kind": "browser_proposal", "proposal_state": row["state"],
+                "state": "awaiting_approval" if row["state"] == "pending" else row["state"],
+                "instance_id": row["instance_id"], "agent_name": job["agent_name"],
+                "workflow_run_id": job["id"], "deliverable_name": job["deliverable_name"],
+                "goal": job["goal"], "seller": row["seller"], "domain": row["domain"],
+                "amount_minor": row["amount_minor"], "currency": row["currency"],
+                "description": row["description"], "purchase_reason": row["rationale"],
+                "evidence": json.loads(row["evidence_json"]), "source_deliverable": dict(output) if output else None,
+                "source_job": {key: job[key] for key in ("id", "scheduled_for", "created_at", "config_version",
+                                                         "timezone", "deliverable_name", "state")},
+                "created_at": row["created_at"], "updated_at": row["updated_at"], "order_id": None,
+                "request_url": "/requests?selected=browser-purchase%3A" + row["id"]}
+
     def job(self, auth, run_id):
         """Read one owned scheduled job, including replaced quotes and output versions."""
         with self.db.reader() as conn:
@@ -614,6 +703,8 @@ class MockWorkflowService(AdWorkflowMixin):
                 "SELECT p.*, w.workflow_run_id FROM mock_commerce_purchase p "
                 "JOIN mock_workflow_purchase w ON w.purchase_id=p.id WHERE w.workflow_run_id=? ORDER BY p.rowid DESC",
                 (run_id,))]
+            result["purchases"].extend(self._browser_purchase_review_projection(conn, auth, proposal) for proposal in conn.execute(
+                "SELECT * FROM browser_purchase_proposal WHERE workflow_run_id=? ORDER BY rowid DESC", (run_id,)))
             result["deliverables"] = [self._deliverable_projection(conn, auth, output) for output in conn.execute(
                 "SELECT * FROM mock_workflow_deliverable WHERE workflow_run_id=? ORDER BY version DESC", (run_id,))]
             return result
@@ -623,6 +714,7 @@ class MockWorkflowService(AdWorkflowMixin):
         inst = self._instance(conn, auth, job["instance_id"])
         snapshot, spec = json.loads(job["config_json"]), json.loads(job["spec_json"])
         latest = self._latest(conn, job["id"])
+        proposal = conn.execute("SELECT id,state FROM browser_purchase_proposal WHERE deliverable_id=? ORDER BY rowid DESC LIMIT 1", (row["id"],)).fetchone()
         return {"id": row["id"], "instance_id": job["instance_id"], "agent_name": inst["name"],
                 "run_id": job["id"], "spec_key": job["spec_key"], "name": spec["name"], "content": row["content"],
                 "state": row["state"], "version": row["version"], "criteria": json.loads(row["criteria_json"]),
@@ -630,6 +722,8 @@ class MockWorkflowService(AdWorkflowMixin):
                 "goal": snapshot["goal"], "created_at": row["created_at"], "reviewed_at": row["reviewed_at"],
                 "feedback": row["feedback"], "config_version": job["config_version"],
                 "config_snapshot": snapshot, "latest": latest["id"] == row["id"], "legacy": False,
+                "browser_proposal": {"id": proposal["id"], "state": proposal["state"],
+                                     "request_url": "/requests?selected=browser-purchase%3A" + proposal["id"]} if proposal else None,
                 "next_due": self._config(conn, auth, job["instance_id"])["next_due"]}
 
     def _legacy_deliverable(self, conn, auth, row):
@@ -695,6 +789,9 @@ class MockWorkflowService(AdWorkflowMixin):
                 all_purchases = conn.execute("SELECT p.*, w.workflow_run_id FROM mock_commerce_purchase p LEFT JOIN mock_workflow_purchase w ON w.purchase_id=p.id WHERE p.instance_id=? ORDER BY p.rowid DESC", (iid,)).fetchall()
                 for purchase in all_purchases:
                     purchases.append(self._purchase_review_projection(conn, auth, purchase))
+                browser_proposals = conn.execute("SELECT * FROM browser_purchase_proposal WHERE instance_id=? AND tenant_id=? AND owner_id=? ORDER BY rowid DESC",
+                                                 (iid, auth.tenant_id, auth.owner_id)).fetchall()
+                purchases.extend(self._browser_purchase_review_projection(conn, auth, proposal) for proposal in browser_proposals)
                 policy = self.commerce._policy(conn, iid)
                 balance = self.commerce._balance(conn, iid)
                 totals["service_balance_micro_usd"] += balance
@@ -726,6 +823,7 @@ class MockWorkflowService(AdWorkflowMixin):
                                    "instance_id": iid, "agent_name": name, "run_id": details.get("run_id"),
                                    "purchase_id": details.get("purchase_id"), "reason": event["reason"], "outcome": event["outcome"]})
                 pending_count = sum(p["state"] in ("awaiting_approval", "awaiting_checkout", "payment_pending") for p in all_purchases)
+                pending_count += sum(proposal["state"] == "pending" for proposal in browser_proposals)
                 agents.append({"id": iid, **config, "balance_micro_usd": balance, "pending_purchase_count": pending_count,
                                "latest_deliverable": outputs[0] if outputs else None, "lifecycle": inst["lifecycle"], "gated_reason": inst["gated_reason"]})
             totals["run_count"] = len(runs)

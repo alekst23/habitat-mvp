@@ -17,11 +17,13 @@ from aicl.web.account import sidebar_context
 from aicl.control.errors import AiclError
 from aicl.workflow.factory import workflow_service
 from aicl.workflow.pages import render
+from aicl.browser.task_config import BROWSER_SCENARIO, browser_purchase_preset
 
 
 NOTICES = {
     "saved": "Configuration saved. Future scheduled jobs will use these goals and criteria.",
     "example_saved": "PocketPlan app marketing example saved. Review the goals and criteria, then set controls and funding before enabling the schedule.",
+    "browser_example_saved": "Browser purchase workflow saved. Add your game details, review the website and budget, then enable the schedule. Sign-in is requested only when needed; checkout stays blocked.",
     "enabled": "Schedule enabled. The next occurrence is shown below.",
     "paused": "Schedule paused. Previous requests and deliverables remain available in Audit.",
     "advanced": "Scheduled occurrence processed. Review the jobs and outputs below.",
@@ -108,10 +110,20 @@ def _configuration(form) -> dict:
             "criteria": criteria, "purchase_required": form.get(f"purchase_required_{index}") == "on",
             "validation_scenario": str(form.get(f"validation_scenario_{index}", "pass")),
         })
-    return {"goal": str(form.get("goal", "")).strip(), "inputs": str(form.get("inputs", "")).strip(),
+    result = {"goal": str(form.get("goal", "")).strip(), "inputs": str(form.get("inputs", "")).strip(),
             "deliverables": specs, "cadence": str(form.get("cadence", "daily")),
             "timezone": str(form.get("timezone", "America/New_York")),
             "scenario": str(form.get("scenario", "generic"))}
+    if result["scenario"] == BROWSER_SCENARIO:
+        raw_amount = str(form.get("browser_max_amount", "")).strip()
+        if not re.fullmatch(r"[0-9]{1,5}(?:\.[0-9]{1,2})?", raw_amount):
+            raise AiclError("validation_failed", "Enter a maximum purchase amount in USD, such as 25.00.")
+        dollars, _, cents = raw_amount.partition(".")
+        result["browser_task"] = {"service_url": str(form.get("browser_service_url", "")).strip(),
+                                  "objective": str(form.get("browser_objective", "")).strip(),
+                                  "max_amount_minor": int(dollars) * 100 + int(cents.ljust(2, "0")),
+                                  "currency": "USD"}
+    return result
 
 
 def workflow_router(ctx) -> APIRouter:
@@ -141,10 +153,13 @@ def workflow_router(ctx) -> APIRouter:
         cfg = {**service.config(auth, instance_id), "inference_mode": ctx.settings.inference_mode,
                "execution_mode": ctx.settings.workflow_execution_mode}
         overview = service.overview(auth, instance_id)
+        from aicl.owner_requests.factory import owner_request_service
+        pending_requests = owner_request_service(ctx).list(auth, instance_id=instance_id)
         agent = next((a for a in overview["agents"] if a["id"] == instance_id), {})
         if values is not None:
             cfg = {**cfg, **values}
         return HTMLResponse(render("workflow/config", title=agent.get("name", "Agent workflow"), cfg=cfg,
+                                   pending_requests=pending_requests, agent_pending_count=len(pending_requests),
                                    agent=agent, overview=overview, notice=NOTICES.get(notice, ""), error=error,
                                    **sidebar_context(ctx, auth)), status_code=status_code)
 
@@ -174,16 +189,20 @@ def workflow_router(ctx) -> APIRouter:
     async def use_example(instance_id: str, request: Request, auth=Depends(csrf)):
         cfg = service.config(auth, instance_id)
         form = await request.form()
+        example = str(form.get("example", "pocketplan_ads"))
         try:
+            if example not in ("pocketplan_ads", BROWSER_SCENARIO):
+                raise AiclError("validation_failed", "Choose an available workflow example.")
             if cfg["saved"]:
-                raise AiclError("conflict", "This agent already has a saved workflow. Create a new agent to try the app marketing example.")
+                raise AiclError("conflict", "This agent already has a saved workflow. Create a new agent to try another workflow example.")
             from aicl.workflow.ad_scenario import pocketplan_preset
-            service.save_config(auth, instance_id, pocketplan_preset(), _integer(form.get("expected_version", "")))
+            preset = browser_purchase_preset() if example == BROWSER_SCENARIO else pocketplan_preset()
+            service.save_config(auth, instance_id, preset, _integer(form.get("expected_version", "")))
         except AiclError as exc:
             if exc.error == "not_found":
                 raise
             return back(instance_id, error=exc.message or "The example could not be saved.")
-        return back(instance_id, notice="example_saved")
+        return back(instance_id, notice="browser_example_saved" if example == BROWSER_SCENARIO else "example_saved")
 
     @router.post("/instances/{instance_id}/workflow/schedule")
     async def schedule(instance_id: str, request: Request, auth=Depends(csrf)):

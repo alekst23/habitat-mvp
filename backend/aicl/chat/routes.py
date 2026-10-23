@@ -21,6 +21,9 @@ from aicl.web.pages import render
 
 def chat_router(ctx) -> APIRouter:
     """`(AppContext) -> APIRouter` factory in the ROUTE_FACTORIES shape."""
+    if ctx.settings.chat_model_mode == "openai":
+        from aicl.chat.assistant_routes import assistant_router
+        return assistant_router(ctx)
     router = APIRouter()
     csrf = require_csrf(ctx)
     orchestrator = SqliteChatOrchestrator(ctx.db, ctx.clock, ctx.ports.chat_model)

@@ -191,7 +191,7 @@ TEMPLATES = {
     'checkout': """{% extends "base" %}{% set page_key = "instance" %}
 {% block eyebrow %}PAYMENT{% endblock %}{% block subtitle %}{{ "Your payment is complete. The receipt is saved with your agent." if order.state == "completed" else "This payment was cancelled. Your agent and task are preserved." if order.state == "cancelled" else "Your order is ready. Authorize this payment, then return to your agent." }}{% endblock %}
 {% block header_actions %}{% if workflow_job %}<a class="button secondary" href="/audit?view=purchases&amp;instance_id={{ order.instance_id }}#purchase-{{ purchase.id }}">Back to purchase review</a>{% else %}<a class="button secondary" href="/instances/{{ order.instance_id }}#{{ 'run-' ~ purchase.run_id if purchase else 'setup' }}">{{ 'Back to task' if purchase else 'Back to setup' }}</a>{% endif %}{% endblock %}
-{% block body %}<style>
+{% block body %}{% if request_url|default('') %}<p class="field-hint"><a href="{{ request_url }}">← Back to this request</a> · Payment authorization</p>{% endif %}<style>
 .paypal-brand { display: flex; align-items: center; gap: 14px; margin-bottom: 9px; }
 .paypal-brand img { display: block; width: 88px; height: auto; }
 .paypal-brand span { color: var(--muted); font-size: 12px; font-weight: 600; }

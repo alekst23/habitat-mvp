@@ -546,8 +546,12 @@ def test_machine_api_separates_roles_and_cannot_authorize_payments(build_env, ba
                                data={"decision": "approve"}).status_code == 401
             assert client.post("/commerce/orders/any/paypal-complete", headers=headers).status_code == 401
         assert adapter.calls == []
-        transport = httpx.MockTransport(lambda request: client.request(
-            request.method, request.url.path, headers=dict(request.headers), content=request.content))
+        def local_request(request):
+            # Starlette can use httpx2 when the Agents SDK is installed; the
+            # worker still uses httpx. Cross the fixture boundary as wire data.
+            response = client.request(request.method, request.url.path, headers=dict(request.headers), content=request.content)
+            return httpx.Response(response.status_code, headers=dict(response.headers), content=response.content)
+        transport = httpx.MockTransport(local_request)
         with AICLClient(ClientConfig("https://habitat.example", worker_secret), transport=transport) as machine:
             result = execute(machine, dispatch["id"], task["task_run_id"])
             assert result["state"] == "completed"

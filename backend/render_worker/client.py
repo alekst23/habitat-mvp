@@ -114,9 +114,25 @@ class AICLClient:
         return self._post(f"jobs/{identifier(dispatch_id)}/generate", {
             "task_run_id": identifier(task_run_id), "attempt_id": identifier(attempt_id)})
 
+    def browser_prepare(self, dispatch_id, task_run_id, attempt_id):
+        """Prepare reviewed browsing or persist an owner wait, without credentials."""
+        return self._post(f"jobs/{identifier(dispatch_id)}/browser/prepare", {
+            "task_run_id": identifier(task_run_id), "attempt_id": identifier(attempt_id)})
+
     def complete_attempt(self, dispatch_id, task_run_id, attempt_id, validation):
         return self._post(f"jobs/{identifier(dispatch_id)}/complete-attempt", {
             "task_run_id": identifier(task_run_id), "attempt_id": identifier(attempt_id), "validation": validation})
+
+    def request_owner(self, dispatch_id, task_run_id, workflow_run_id, *, kind, title, reason, details=None, dedupe_key):
+        return self._post(f"jobs/{identifier(dispatch_id)}/owner-request", {
+            "task_run_id": identifier(task_run_id), "workflow_run_id": identifier(workflow_run_id),
+            "kind": kind, "title": title, "reason": reason, "details": details or {}, "dedupe_key": dedupe_key})
+
+    def browser_page(self, dispatch_id, task_run_id, workflow_run_id, request_id, url):
+        """Read one authorized page. No browser credentials enter this worker."""
+        return self._post(f"jobs/{identifier(dispatch_id)}/browser/page", {
+            "task_run_id": identifier(task_run_id), "workflow_run_id": identifier(workflow_run_id),
+            "request_id": identifier(request_id), "url": url})
 
     def finish(self, dispatch_id, task_run_id):
         return self._post(f"jobs/{identifier(dispatch_id)}/finish", {"task_run_id": identifier(task_run_id)})

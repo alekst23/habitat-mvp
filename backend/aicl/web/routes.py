@@ -187,9 +187,16 @@ def web_router(ctx) -> APIRouter:
             return RedirectResponse("/", status_code=303)
         view = SqliteProjectionService(ctx.db, ctx.clock, ctx.settings.hold_stale_seconds).workspace(auth)
         workflow = workflow_service(ctx).overview(auth) if commerce_enabled else None
+        pending_requests = []
+        if commerce_enabled:
+            from aicl.owner_requests.factory import owner_request_service
+            pending_requests = owner_request_service(ctx).list(auth)
         return _page("workspace", title="Your workspace", instances=view.instances,
                      judge_demo_mode=ctx.settings.judge_demo_mode,
                      commerce_enabled=commerce_enabled, workflow=workflow,
+                     pending_count=len(pending_requests), pending_requests=pending_requests[:3],
+                     agent_request_counts={i.id: sum(r["instance_id"] == i.id for r in pending_requests)
+                                           for i in view.instances},
                      **sidebar_context(ctx, auth))
 
     def wizard_form(auth, status=200, **values):

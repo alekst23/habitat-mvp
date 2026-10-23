@@ -29,7 +29,9 @@ def test_test_composition_registers_every_port_route_and_hook(base_env, tmp_path
     assert report.port_names == FINAL_REQUIRED_PORTS == ports.REQUIRED_PORTS
     assert report.route_factory_names == tuple(f.__name__ for f in routes.ROUTE_FACTORIES)
     assert {"manage_router", "commerce_router", "workflow_router", "render_router"} <= set(report.route_factory_names)
-    assert len(report.route_factory_names) == 8
+    assert len(report.route_factory_names) == 9
+    assert "owner_requests_router" in report.route_factory_names
+    assert {"/requests", "/requests/{request_id}/respond"} <= report.route_paths
     assert not any(path.startswith("/internal/render") for path in report.route_paths)
     assert report.hook_names == FINAL_STARTUP_HOOKS == tuple(h.__name__ for h in hooks.STARTUP_HOOKS)
     assert {"/instances/{instance_id}", "/connections", "/instances/{instance_id}/resolve-gate", "/workspace",

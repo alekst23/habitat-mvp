@@ -59,7 +59,8 @@ def test_ad_seller_migration_preserves_paid_pending_rows_and_append_only_receipt
 
     def assert_preserved():
         after = snapshot(env.db, original_columns)
-        for table in ("workflow_inference_attempt", "render_dispatch", "render_dispatch_attempt", "render_compute_usage", "judge_demo_workspace"):
+        for table in ("workflow_inference_attempt", "render_dispatch", "render_dispatch_attempt", "render_compute_usage", "judge_demo_workspace",
+                      "assistant_session", "assistant_turn", "assistant_message", "assistant_proposal", "assistant_tool_event", "assistant_inference_attempt", "owner_request", "browser_session", "browser_attempt_evidence", "browser_purchase_proposal"):
             assert after.pop(table) == []
         model = "gpt-6-sol-2026-10-22"
         render = "render-flex-bound-2026-10-22"
@@ -84,7 +85,7 @@ def test_ad_seller_migration_preserves_paid_pending_rows_and_append_only_receipt
         assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
         assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
         after_triggers = [tuple(row) for row in conn.execute("SELECT name,sql FROM sqlite_master WHERE type='trigger' ORDER BY name")]
-        new_names = {"render_compute_no_update", "render_compute_no_delete"}
+        new_names = {"render_compute_no_update", "render_compute_no_delete", "browser_purchase_proposal_snapshot_immutable"}
         assert [row for row in after_triggers if row[0] not in new_names] == triggers
         assert {row[0] for row in after_triggers} - {row[0] for row in triggers} == new_names
         assert conn.execute("SELECT 1 FROM schema_migration WHERE version='0015_mock_ad_merchant'").fetchone()

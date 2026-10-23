@@ -64,12 +64,9 @@ def commerce_router(ctx) -> APIRouter:
         if order["state"] == "completed":
             if order.get("purchase_id"):
                 job = workflow.payment_completed(auth, order)
-                if job is not None:
-                    return RedirectResponse(
-                        "/audit?" + urlencode({"view": "purchases", "instance_id": order["instance_id"],
-                                               "notice": "payment_completed"}), 303)
-                purchase = service.purchase(auth, order["purchase_id"])
-                return back(order["instance_id"], notice="payment_completed", section="task", run_id=purchase["run_id"])
+                return RedirectResponse(
+                    "/requests?" + urlencode({"selected": "purchase:" + order["purchase_id"],
+                                              "notice": "payment_completed"}), 303)
             return back(order["instance_id"], notice="funding_completed", section="setup")
         return RedirectResponse(f"/commerce/orders/{order['id']}", 303)
 
@@ -130,6 +127,7 @@ def commerce_router(ctx) -> APIRouter:
             "checkout", title="Checkout", order=order, purchase=purchase,
             run=service.run(auth, purchase["run_id"]) if purchase else None,
             workflow_job=workflow_job,
+            request_url=("/requests?" + urlencode({"selected": "purchase:" + purchase["id"]})) if purchase else "",
             buyer_choices=DEMO_BUYERS,
             paypal_return=paypal_return,
             paypal_approval_expired=bool(order.get("is_paypal_sandbox") and purchase

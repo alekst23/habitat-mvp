@@ -22,9 +22,10 @@ CAPABILITY_COPY = {
 TEMPLATES = {
     "instance": """{% extends "base" %}{% set page_key = "instance" %}
 {% block eyebrow %}{% if commerce %}YOUR AGENT WORKSPACE{% else %}AGENT CONTROL ROOM{% endif %}{% endblock %}
-{% block subtitle %}{% if commerce %}Set funding and boundaries for scheduled work. Review requests and deliverables in Audit.{% else %}Set the boundaries. Review the activity. Stay in control.{% endif %}{% endblock %}
+{% block subtitle %}{% if commerce %}Set funding and boundaries for scheduled work. Respond in Requests and review completed work in Audit.{% else %}Set the boundaries. Review the activity. Stay in control.{% endif %}{% endblock %}
 {% block header_actions %}{% if commerce %}<a class="button primary" href="/instances/{{ d.snapshot.id }}/workflow">Goals &amp; schedule</a><a class="button secondary" href="/audit?instance_id={{ d.snapshot.id }}">Audit</a>{% endif %}<a class="button secondary" href="/workspace">Back to workspace</a>{% endblock %}
 {% block body %}
+{% set request_instance_id = d.snapshot.id %}{% include "requests/attention" %}
 {% if commerce %}{% include "commerce/style" %}{% endif %}
 <div id="instance-state">
 {% if notice %}<div class="notice success" role="status">{{ notice }}</div>{% endif %}
@@ -80,7 +81,7 @@ TEMPLATES = {
     </div>{% if commerce %}</details>{% else %}</section>{% endif %}
     {% endif %}
     <section class="card section-anchor" id="tool-confirmations"><div class="card-header"><div><span class="kicker">TOOL APPROVAL</span><h2>Tool confirmations</h2></div><span class="status-badge draft">{{ d.pending_actions|length }} pending</span></div><div class="card-body">
-    {% if commerce and commerce.attention_count %}<p class="field-hint"><a href="/audit?view=purchases&amp;instance_id={{ d.snapshot.id }}">Review purchase requests in Audit.</a></p>{% endif %}
+    {% if commerce and commerce.attention_count %}<p class="field-hint"><a href="/requests?instance_id={{ d.snapshot.id }}">Review agent requests.</a></p>{% endif %}
     {% for p in d.pending_actions %}<div class="pending panel" data-pending="{{ p.id }}" data-csrf="{{ csrf }}"><h3>{{ p.capability }}</h3><div class="preview-grid">{% for k, v in p.preview.items() %}<p><span class="muted">{{ k }}</span><br>{{ v }}</p>{% endfor %}</div>
     <p class="field-hint">Confirmation permits this specific action once. Submit the same request again to execute it.</p><button type="button" class="confirm primary">Confirm</button><p role="status" aria-live="polite"></p></div>
     {% else %}<div class="empty-state"><p>No tool confirmations are waiting.</p><p class="muted">Actions that send or post require your approval before they can proceed.</p></div>{% endfor %}

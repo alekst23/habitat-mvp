@@ -1,6 +1,6 @@
 """Durable Render dispatch with authority and accounting retained by AICL.
 
-A single reviewed PocketPlan workflow is supported. Scheduler identity can queue
+Reviewed PocketPlan and browser-proposal workflows are supported. Scheduler identity can queue
 eligible occurrences; worker identity can execute only its bound task. Neither
 identity has a purchase approval or payment capability. Network I/O never holds
 a SQLite transaction. Unknown provider outcomes are never automatically resent.
@@ -13,6 +13,7 @@ import json
 import math
 import re
 import uuid
+from urllib.parse import urlsplit, urlunsplit
 
 from aicl.control.auth import AuthContext
 from aicl.control.audit import AuditEvent
@@ -30,9 +31,10 @@ _RUN_ID = re.compile(r"^[A-Za-z0-9_.:-]{1,200}$")
 
 
 class RenderExecution:
-    def __init__(self, workflow):
+    def __init__(self, workflow, *, browser=None):
         self.workflow = workflow
         self.db, self.clock, self.commerce = workflow.db, workflow.clock, workflow.commerce
+        self.browser = browser
 
     def _auth(self, conn, instance_id):
         row = conn.execute("SELECT * FROM agent_instance WHERE id=?", (instance_id,)).fetchone()
@@ -62,10 +64,13 @@ class RenderExecution:
         if not isinstance(task_run_id, str) or not _RUN_ID.fullmatch(task_run_id):
             raise AiclError("validation_failed", "A valid Render task run identity is required.")
 
-    def _enqueue(self, conn, auth, config, scheduled_for, *, job=None, retry_blocked=False):
+    def _enqueue(self, conn, auth, config, scheduled_for, *, job=None, retry_blocked=False, owner_request_id=None):
         kind = "continuation" if job else "schedule"
         key = "continue:" + job["id"] if job else scheduled_for
-        prior = (conn.execute("SELECT * FROM render_dispatch WHERE continuation_run_id=? ORDER BY rowid DESC LIMIT 1", (job["id"],)).fetchone()
+        if owner_request_id:
+            key += ":request:" + owner_request_id
+        prior = (conn.execute("SELECT * FROM render_dispatch WHERE instance_id=? AND scheduled_for=? AND kind=?", (config["instance_id"], key, kind)).fetchone()
+                 if owner_request_id else conn.execute("SELECT * FROM render_dispatch WHERE continuation_run_id=? ORDER BY rowid DESC LIMIT 1", (job["id"],)).fetchone()
                  if job else conn.execute("SELECT * FROM render_dispatch WHERE instance_id=? AND scheduled_for=? AND kind=?",
                                           (config["instance_id"], key, kind)).fetchone())
         if prior:
@@ -73,8 +78,8 @@ class RenderExecution:
                 key += ":" + str(uuid.uuid4())
             else:
                 return prior
-        if config.get("scenario") != SCENARIO or self.workflow.inference is None:
-            raise AiclError("denied", "Render requires the reviewed PocketPlan workflow and configured real inference.", reason="unsupported_workflow")
+        if config.get("scenario") not in (SCENARIO, "browser_purchase") or self.workflow.inference is None:
+            raise AiclError("denied", "Render requires a reviewed advertising or browser purchase workflow and configured inference.", reason="unsupported_workflow")
         self.workflow._require_demo_active(conn, auth)
         if not config["enabled"]:
             raise AiclError("denied", "The schedule is paused.", reason="schedule_paused")
@@ -110,6 +115,109 @@ class RenderExecution:
             raise AiclError("denied", "Complete payment before continuing.")
         config = self.workflow._config(conn, auth, job["instance_id"])
         self._enqueue(conn, auth, config, to_iso(self.clock.now()), job=job, retry_blocked=retry_blocked)
+
+    def enqueue_owner_continuation(self, conn, auth, job):
+        from aicl.owner_requests.service import OwnerRequestService
+        if OwnerRequestService(self.workflow).pending_for_job(conn, job["id"]):
+            raise AiclError("denied", "This job still needs an owner response.")
+        request = conn.execute("SELECT id FROM owner_request WHERE workflow_run_id=? AND status='resolved' ORDER BY rowid DESC LIMIT 1", (job["id"],)).fetchone()
+        if not request or conn.execute("SELECT 1 FROM owner_request WHERE workflow_run_id=? AND status='declined'", (job["id"],)).fetchone():
+            raise AiclError("denied", "A verified owner response is required.")
+        config = self.workflow._config(conn, auth, job["instance_id"])
+        return self._enqueue(conn, auth, config, to_iso(self.clock.now()), job=job,
+                             retry_blocked=True, owner_request_id=request["id"])
+
+    def request_owner(self, dispatch_id, task_run_id, job_id, kind, title, reason, details, dedupe_key):
+        """A worker may ask its owner, never supply their response or identity."""
+        from aicl.owner_requests.service import OwnerRequestService
+        with self.db.transaction() as conn:
+            row = self._row(conn, dispatch_id, task_run_id)
+            if row["state"] != "running":
+                raise AiclError("denied", "The Render job is not running.")
+            job = conn.execute("SELECT * FROM mock_workflow_run WHERE id=? AND instance_id=?", (job_id, row["instance_id"])).fetchone()
+            mapped = conn.execute("SELECT 1 FROM render_dispatch_attempt m JOIN workflow_inference_attempt a ON a.id=m.attempt_id WHERE m.dispatch_id=? AND a.workflow_run_id=?", (dispatch_id, job_id)).fetchone()
+            bound = job is not None and (job["id"] == row["continuation_run_id"] if row["kind"] == "continuation"
+                                         else job["occurrence_id"] == row["occurrence_id"] or mapped)
+            if not bound:
+                raise AiclError("not_found", "Job is not part of this Render task.")
+            if conn.execute("SELECT 1 FROM workflow_inference_attempt WHERE workflow_run_id=? AND state IN ('inflight','unknown')", (job_id,)).fetchone():
+                raise AiclError("conflict", "Resolve the current provider attempt before requesting owner input.")
+            if kind not in ("clarification", "authentication", "permission"):
+                raise AiclError("validation_failed", "Choose a supported owner request.")
+            auth = self._auth(conn, row["instance_id"])
+            result = OwnerRequestService(self.workflow).create(auth, row["instance_id"], job_id,
+                kind, title, reason, details=details, dedupe_key=dedupe_key)
+            return {"request": result, "state": "waiting_owner"}
+
+    def _browser_job_authority(self, conn, dispatch_id, task_run_id, job_id):
+        """Recheck saved job authority immediately around a browser read."""
+        from aicl.owner_requests.service import OwnerRequestService
+        row = self._row(conn, dispatch_id, task_run_id)
+        if row["state"] != "running":
+            raise AiclError("denied", "The Render job is not running.")
+        job = conn.execute("SELECT * FROM mock_workflow_run WHERE id=? AND instance_id=?", (job_id, row["instance_id"])).fetchone()
+        mapped = conn.execute("SELECT 1 FROM render_dispatch_attempt m JOIN workflow_inference_attempt a ON a.id=m.attempt_id WHERE m.dispatch_id=? AND a.workflow_run_id=?", (dispatch_id, job_id)).fetchone()
+        bound = job is not None and (job["id"] == row["continuation_run_id"] if row["kind"] == "continuation"
+                                     else job["occurrence_id"] == row["occurrence_id"] or mapped)
+        if not bound:
+            raise AiclError("not_found", "Job is not part of this Render task.")
+        auth = self._auth(conn, row["instance_id"])
+        if (job["state"] in ("waiting_owner", "owner_declined")
+                or OwnerRequestService(self.workflow).pending_for_job(conn, job_id)
+                or conn.execute("SELECT 1 FROM owner_request WHERE workflow_run_id=? AND status='declined'", (job_id,)).fetchone()):
+            raise AiclError("denied", "This job still needs an owner response.")
+        self.workflow._require_demo_active(conn, auth)
+        if not self.workflow._config(conn, auth, row["instance_id"])["enabled"]:
+            raise AiclError("denied", "The schedule is paused.", reason="schedule_paused")
+        self.commerce._controls(conn, auth, row["instance_id"])
+        hold = conn.execute("SELECT state FROM budget_hold WHERE id=? AND instance_id=?", (row["hold_id"], row["instance_id"])).fetchone()
+        if (not hold or hold["state"] != "held" or not row["started_at"]
+                or self.clock.now() >= from_iso(row["started_at"]) + timedelta(minutes=MAX_COMPUTE_MINUTES)):
+            raise AiclError("denied", "The worker's bounded compute reservation is no longer active.", reason="budget_unavailable")
+        return auth, row
+
+    def _browser_authority(self, conn, dispatch_id, task_run_id, job_id, request_id):
+        auth, row = self._browser_job_authority(conn, dispatch_id, task_run_id, job_id)
+        request = conn.execute("SELECT * FROM owner_request WHERE id=? AND instance_id=? AND tenant_id=? AND owner_id=? AND kind='authentication'",
+                               (request_id, row["instance_id"], auth.tenant_id, auth.owner_id)).fetchone()
+        if not request:
+            raise AiclError("not_found", "Sign-in request is not available to this agent.")
+        if request["status"] != "resolved":
+            raise AiclError("denied", "This job still needs an owner response.")
+        return auth, row
+
+    def browser_prepare(self, dispatch_id, task_run_id, attempt_id):
+        from aicl.browser.workflow import BrowserPreparation
+        return BrowserPreparation(self).prepare(dispatch_id, task_run_id, attempt_id)
+
+    def browser_page(self, dispatch_id, task_run_id, job_id, request_id, url):
+        """A scoped page read, never raw cookies, browser control or payment authority.
+
+        The broker owns session leases, expiration, URL policy and encrypted
+        credentials. Browser I/O must not hold the application database lock.
+        """
+        if self.browser is None:
+            raise AiclError("unavailable", "Cloud browser service is not configured.")
+        with self.db.transaction() as conn:
+            auth, row = self._browser_authority(conn, dispatch_id, task_run_id, job_id, request_id)
+            self._event(conn, row, "browser_read_requested")
+        page = self.browser.worker_page(auth, request_id, job_id, url,
+            authorize=lambda conn: self._browser_authority(conn, dispatch_id, task_run_id, job_id, request_id))
+        with self.db.transaction() as conn:
+            _, row = self._browser_authority(conn, dispatch_id, task_run_id, job_id, request_id)
+            self._event(conn, row, "browser_read_completed")
+        # Defense in depth: never forward an expanded runtime result verbatim.
+        if not isinstance(page, dict) or any(not isinstance(page.get(key), str) for key in ("url", "title", "text")):
+            raise AiclError("unavailable", "Cloud browser returned an invalid page result.")
+        try:
+            parts = urlsplit(page["url"])
+            if parts.scheme != "https" or not parts.hostname or parts.username or parts.password:
+                raise ValueError()
+            safe_url = urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+        except ValueError:
+            raise AiclError("unavailable", "Cloud browser returned an invalid page location.") from None
+        return {"url": safe_url[:2048], "title": page["title"][:500], "text": page["text"][:20000],
+                "access_verified": False}
 
     def dispatch(self, limit=10):
         if type(limit) is not int or not 1 <= limit <= 20:
@@ -184,14 +292,40 @@ class RenderExecution:
     def _attach(self, conn, row):
         # Only one active dispatch per agent. Retries from later occurrences can
         # re-use a pre-dispatch-blocked attempt, never an inflight one.
-        for attempt in conn.execute("SELECT a.id FROM workflow_inference_attempt a JOIN mock_workflow_run w ON w.id=a.workflow_run_id WHERE w.instance_id=? AND a.state='pending'", (row["instance_id"],)).fetchall():
+        for attempt in conn.execute("SELECT a.id FROM workflow_inference_attempt a JOIN mock_workflow_run w ON w.id=a.workflow_run_id WHERE w.instance_id=? AND w.state NOT IN ('waiting_owner','owner_declined') AND a.state='pending'", (row["instance_id"],)).fetchall():
             conn.execute("INSERT OR IGNORE INTO render_dispatch_attempt(dispatch_id,attempt_id) VALUES (?,?)", (row["id"], attempt["id"]))
 
     def _attempts(self, conn, row):
         out = []
         for a in conn.execute("SELECT a.*,m.result_json FROM render_dispatch_attempt m JOIN workflow_inference_attempt a ON a.id=m.attempt_id WHERE m.dispatch_id=? AND m.completed=0 AND (a.state='pending' OR m.result_json IS NOT NULL)", (row["id"],)):
             job = conn.execute("SELECT * FROM mock_workflow_run WHERE id=?", (a["workflow_run_id"],)).fetchone()
-            out.append({"id": a["id"], "snapshot": json.loads(job["config_json"]), "spec": json.loads(job["spec_json"]), "feedback": a["feedback"]})
+            if job["state"] in ("waiting_owner", "owner_declined"):
+                continue
+            snapshot = json.loads(job["config_json"])
+            # A fresh scheduled/continuation worker must discover a saved handoff
+            # without retaining the old process or receiving its browser state.
+            # This is response metadata, not proof that website access still works.
+            browser_requests = []
+            for request in conn.execute("SELECT r.id,r.details_json,b.credential_expires_at FROM owner_request r "
+                                        "JOIN browser_session b ON b.id=json_extract(r.response_json,'$.browser_session_id') "
+                                        "WHERE r.instance_id=? AND r.kind='authentication' AND r.status='resolved' "
+                                        "AND json_extract(r.response_json,'$.decision')='session_provided' "
+                                        "AND b.instance_id=r.instance_id AND b.tenant_id=r.tenant_id AND b.owner_id=r.owner_id "
+                                        "AND b.request_id=r.id AND b.mode='owner' AND b.state='complete' "
+                                        "AND b.domain=json_extract(r.details_json,'$.domain') "
+                                        "AND b.secret_ref IS NOT NULL AND b.credential_expires_at>? "
+                                        "AND NOT EXISTS (SELECT 1 FROM owner_request p WHERE p.instance_id=r.instance_id "
+                                        "AND p.kind='authentication' AND p.status='pending' AND json_extract(p.details_json,'$.domain')=b.domain) "
+                                        "ORDER BY r.created_at,r.id",
+                                        (row["instance_id"], to_iso(self.clock.now()))):
+                details = json.loads(request["details_json"])
+                browser_requests.append({"request_id": request["id"], "domain": details["domain"],
+                                         "requested_access": details.get("requested_access", ""),
+                                         "credential_expires_at": request["credential_expires_at"],
+                                         "access_verified": False})
+            if browser_requests:
+                snapshot["browser_requests"] = browser_requests
+            out.append({"id": a["id"], "workflow_run_id": job["id"], "snapshot": snapshot, "spec": json.loads(job["spec_json"]), "feedback": a["feedback"]})
         return out
 
     def _result(self, conn, row):
@@ -259,6 +393,11 @@ class RenderExecution:
             if row["state"] != "running":
                 raise AiclError("denied", "The Render job is not running.")
             auth = self._auth(conn, row["instance_id"])
+            if json.loads(job["config_json"]).get("scenario") == "browser_purchase":
+                from aicl.browser.workflow import BrowserPreparation
+                self._browser_job_authority(conn, dispatch_id, task_run_id, job["id"])
+                if not BrowserPreparation(self).ready(conn, auth, job, attempt_id):
+                    raise AiclError("denied", "Read the authorized website before preparing its purchase proposal.", reason="connection_unavailable")
         claimed = self.workflow.inference._claim(auth, attempt_id)
         if claimed is None:
             with self.db.reader() as conn:
@@ -266,7 +405,7 @@ class RenderExecution:
                 return {"state": attempt["state"], "result": None}
         attempt, job = claimed
         try:
-            result = self.workflow.inference.adapter.generate(json.loads(job["config_json"]), json.loads(job["spec_json"]), attempt["feedback"])
+            result = self.workflow.inference.adapter.generate(self.workflow.inference.input_snapshot(job), json.loads(job["spec_json"]), attempt["feedback"])
         except InferenceNoChargeError as error:
             self.workflow.inference._failure(auth, attempt, job, no_charge=True, reason=error.reason)
         except Exception:
@@ -297,7 +436,8 @@ class RenderExecution:
             auth = self._auth(conn, row["instance_id"])
             # Server re-validates saved criteria, usage and content. Worker flags
             # can reject an output but cannot fabricate usage or declare success.
-            self.workflow.inference._settle(auth, dict(attempt), dict(job), result)
+            self.workflow.inference._settle(auth, dict(attempt), dict(job), result,
+                proposal_authorize=lambda current: self._browser_job_authority(current, dispatch_id, task_run_id, job["id"]))
             conn.execute("UPDATE render_dispatch_attempt SET completed=1 WHERE dispatch_id=? AND attempt_id=?", (dispatch_id, attempt_id))
             return {"state": conn.execute("SELECT state FROM workflow_inference_attempt WHERE id=?", (attempt_id,)).fetchone()[0]}
 
@@ -328,7 +468,8 @@ class RenderExecution:
                 raise AiclError("conflict", "A provider request is still in flight or unresolved. Its reservation remains held.")
             auth = self._auth(conn, row["instance_id"])
             config = self.workflow._config(conn, auth, row["instance_id"])
-            if row["kind"] == "schedule" and config["enabled"] and config["demo_time"] == row["scheduled_for"] and not self.workflow._demo_expired(conn, auth.owner_id):
+            if (row["kind"] == "schedule" and json.loads(row["config_json"]).get("scenario") == SCENARIO
+                    and config["enabled"] and config["demo_time"] == row["scheduled_for"] and not self.workflow._demo_expired(conn, auth.owner_id)):
                 try:
                     with self.db.transaction():
                         self.commerce._controls(conn, auth, row["instance_id"])
@@ -338,6 +479,7 @@ class RenderExecution:
                     pass  # Observed model usage still settles after pause.
             if self._attempts(conn, row):
                 return self._result(conn, row)
+            waiting_owner = conn.execute("SELECT 1 FROM mock_workflow_run WHERE state='waiting_owner' AND (occurrence_id=? OR id=?)", (row["occurrence_id"], row["continuation_run_id"])).fetchone()
             unresolved = conn.execute("SELECT 1 FROM render_dispatch_attempt m JOIN workflow_inference_attempt a ON a.id=m.attempt_id WHERE m.dispatch_id=? AND a.state IN ('inflight','unknown','blocked','released')", (dispatch_id,)).fetchone()
-            self._finish_compute(conn, row, "attention" if unresolved else "completed")
+            self._finish_compute(conn, row, "attention" if unresolved or waiting_owner else "completed")
             return self._result(conn, self._row(conn, dispatch_id))

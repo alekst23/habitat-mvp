@@ -130,12 +130,17 @@ def manage_router(ctx) -> APIRouter:
                                           "current_version": error.extra.get("current_version"),
                                           "field_errors": error.extra.get("field_errors") or []}
         commerce = commerce_service.dashboard(auth, instance_id) if commerce_service else None
+        pending_requests = []
+        if commerce:
+            from aicl.owner_requests.factory import owner_request_service
+            pending_requests = owner_request_service(ctx).list(auth, instance_id=instance_id)
         if commerce and not snap.capabilities.get("inference") and not any(
                 item["reason"] == "capability_disabled" for item in commerce["readiness"]["blockers"]):
             commerce["readiness"]["blockers"].append({"reason": "capability_disabled",
                                                        "message": "Enable inference before continuing."})
             commerce["readiness"]["ready"] = False
         html = render("instance", title=snap.name, d=detail, usd=format_usd, error=err, notice=notice,
+                      pending_requests=pending_requests, agent_pending_count=len(pending_requests),
                       commerce=commerce, commerce_feedback=commerce_feedback,
                       execution_mode=ctx.settings.workflow_execution_mode,
                       commerce_request_id=str(uuid.uuid4()),

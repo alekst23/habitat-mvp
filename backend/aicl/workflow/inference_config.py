@@ -10,6 +10,10 @@ from aicl.settings import Settings, SettingsError
 
 
 def add_inference_arguments(parser) -> None:
+    parser.add_argument("--chat", choices=("fake", "openai"), default="fake",
+                        help="openai enables the interviewing and monitoring assistant")
+    parser.add_argument("--assistant-max-spend-micro-usd", type=int, default=1_000_000,
+                        help="separate persistent assistant API allowance (default 1000000 = $1)")
     parser.add_argument("--inference", choices=("mock", "openai"), default="mock",
                         help="openai calls GPT-6 Sol for campaign plans and reports; default is mock")
     parser.add_argument("--inference-key-file", type=Path,
@@ -48,19 +52,24 @@ def read_openai_key_file(path: Path) -> str:
 
 
 def with_inference_settings(settings: Settings, args) -> Settings:
-    if args.inference == "mock" and args.inference_key_file:
+    chat_mode = getattr(args, "chat", "fake")
+    if args.inference == "mock" and chat_mode == "fake" and args.inference_key_file:
         raise SettingsError("--inference", "choose openai when supplying an inference key file")
     key = ""
-    if args.inference == "openai":
+    if args.inference == "openai" or chat_mode == "openai":
         key = (read_openai_key_file(args.inference_key_file) if args.inference_key_file
                else os.environ.get("OPENAI_API_KEY", ""))
     return Settings.model_validate({**settings.model_dump(), "inference_mode": args.inference,
+        "chat_model_mode": chat_mode,
+        "assistant_max_spend_micro_usd": getattr(args, "assistant_max_spend_micro_usd", 1_000_000),
         "openai_api_key": key, "inference_max_spend_micro_usd": args.inference_max_spend_micro_usd})
 
 
 def inference_startup_message(settings: Settings) -> str:
+    assistant = (f" GPT-6 Sol owner assistant enabled; separate allowance ${settings.assistant_max_spend_micro_usd / 1_000_000:.2f}."
+                 if settings.chat_model_mode == "openai" else "")
     if settings.inference_mode == "mock":
-        return "Inference is simulated; no model API calls."
+        return "Workflow inference is simulated." + assistant if assistant else "Inference is simulated; no model API calls."
     return ("GPT-6 Sol inference enabled for campaign plans and reports. "
             f"API spending ceiling: ${settings.inference_max_spend_micro_usd / 1_000_000:.2f} per database; "
-            "AICL budgets and service credit also apply. Advertising remains simulated.")
+            "AICL budgets and service credit also apply. Advertising remains simulated." + assistant)

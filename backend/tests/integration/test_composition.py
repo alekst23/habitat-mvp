@@ -97,7 +97,7 @@ def test_build_ports_requires_exactly_the_clock_and_ignores_later_ticket_ports(b
 @pytest.mark.ac("E11-1.AC1", code="backend/aicl/app.py:create_app")
 def test_create_app_migrates_imports_prices_starts_with_empty_extension_points_and_gates_test_routes(base_env, tmp_path):
     # Machine routes are registered as an extension but enabled only by the explicit Render profile.
-    assert len(routes.ROUTE_FACTORIES) == 8 and len(hooks.STARTUP_HOOKS) == 3
+    assert len(routes.ROUTE_FACTORIES) == 9 and len(hooks.STARTUP_HOOKS) == 3
     assert {"commerce_router", "workflow_router", "render_router"} <= {factory.__name__ for factory in routes.ROUTE_FACTORIES}
 
     dev = create_app(Settings.from_env(base_env))

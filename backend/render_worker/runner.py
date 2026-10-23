@@ -28,6 +28,11 @@ def validate_output(result, plan):
     """Structural checks only; model claims still require owner quality review."""
     if not isinstance(result, dict) or result.get("validation_error"):
         return {"passed": False}
+    request = result.get("owner_request")
+    if request is not None:
+        # The control plane validates exact request fields against cached output.
+        return {"passed": isinstance(request, dict) and request.get("kind") == "clarification"
+                and result.get("content") == "" and result.get("criteria") == []}
     content, checks = result.get("content"), result.get("criteria")
     valid = (isinstance(content, str) and bool(content.strip()) and len(content) <= 30000
              and isinstance(checks, list) and len(checks) == len(plan["criteria"]))
@@ -58,6 +63,17 @@ def execute(client, dispatch_id, task_run_id, *, emit=lambda event: None):
             if len(processed) >= MAX_ATTEMPTS_PER_RUN:
                 raise MachineAPIError("Render task reached its bounded work limit")
             processed.add(plan["attempt_id"])
+            if attempt["snapshot"].get("scenario") == "browser_purchase":
+                # The broker owns login discovery, saved-session reuse and page
+                # evidence. A paused attempt remains durable for a later task;
+                # this worker never keeps a process alive waiting for the owner.
+                prepared = client.browser_prepare(dispatch_id, task_run_id, plan["attempt_id"])
+                if not isinstance(prepared, dict) or prepared.get("state") not in ("ready", "waiting_owner", "blocked"):
+                    raise MachineAPIError("AICL supplied an invalid browser preparation state")
+                emit({"stage": "browser_prepared", "dispatch_id": dispatch_id,
+                      "attempt_id": plan["attempt_id"], "state": prepared["state"]})
+                if prepared["state"] != "ready":
+                    continue
             emit({"stage": "generate", "dispatch_id": dispatch_id, "attempt_id": plan["attempt_id"]})
             generated = client.generate(dispatch_id, task_run_id, plan["attempt_id"])
             if isinstance(generated.get("result"), dict):

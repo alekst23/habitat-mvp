@@ -404,3 +404,14 @@ CSS = r"""
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; } }
 }
 """
+
+CSS += """
+.request-nav-count{margin-left:auto;min-width:21px;padding:1px 6px;border-radius:12px;background:#dce9c3;color:#203e30;font:600 11px/18px system-ui;text-align:center}
+.request-nav-count[hidden]{display:none}
+.request-attention{border:1px solid var(--line);background:var(--surface,#fff);border-radius:10px;margin:0 0 20px;overflow:hidden}
+.request-attention-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:var(--canvas);font-size:13px}
+.request-attention-heading a{font-size:12px;color:var(--forest,#245442)}
+.request-attention ul{list-style:none;margin:0;padding:0}.request-attention li+li{border-top:1px solid var(--line)}
+.request-attention li>a{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;text-decoration:none;color:inherit}
+.request-attention li>a:hover{background:var(--canvas)}.request-attention strong{font-size:13px}.request-attention small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+"""

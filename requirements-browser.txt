@@ -1,0 +1,6 @@
+# Keep the Python package and Chromium image release in browser-service/Dockerfile equal.
+playwright==1.63.0
+fastapi==0.136.3
+starlette==1.8.0
+uvicorn==0.34.0
+pydantic==2.12.5
