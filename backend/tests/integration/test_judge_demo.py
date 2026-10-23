@@ -44,6 +44,7 @@ def test_public_entry_creates_paused_sample_without_email_or_funding(base_env, m
     with TestClient(app, base_url="https://habitat.example", follow_redirects=False) as client:
         page = client.get("/")
         assert page.status_code == 200 and "Try the demo" in page.text and 'name="email"' not in page.text
+        assert page.headers["referrer-policy"] == "same-origin"
         token = re.search(r'name="csrf_token" value="([^"]+)"', page.text)[1]
         entered = client.post("/judge/start", data={"csrf_token": token}, headers={"origin": "https://habitat.example"})
         assert entered.status_code == 303 and entered.headers["location"] == "/workspace"

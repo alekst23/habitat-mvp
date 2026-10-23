@@ -51,6 +51,7 @@ def records(app, table):
 def entry(client):
     page = client.get("/auth/sign-in")
     assert page.status_code == 200
+    assert page.headers["referrer-policy"] == "same-origin"
     nonce = client.cookies[ENTRY_COOKIE]
     assert nonce in page.text and 'action="/judge/start"' in page.text
     return nonce
@@ -60,13 +61,15 @@ def start(client, nonce, **extra):
     return client.post("/judge/start", data={"csrf_token": nonce, **extra}, headers={"origin": ORIGIN})
 
 
-@pytest.mark.parametrize("failure", ["no_origin", "foreign_origin", "cross_site", "no_cookie", "wrong_cookie", "forged_nonce"])
+@pytest.mark.parametrize("failure", ["no_origin", "null_origin", "foreign_origin", "cross_site", "no_cookie", "wrong_cookie", "forged_nonce"])
 def test_entry_requires_same_origin_and_browser_bound_signed_nonce(judge_app, failure):
     with TestClient(judge_app, base_url=ORIGIN, follow_redirects=False) as client:
         nonce = entry(client)
         headers = {"origin": ORIGIN}
         if failure == "no_origin":
             headers = {}
+        elif failure == "null_origin":
+            headers["origin"] = "null"
         elif failure == "foreign_origin":
             headers["origin"] = "https://other.example"
         elif failure == "cross_site":

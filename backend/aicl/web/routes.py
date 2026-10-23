@@ -78,7 +78,8 @@ def web_router(ctx) -> APIRouter:
         token = entry_token(ctx)
         response = _page("judge_entry", title="Try Habitat", csrf=token)
         response.headers["Cache-Control"] = "no-store"
-        response.headers["Referrer-Policy"] = "no-referrer"
+        # HTML form POSTs need their same-origin Origin header for entry CSRF checks.
+        response.headers["Referrer-Policy"] = "same-origin"
         response.set_cookie(ENTRY_COOKIE, token, max_age=ENTRY_TTL_SECONDS, path="/",
                             httponly=True, samesite="strict", secure=True)
         return response
