@@ -75,9 +75,11 @@ test('scheduled work, independent purchases, versioned deliverables and AG Grid 
   await page.goto(audit + '&view=purchases');
   const denied = page.locator('article.workflow-record').filter({ hasText: 'Garden outreach plan' });
   const approved = page.locator('article.workflow-record').filter({ hasText: 'Pilot launch checklist' });
-  await expect(page.getByRole('button', { name: 'Approve purchase', exact: true })).toHaveCount(2);
+  await expect(page.getByRole('link', { name: 'Review request', exact: true })).toHaveCount(2);
+  await expect(page.getByRole('button', { name: 'Approve purchase', exact: true })).toHaveCount(0);
+  const approvedRequestUrl = await approved.getByRole('link', { name: 'Review request', exact: true }).getAttribute('href');
 
-  // The inbox must expose the work and its primary action before any scrolling.
+  // Audit history exposes the work and its link to the owner decision in Requests.
   async function aboveFold(locator: Locator, description: string) {
     await expect(locator, description).toBeVisible();
     const bounds = await locator.boundingBox();
@@ -91,10 +93,10 @@ test('scheduled work, independent purchases, versioned deliverables and AG Grid 
     const firstRequest = page.locator('article.workflow-record').first();
     await aboveFold(firstRequest.getByRole('heading', { level: 3 }), `First request title at ${viewport.width}px`);
     if (viewport.width > 390) {
-      await aboveFold(firstRequest.getByRole('button', { name: 'Approve purchase', exact: true }), `Purchase approval at ${viewport.width}px`);
+      await aboveFold(firstRequest.getByRole('link', { name: 'Review request', exact: true }), `Review request at ${viewport.width}px`);
     }
     const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: innerWidth }));
-    expect(widths.page, `Purchase inbox at ${viewport.width}px`).toBeLessThanOrEqual(widths.viewport + 1);
+    expect(widths.page, `Purchase history at ${viewport.width}px`).toBeLessThanOrEqual(widths.viewport + 1);
     await page.screenshot({ path: `.ctx/scheduled-workflow/purchases-${viewport.width}.png`, fullPage: false });
   }
 
@@ -153,17 +155,30 @@ test('scheduled work, independent purchases, versioned deliverables and AG Grid 
     await expect(page.getByText(otherJob.scope, { exact: true })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Review purchase', exact: true })).toHaveAttribute('href', `/audit?view=purchases&instance_id=${agentPath.split('/')[2]}#${requestId}`);
     await page.getByRole('link', { name: 'Back to purchases', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Purchase inbox', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Purchase history', exact: true })).toBeVisible();
     await expect(page.getByLabel('Agent', { exact: true })).toHaveValue(agentPath.split('/')[2]);
   }
   expect(requestedItems[0]).toBe(requestedItems[1]);
   expect(sourceJobPaths[0]).not.toBe(sourceJobPaths[1]);
 
-  await denied.getByRole('button', { name: 'Decline purchase' }).click();
-  await expect(page.getByRole('status')).toContainText('Purchase declined');
-  await expect(denied).toContainText('No merchant payment was made');
-  await approved.getByRole('radio', { name: /Resume on schedule/ }).check();
-  await approved.getByRole('button', { name: 'Approve purchase', exact: true }).click();
+  await denied.getByRole('link', { name: 'Review request', exact: true }).click();
+  await expect(page).toHaveURL(/\/requests\?selected=purchase%3A/);
+  const requestDetail = page.locator('#request-detail');
+  await expect(page.locator('.requests-item')).toHaveCount(2);
+  await expect(requestDetail).toContainText('Garden outreach plan');
+  await expect(requestDetail.getByRole('link', { name: 'View job', exact: true })).toHaveAttribute('href', sourceJobPaths[1]);
+  await requestDetail.getByRole('button', { name: 'Decline purchase', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Request declined');
+  await expect(requestDetail).toContainText('No merchant payment was made');
+  await expect(page.locator('.requests-item')).toHaveCount(1);
+  await expect(requestDetail.getByRole('button', { name: 'Approve purchase', exact: true })).toHaveCount(0);
+  await page.goto(approvedRequestUrl!);
+  await expect(requestDetail).toContainText('Pilot launch checklist');
+  await expect(requestDetail.getByRole('link', { name: 'View job', exact: true })).toHaveAttribute('href', sourceJobPaths[0]);
+  await expect(requestDetail).toContainText('Approval covers this exact seller, purchase and total');
+  await expect(requestDetail).toContainText('approval alone does not make a payment');
+  await requestDetail.getByRole('radio', { name: 'Continue on schedule', exact: true }).check();
+  await requestDetail.getByRole('button', { name: 'Approve purchase', exact: true }).click();
   const orderUrl = page.url();
   await expect(page.getByRole('link', { name: 'View source job', exact: true })).toHaveAttribute('href', sourceJobPaths[0]);
   await expect(page.getByText(purchaseJobs[0].scope, { exact: true })).toBeVisible();
@@ -173,11 +188,18 @@ test('scheduled work, independent purchases, versioned deliverables and AG Grid 
   await page.getByText('Payment options', { exact: true }).click();
   await page.getByRole('button', { name: 'Mark as pending' }).click();
   await expect(page).toHaveURL(orderUrl);
+  await page.goto(approvedRequestUrl!);
+  await expect(requestDetail).toContainText('Payment is pending');
+  await expect(requestDetail.getByRole('link', { name: 'Review pending payment', exact: true })).toHaveAttribute('href', new URL(orderUrl).pathname);
+  await expect(requestDetail.getByRole('button', { name: 'Approve purchase', exact: true })).toHaveCount(0);
   await page.goto(audit + '&view=deliverables');
   await expect(page.getByRole('link', { name: 'Pilot launch checklist', exact: true })).toHaveCount(0);
   await page.goto(orderUrl);
   await page.getByRole('button', { name: /^Pay \$[\d.]+ with PayPal$/ }).click();
-  await expect(page).toHaveURL(/\/audit\?/);
+  await expect(page).toHaveURL(/\/requests\?selected=purchase%3A/);
+  await expect(page.getByRole('status')).toContainText('Payment confirmed');
+  await expect(requestDetail).toContainText('Payment completed');
+  await expect(page.locator('.requests-item')).toHaveCount(0);
   await page.goto(audit + '&view=deliverables');
   await expect(page.getByRole('link', { name: 'Pilot launch checklist', exact: true })).toHaveCount(0);
   await advance(page);
@@ -217,7 +239,7 @@ test('scheduled work, independent purchases, versioned deliverables and AG Grid 
   await expect(page.getByRole('columnheader', { name: /Amount/ })).toBeVisible();
   await page.screenshot({ path: '.ctx/scheduled-workflow/audit-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const path of [workflowPath, audit + '&view=purchases', audit + '&view=deliverables', audit + '&view=costs']) {
+  for (const path of [workflowPath, approvedRequestUrl!, audit + '&view=purchases', audit + '&view=deliverables', audit + '&view=costs']) {
     await page.goto(path);
     const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: innerWidth }));
     expect(widths.page, path).toBeLessThanOrEqual(widths.viewport + 1);
