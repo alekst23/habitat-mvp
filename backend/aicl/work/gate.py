@@ -443,8 +443,10 @@ class SqliteHoldReconciler:
         with self.db.reader() as conn:
             return [dict(r) for r in conn.execute(
                 "SELECT h.*, i.tenant_id AS tenant_id, i.owner_id AS owner_id FROM budget_hold h JOIN "
-                "agent_instance i ON i.id = h.instance_id WHERE h.state = 'unknown' OR "
-                "(h.state = 'held' AND h.created_at < ?) ORDER BY h.created_at", (cutoff,))]
+                "agent_instance i ON i.id = h.instance_id WHERE NOT EXISTS "
+                "(SELECT 1 FROM workflow_inference_attempt a WHERE a.hold_id = h.id) AND NOT EXISTS "
+                "(SELECT 1 FROM render_dispatch d WHERE d.hold_id = h.id) AND "
+                "(h.state = 'unknown' OR (h.state = 'held' AND h.created_at < ?)) ORDER BY h.created_at", (cutoff,))]
 
     def run_once(self) -> None:
         try:

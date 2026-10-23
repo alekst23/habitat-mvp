@@ -19,6 +19,7 @@ from aicl.creation.routes import field_errors_from
 from aicl.creation.service import create_instance
 from aicl.web.pages import render
 from aicl.web.views import SqliteProjectionService
+from aicl.workflow.factory import workflow_service
 
 
 class FormCsrfShim:
@@ -65,6 +66,7 @@ def web_router(ctx) -> APIRouter:
     csrf = require_csrf(ctx)
     service = ctx.sign_in
     secure = not ctx.settings.test_mode
+    commerce_enabled = ctx.settings.workflow_enabled
 
     def signed_in(request: Request):
         return ctx.auth_provider.resolve(dict(request.cookies))
@@ -119,12 +121,15 @@ def web_router(ctx) -> APIRouter:
         if auth is None:
             return RedirectResponse("/", status_code=303)
         view = SqliteProjectionService(ctx.db, ctx.clock, ctx.settings.hold_stale_seconds).workspace(auth)
+        workflow = workflow_service(ctx).overview(auth) if commerce_enabled else None
         return _page("workspace", title="Your workspace", instances=view.instances,
+                     commerce_enabled=commerce_enabled, workflow=workflow,
                      csrf=ctx.csrf_verifier.token_for(auth.session_id))
 
     def wizard_form(auth, status=200, **values):
         defaults = {"name": "", "instructions": "", "selected": [], "errors": []}
         return _page("wizard", status, title="Create with wizard", key="wiz_" + uuid.uuid4().hex,
+                     commerce_enabled=commerce_enabled,
                      csrf=ctx.csrf_verifier.token_for(auth.session_id), capabilities=CATALOG_CAPABILITIES,
                      **{**defaults, **values})
 
@@ -157,6 +162,6 @@ def web_router(ctx) -> APIRouter:
                 raise
             return wizard_form(auth, 422, name=name, instructions=instructions, selected=selected,
                                errors=exc.extra["field_errors"])
-        return _page("created", title="Agent created", instance=result.instance)
+        return _page("created", title="Agent created", instance=result.instance, commerce_enabled=commerce_enabled)
 
     return router

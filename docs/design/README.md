@@ -1,5 +1,12 @@
 # Design index
 
+## Owner workflow implementation plan
+
+- [Owner workflow change plan](owner-workflow-change-plan.md): current implementation
+  fit, gaps and an ordered mock-only MVP plan for configured deliverable criteria,
+  scheduled work, purchase continuation, AG Grid Audit and versioned output review.
+  Real execution, live providers and deployment remain separate work.
+
 ## PayPal funding and agent purchases
 
 - [Funding specification](paypal-funding/spec.md): captured PayPal top-ups, prepaid

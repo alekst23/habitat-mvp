@@ -1,4 +1,4 @@
-"""Packaged E11 runtime: real owner authentication, simulated providers, no test routes.
+"""Packaged runtime: real owner authentication, explicit workflow profile, no test routes.
 
 Hosting supplies secrets, SMTP and TLS ingress; packaging/configuration checks do
 not provision them. A mounted /data directory must persist outside the container.
@@ -18,6 +18,6 @@ def create_app():
     if settings.database_url != "sqlite:////data/habitat.sqlite":
         raise RuntimeError("packaged runtime requires the /data persistent-volume database path")
     app = compose(settings)
-    if any(getattr(route, "path", "").startswith("/__test__") for route in app.routes):
-        raise RuntimeError("packaged runtime must not expose test routes")
+    if any(getattr(route, "path", "").startswith(("/__test__", "/__demo__")) for route in app.routes):
+        raise RuntimeError("packaged runtime must not expose test or demo helper routes")
     return app

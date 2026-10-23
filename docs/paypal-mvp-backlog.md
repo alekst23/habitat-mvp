@@ -3,7 +3,14 @@
 Updated October 19, 2026. The stable baseline is the **E11 owner-control MVP**,
 including the responsive E11-6 UI. The next release adds both PayPal funding for
 agent inference and owner-approved agent purchases. Design documents, diagrams,
-and the demo script describe that target; they do not enable it.
+and the demo script describe the external integration target.
+
+The [local mock MVP](mock-paypal-mvp.md) now implements the complete rehearsal
+journey with simulated payment, merchant and model adapters. It adds durable
+top-ups and usage accounting, exact purchase approval, separate buyer checkout,
+receipts, delivery and task resume. It credits a selected agent directly and uses
+a cumulative purchase allowance. Real PayPal Sandbox captures, verified webhooks,
+owner-wallet allocations and model calls remain pending below.
 
 ## What the baseline contains
 
@@ -22,8 +29,9 @@ limits, not money. The historical E11 evidence remains tied to its named commits
 
 ## Itemized updates
 
-All items below are pending implementation. Build the owner UI alongside each
-service slice instead of leaving the entire UI until the end.
+The external integration criteria below remain pending. The local mock MVP is a
+working basis for the shared records, controls, UI and runner, but is not evidence
+of PayPal or model execution. Build the owner UI alongside each service slice.
 
 | Order | Update | Depends on | Done when |
 | --- | --- | --- | --- |

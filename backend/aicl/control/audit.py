@@ -27,6 +27,9 @@ EVENT_TYPES: frozenset[str] = frozenset({
     "budget.unknown", "budget.reconciled", "budget.overrun", "budget.late_settlement",
     "auth.signed_in", "auth.signed_out", "auth.link_rate_limited", "auth.link_rejected",
     "access.denied",
+    "commerce.policy_changed", "commerce.order_created", "commerce.checkout_changed",
+    "commerce.payment_recorded", "commerce.purchase_changed", "commerce.run_started",
+    "commerce.run_completed", "commerce.denied",
 })
 # Only these `details` keys survive the writer; any other key is dropped.
 DETAILS_ALLOW_LIST: frozenset[str] = frozenset({
@@ -34,7 +37,7 @@ DETAILS_ALLOW_LIST: frozenset[str] = frozenset({
     "new_micro_usd", "host", "provider", "connection_id", "hold_id", "micro_usd",
     "price_table_version", "denial_reason", "confirmation_id", "payload_digest_prefix",
     "template_id", "surface", "target_kind", "count", "reason_code", "token_hash_prefix",
-    "email_hash_prefix",
+    "email_hash_prefix", "mode", "order_id", "purchase_id", "receipt_id", "run_id", "purpose", "amount_minor",
 })
 # Only pre-authentication system events may carry a null tenant/owner.
 NULL_IDENTITY_EVENT_TYPES: frozenset[str] = frozenset({"auth.link_rate_limited", "auth.link_rejected"})

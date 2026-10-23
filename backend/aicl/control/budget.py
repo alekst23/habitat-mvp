@@ -102,7 +102,7 @@ class BudgetPort(Protocol):
     `conflict` and `unavailable` per technical.md.
     """
 
-    def reserve(self, conn: Connection, instance_id: str, work_id: str, estimate: Estimate) -> Hold: ...
+    def reserve(self, conn: Connection, instance_id: str, work_id: str, estimate: Estimate, *, price_table_version: str | None = None) -> Hold: ...
 
     def settle(self, conn: Connection, hold_id: str, measured: MeasuredUsage) -> Usage: ...
 
@@ -202,11 +202,13 @@ class SqliteBudgetPort:
             return op(conn, *args)
 
     # -- operations ----------------------------------------------------------------------------
-    def reserve(self, conn, instance_id, work_id, estimate):
+    def reserve(self, conn, instance_id, work_id, estimate, *, price_table_version=None):
         inst = self._instance(conn, instance_id)
         existing = conn.execute("SELECT * FROM budget_hold WHERE instance_id = ? AND work_id = ?",
                                 (instance_id, work_id)).fetchone()
         if existing is not None:
+            if price_table_version is not None and existing["price_table_version"] != price_table_version:
+                raise AiclError("conflict", "work_id already reserved with a different price version")
             if (existing["est_input_tokens"], existing["est_output_tokens"], existing["est_compute_minutes"]) != (
                     estimate.inference_input_tokens, estimate.inference_output_tokens, estimate.compute_minutes):
                 raise AiclError("conflict", "work_id already reserved with a different estimate",
@@ -216,8 +218,8 @@ class SqliteBudgetPort:
         if any(not isinstance(v, int) or isinstance(v, bool) or v < 0 for v in values):
             raise AiclError("validation_failed", "estimate must be nonnegative integers")
         now = self.clock.now()
-        version = effective_version(conn, now)
-        if version is None:
+        version = load_version(conn, price_table_version) if price_table_version else effective_version(conn, now)
+        if version is None or version.effective_from > now:
             raise _denied("price_unavailable")
         if self._blocking(conn, instance_id, now) > 0:
             raise _denied("reconciliation_pending")

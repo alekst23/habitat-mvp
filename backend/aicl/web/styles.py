@@ -69,24 +69,29 @@ CSS = r"""
 @layer components {
   .skip-link { position: fixed; left: 12px; top: -70px; z-index: 100; padding: 12px 18px; border-radius: 8px; background: var(--green); color: white; }
   .skip-link:focus { top: 12px; color: white; }
-  .app-shell { min-height: 100vh; display: grid; grid-template-columns: 224px minmax(0, 1fr); }
-  .sidebar { position: sticky; top: 0; align-self: start; height: 100vh; background: #1f3d30; color: #eaf0e6; padding: 32px 20px 22px; display: flex; flex-direction: column; }
+  .app-shell { min-height: 100vh; display: grid; grid-template-columns: 196px minmax(0, 1fr); --radius: 12px; }
+  .sidebar { position: sticky; top: 0; align-self: start; height: 100vh; background: #1f3d30; color: #eaf0e6; padding: 22px 12px 18px; display: flex; flex-direction: column; }
   .brand { display: flex; align-items: center; gap: 11px; color: inherit; text-decoration: none; }
   .brand:hover { color: inherit; }
   .brand-mark { width: 35px; height: 40px; flex: 0 0 35px; display: grid; place-items: center; color: #c9d9b6; }
   .brand-mark svg { width: 35px; height: 40px; }
   .brand-name { display: block; font-size: 24px; font-family: Georgia, serif; letter-spacing: -.6px; line-height: 1.15; }
   .brand-tagline { display: block; font-size: 9px; letter-spacing: 1.65px; text-transform: uppercase; opacity: .65; margin-top: 4px; }
-  .nav-list { padding: 0; list-style: none; display: grid; gap: 7px; margin-top: 52px; }
-  .nav-link { display: flex; align-items: center; gap: 12px; border-radius: 8px; padding: 12px 14px; color: #cad8c9; text-decoration: none; font-size: 13px; font-weight: 500; }
+  .sidebar .brand { gap: 9px; padding: 0 5px; }
+  .sidebar .brand-mark, .sidebar .brand-mark svg { width: 28px; height: 32px; }
+  .sidebar .brand-mark { flex-basis: 28px; }
+  .sidebar .brand-name { font-size: 23px; }
+  .sidebar .brand-tagline { font-size: 8px; letter-spacing: 1px; }
+  .nav-list { padding: 0; list-style: none; display: grid; gap: 4px; margin-top: 28px; }
+  .nav-link { display: flex; align-items: center; gap: 10px; border-radius: 7px; min-height: 42px; padding: 10px 12px; color: #cad8c9; text-decoration: none; font-size: 13px; font-weight: 500; }
   .nav-link:hover { color: #fff; background: #ffffff0d; }
   .nav-link.active, .nav-link[aria-current=page] { background: #d7e3c914; color: #f5f9ee; box-shadow: inset 3px 0 #bed0a4; }
   .nav-icon { width: 19px; height: 19px; display: grid; place-items: center; opacity: .9; }
   .nav-icon svg { width: 18px; height: 18px; }
-  .sidebar-footer { margin-top: auto; padding: 19px 12px 0; border-top: 1px solid #ffffff1f; font-size: 11px; line-height: 1.7; color: #afc1af; }
+  .sidebar-footer { margin-top: auto; padding: 14px 8px 0; border-top: 1px solid #ffffff1f; font-size: 11px; line-height: 1.6; color: #afc1af; }
   .sidebar-footer strong { color: #dce7d7; display: block; font-weight: 500; margin-bottom: 3px; }
   .app-main { min-width: 0; }
-  .topbar { min-height: 74px; padding: 16px 40px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); background: #fafbf7; }
+  .topbar { min-height: 44px; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); background: #fafbf7; }
   .breadcrumb { color: #778277; font-size: 12px; display: flex; align-items: center; gap: 12px; }
   .breadcrumb a { text-decoration: none; color: #778277; }
   .breadcrumb strong, .breadcrumb span:last-child { font-weight: 500; color: #3e5145; }
@@ -117,11 +122,12 @@ CSS = r"""
   .stat-value small { font-size: 13px; letter-spacing: 0; color: var(--muted); }
   .stat-note { color: #829078; font-size: 11px; display: block; margin-top: 7px; }
   .agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); list-style: none; padding: 0; gap: 18px; }
-  .agent-card { background: white; border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: flex; flex-direction: column; gap: 16px; transition: border-color .15s, box-shadow .15s; min-width: 0; }
-  .agent-card:hover { border-color: #aabca0; box-shadow: 0 5px 20px #203c3108; }
+  .agent-card-item { display: flex; min-width: 0; }
+  .agent-card { background: white; border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: flex; flex: 1; flex-direction: column; gap: 16px; color: var(--text); text-decoration: none; transition: border-color .15s, box-shadow .15s; min-width: 0; }
+  .agent-card:hover, .agent-card:focus-visible { border-color: #aabca0; box-shadow: 0 5px 20px #203c3108; color: var(--text); }
   .agent-avatar { width: 42px; height: 42px; border-radius: 12px; background: #edf1e5; color: #6a8059; display: grid; place-items: center; font-size: 20px; font-family: Georgia, serif; flex: 0 0 42px; }
   .agent-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .agent-card h3 a { color: var(--ink); font-size: 18px; text-decoration: none; }
+  .agent-card h3 { color: var(--ink); font-size: 18px; }
   .agent-card p { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
   .agent-card > .card-body { padding: 0; }
   .card-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid #edf0e8; display: flex; gap: 10px; align-items: center; justify-content: space-between; color: #73816c; font-size: 11px; }
@@ -179,6 +185,15 @@ CSS = r"""
   nav.section-anchor { display: flex; gap: 22px; margin: -5px 0 25px; padding-bottom: 12px; border-bottom: 1px solid var(--line); overflow-x: auto; }
   nav.section-anchor a { white-space: nowrap; color: var(--muted); font-size: 12px; text-decoration: none; padding: 8px 0; }
   nav.section-anchor a:hover { color: var(--green); }
+  nav.section-anchor .task-nav { color: var(--green); font-weight: 700; }
+  .simulation-note { padding: 10px 14px; margin-bottom: 20px; font-size: 11px; }
+  .controls-heading { margin-top: 36px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .control-diagnostics > summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 20px 24px; cursor: pointer; list-style: none; }
+  .control-diagnostics > summary::-webkit-details-marker { display: none; }
+  .control-diagnostics > summary > span:first-child { display: grid; gap: 5px; }
+  .control-diagnostics > summary::after { content: '+'; font-size: 20px; color: var(--green); }
+  .control-diagnostics[open] > summary { border-bottom: 1px solid var(--line); }
+  .control-diagnostics[open] > summary::after { content: '−'; }
   #budgets, #capabilities, #activity { margin-top: 26px; }
   #activity > section + section { margin-top: 22px; }
   .limit-grid { margin: 16px 0 10px; }
@@ -242,14 +257,50 @@ CSS = r"""
   .flow-node { display: flex; align-items: center; gap: 16px; }
   .flow-node p { font-size: 12px; color: #79836e; margin-top: 6px; }
   .flow-line { width: 1px; height: 28px; margin: auto; background: #a9bb96; }
+  /* Keep the working app dense; public landing and sign-in retain their spacing. */
+  .app-shell .page-content { padding: 20px 24px 40px; }
+  .app-shell .page-header { align-items: center; gap: 16px; margin-bottom: 18px; }
+  .app-shell .page-header .eyebrow { display: none; }
+  .app-shell h1 { font-size: 30px; letter-spacing: -.8px; }
+  .app-shell .page-subtitle { margin-top: 5px; line-height: 1.45; max-width: 780px; }
+  .app-shell .page-actions, .app-shell .button-row { gap: 8px; }
+  .app-shell button, .app-shell .button { min-height: 38px; padding: 8px 12px; }
+  .app-shell .small { min-height: 32px; padding: 6px 10px; }
+  .app-shell input:not([type=hidden]):not([type=checkbox]):not([type=radio]),
+  .app-shell select { min-height: 38px; padding: 8px 10px; }
+  .app-shell textarea { padding: 9px 10px; }
+  .app-shell .card-header { padding: 14px 16px; gap: 12px; }
+  .app-shell .card-body { padding: 16px; }
+  .app-shell .card-body > * + * { margin-top: 12px; }
+  .app-shell .card-body > input[type=hidden] + * { margin-top: 0; }
+  .app-shell .section-heading { margin: 20px 0 10px; gap: 12px; }
+  .app-shell .stat-grid { gap: 12px; margin-bottom: 18px; }
+  .app-shell .stat-card { padding: 14px 16px; }
+  .app-shell .stat-value { font-size: 27px; margin-top: 4px; line-height: 1.2; }
+  .app-shell .stat-note { margin-top: 5px; }
+  .app-shell .agent-grid { gap: 14px; }
+  .app-shell .agent-card { padding: 18px; gap: 12px; }
+  .app-shell .agent-card > .card-body { padding: 0; }
+  .app-shell .card-footer { padding-top: 12px; }
+  .app-shell .form-grid { gap: 16px; }
+  .app-shell .form-actions { padding-top: 16px; margin-top: 16px; gap: 12px; }
+  .app-shell .field { gap: 5px; }
+  .app-shell .notice { padding: 10px 12px; margin-bottom: 14px; }
+  .app-shell .detail-grid, .app-shell .split-layout { gap: 18px; }
+  .app-shell .main-column, .app-shell .side-column { gap: 16px; }
+  .app-shell .guide-card { padding: 18px; }
+  .app-shell .connection-card { padding: 18px; gap: 12px; }
+  .app-shell nav.section-anchor { margin-bottom: 18px; gap: 18px; padding-bottom: 8px; }
+  .app-shell .control-diagnostics > summary { padding: 14px 16px; }
+  .app-shell .controls-heading { margin-top: 24px; padding-top: 20px; }
+  .app-shell .workspace-footer { margin-top: 24px; padding-top: 16px; }
+  .app-shell th, .app-shell td { padding: 10px 12px; }
 }
 @layer responsive {
-  @media (min-width: 1600px) { .page-content { padding-top: 44px; } }
   @media (max-width: 1180px) {
-    .app-shell { grid-template-columns: 195px minmax(0, 1fr); }
-    .sidebar { padding: 28px 14px 20px; }
-    .topbar { padding: 16px 26px; }
-    .page-content { padding: 30px 26px 50px; }
+    .app-shell { grid-template-columns: 184px minmax(0, 1fr); }
+    .topbar { padding-inline: 20px; }
+    .app-shell .page-content { padding: 20px 20px 36px; }
     .page-header { align-items: flex-start; flex-wrap: wrap; }
     .detail-grid { grid-template-columns: minmax(0, 1fr); }
     .side-column { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
@@ -259,15 +310,24 @@ CSS = r"""
   }
   @media (max-width: 800px) {
     .app-shell { display: block; }
-    .sidebar { position: static; height: auto; padding: 18px 22px 0; }
-    .sidebar .brand-name { font-size: 22px; }
-    .sidebar .brand-mark { width: 28px; height: 32px; }
-    .nav-list { margin-top: 18px; display: flex; gap: 5px; overflow-x: auto; }
-    .nav-link { white-space: nowrap; padding: 12px; font-size: 12px; border-radius: 7px 7px 0 0; }
+    .sidebar { position: static; height: auto; padding: 10px 16px 0; }
+    .sidebar .brand { gap: 7px; padding: 0 4px; }
+    .sidebar .brand-name { font-size: 20px; }
+    .sidebar .brand-mark, .sidebar .brand-mark svg { width: 20px; height: 24px; }
+    .sidebar .brand-mark { flex-basis: 20px; }
+    .sidebar .brand-tagline { display: none; }
+    .nav-list { margin-top: 7px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+    .nav-link { justify-content: center; gap: 6px; min-height: 44px; padding: 8px 6px; font-size: 12px; line-height: 1.25; border-radius: 6px 6px 0 0; }
+    .nav-icon { flex-shrink: 0; }
     .nav-link.active, .nav-link[aria-current=page] { box-shadow: inset 0 -3px #bed0a4; }
     .sidebar-footer { display: none; }
-    .topbar { min-height: 56px; padding: 12px 22px; }
-    .page-content { padding: 27px 22px 40px; }
+    .topbar { min-height: 34px; padding: 7px 20px; }
+    .app-shell .page-content { padding: 16px 20px 32px; }
+    .app-shell .page-header { gap: 10px; margin-bottom: 14px; }
+    .app-shell h1 { font-size: 28px; }
+    .app-shell button, .app-shell .button,
+    .app-shell input:not([type=hidden]):not([type=checkbox]):not([type=radio]),
+    .app-shell select { min-height: 44px; }
     .split-layout { grid-template-columns: minmax(0, 1fr); }
     .guide-card { order: 2; }
     .auth-layout { gap: 32px; padding: 0 24px; margin: 40px auto; }
@@ -277,12 +337,16 @@ CSS = r"""
     .hero-visual { padding: 25px 22px; }
   }
   @media (max-width: 560px) {
+    .sidebar { padding-inline: 10px; }
+    .nav-list { gap: 2px; }
+    .nav-link { font-size: 11px; padding-inline: 3px; }
+    .nav-icon { display: none; }
     h1 { font-size: 32px; letter-spacing: -.9px; }
-    .page-content { padding: 24px 16px 36px; }
-    .topbar { padding: 12px 16px; gap: 8px; }
+    .app-shell .page-content { padding: 14px 14px 30px; }
+    .topbar { padding: 7px 14px; gap: 8px; }
     .breadcrumb { font-size: 10px; gap: 7px; overflow-wrap: anywhere; }
     .environment-badge { font-size: 9px; padding: 5px 7px; }
-    .page-header { gap: 18px; margin-bottom: 22px; }
+    .app-shell .page-header { gap: 10px; margin-bottom: 14px; }
     .page-actions { width: 100%; }
     .page-actions .button { flex: 1; }
     .stat-grid { grid-template-columns: 1fr; gap: 10px; }
@@ -291,6 +355,7 @@ CSS = r"""
     .stat-value { margin: 0; font-size: 25px; grid-column: 2; grid-row: 1 / span 2; }
     .stat-note { margin-top: 3px; grid-column: 1; }
     .card-header, .card-body, .composer { padding: 19px; }
+    .app-shell .card-header, .app-shell .card-body, .app-shell .composer { padding: 14px; }
     .card-header { gap: 10px; }
     .side-column, .capability-grid, .connection-grid { grid-template-columns: minmax(0, 1fr); }
     .limit-grid { gap: 12px; }

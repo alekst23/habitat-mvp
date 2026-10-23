@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import secrets
+import sqlite3
 import uuid
 from dataclasses import dataclass
 from datetime import timedelta
@@ -78,6 +79,9 @@ def _register_test_routes(app: FastAPI, ctx: AppContext) -> None:
 def create_app(settings: Settings, ports: Ports | None = None) -> FastAPI:
     """Run migrations and the price import, build AppContext via build_ports(settings) (`ports` is a
     test-only override), start STARTUP_HOOKS in order and register ROUTE_FACTORIES routers."""
+    # model_copy is deliberately non-validating in Pydantic. Recheck profile guards
+    # before any migrations, service composition or route registration.
+    settings = Settings.model_validate(settings.model_dump())
     db = Database(settings.database_url)
     db.migrate()
     with db.transaction() as conn:
@@ -96,6 +100,23 @@ def create_app(settings: Settings, ports: Ports | None = None) -> FastAPI:
     app = FastAPI(title="Habitat AICL control plane")
     app.add_middleware(FormCsrfShim)
     app.state.ctx = ctx
+    if settings.workflow_enabled:
+        from fastapi.staticfiles import StaticFiles
+
+        app.mount("/static", StaticFiles(directory=Path(__file__).parent / "web" / "static"), name="static")
+
+    @app.get("/health/live", include_in_schema=False)
+    def liveness() -> dict:
+        return {"status": "ok"}
+
+    @app.get("/health/ready", include_in_schema=False)
+    def readiness() -> JSONResponse:
+        try:
+            with db.reader() as conn:
+                conn.execute("SELECT version FROM schema_migration LIMIT 1").fetchone()
+        except (sqlite3.Error, OSError):
+            return JSONResponse({"status": "unavailable"}, status_code=503)
+        return JSONResponse({"status": "ready"})
 
     @app.exception_handler(AiclError)
     async def aicl_error(_request, exc: AiclError) -> JSONResponse:

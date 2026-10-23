@@ -114,13 +114,29 @@ def test_owner_pages_post_expected_version_and_csrf_and_show_the_committed_resul
 
     page = a.get(f"/instances/{iid}")
     assert page.status_code == 200 and "Pages Helper" in page.text and "draft" in page.text
+    assert page.text.index('id="setup"') < page.text.index('aria-label="Agent controls overview"')
+    assert 'Start launch-kit task' not in page.text
+    assert '<details class="card control-diagnostics" id="diagnostics">' in page.text
+    assert f'href="/instances/{iid}/workflow">Goals &amp; schedule</a>' in page.text
+    assert '<h2>Tool confirmations</h2>' in page.text
+    assert 'No tool confirmations are waiting.' in page.text
+    assert 'Nothing is waiting for confirmation.' not in page.text
+    assert re.search(r'<button[^>]+disabled[^>]*>Run control test', page.text)
+    assert 'Activate this draft' in page.text
+    assert 'fixed compute estimate' in page.text and 'Inference tokens are zero' in page.text
+    selector = re.search(r'<select id="work-capability".*?</select>', page.text, re.S).group()
+    assert 'value="inference"' in selector and 'gmail.read' not in selector
+    assert 'Re-check and clear' not in page.text
     assert "0.000000" in page.text  # budget rendered as USD with six decimals
-    assert "secret_ref" not in page.text and "real provider adapters are not enabled" in page.text.lower()
+    assert "secret_ref" not in page.text and 'class="notice info simulation-note"' not in page.text
 
     stale = a.post(f"/instances/{iid}/lifecycle", data=page_form(a, expected_version=99, action="activate"))
     assert stale.status_code == 409 and "conflict" in stale.text and read_instance_snapshot(web.auth_a, iid).version == 1
     assert "active" in post("/lifecycle", action="activate").text
     assert read_instance_snapshot(web.auth_a, iid).lifecycle == "active"
+    active_page = a.get(f"/instances/{iid}").text
+    assert 'A budget window has no available allowance' in active_page
+    assert not re.search(r'<button[^>]+disabled[^>]*>Run control test', active_page)
     assert "invalid_transition" in post("/lifecycle", action="activate").text  # active cannot be activated again
 
     post("/capabilities", capability="gmail.send", enabled="true")
@@ -146,6 +162,9 @@ def test_owner_pages_post_expected_version_and_csrf_and_show_the_committed_resul
     raised = post("/limits", inference_daily_usd="1", inference_monthly_usd="10", compute_daily_usd="1",
                   compute_monthly_usd="10")
     assert raised.status_code == 200 and read_instance_snapshot(web.auth_a, iid).limits == GENEROUS
+    assert 'Re-check and clear' not in raised.text
+    assert 'Control test available' in raised.text
+    assert 'Attach an active connection' in raised.text
     assert "gate_unresolved" not in post("/resolve-gate").text
     assert read_instance_snapshot(web.auth_a, iid).gated_reason is None
 
