@@ -211,22 +211,22 @@ class OwnerRequestService:
             self.workflow._auth(auth)
             if instance_id:
                 self.workflow._instance(conn, auth, instance_id)
-            params = [auth.tenant_id, auth.owner_id]
-            where = "tenant_id=? AND owner_id=?"
-            if instance_id:
-                where += " AND instance_id=?"
-                params.append(instance_id)
+            selected_instance = instance_id or None
+            params = (auth.tenant_id, auth.owner_id, selected_instance, selected_instance)
             result = []
             if kind != "purchase":
-                for row in conn.execute("SELECT * FROM owner_request WHERE " + where, params):
+                for row in conn.execute("SELECT * FROM owner_request WHERE tenant_id=? AND owner_id=? "
+                                        "AND (? IS NULL OR instance_id=?)", params):
                     if (kind in (None, "all") or row["kind"] == kind) and (status == "all" or row["status"] == status):
                         result.append(self._project(conn, auth, row))
             if kind in (None, "all", "purchase"):
-                for row in conn.execute("SELECT id FROM browser_purchase_proposal WHERE " + where, params):
+                for row in conn.execute("SELECT id FROM browser_purchase_proposal WHERE tenant_id=? AND owner_id=? "
+                                        "AND (? IS NULL OR instance_id=?)", params):
                     item = self._browser_purchase(conn, auth, row["id"])
                     if status == "all" or item["status"] == status:
                         result.append(item)
-                for row in conn.execute("SELECT id FROM mock_commerce_purchase WHERE " + where, params):
+                for row in conn.execute("SELECT id FROM mock_commerce_purchase WHERE tenant_id=? AND owner_id=? "
+                                        "AND (? IS NULL OR instance_id=?)", params):
                     item = self._purchase(conn, auth, row["id"])
                     if status == "all" or item["status"] == status:
                         result.append(item)

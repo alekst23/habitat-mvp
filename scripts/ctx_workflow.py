@@ -570,8 +570,8 @@ def validate_repository(root=ROOT):
     for i, step in enumerate(STEPS):
         job = jobs[f"ctx:{step}"]
         require(job["stage"] in ci["stages"], "CI stage missing")
-        require(job["script"] == [f"python scripts/ctx_workflow.py run {step}"],
-                "CI does not use evidence adapter")
+        command = ["sh scripts/ctx_verify_container.sh"] if step == "verify" else [f"python scripts/ctx_workflow.py run {step}"]
+        require(job["script"] == command, "CI does not use the reviewed evidence entrypoint")
         needs = {need if isinstance(need, str) else need["job"] for need in job.get("needs", [])}
         expected = {f"ctx:{s}" for s in STEPS[:i]}
         if step == "acceptance":

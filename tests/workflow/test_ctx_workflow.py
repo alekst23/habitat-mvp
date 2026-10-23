@@ -112,6 +112,18 @@ class FlowTests(unittest.TestCase):
                 current = target
             self.fail("routing adapter did not terminate")
 
+    def test_verification_entrypoint_cannot_select_an_alternate_command(self):
+        read_yaml = ctx.read_yaml
+        for script in (["python -m pytest backend/tests -q"], ["sh scripts/ctx_verify_container.sh --skip-browser"]):
+            with self.subTest(script=script):
+                def modified(path):
+                    value = read_yaml(path)
+                    if Path(path).name == "delivery.yml":
+                        value["ctx:verify"]["script"] = script
+                    return value
+                with patch.object(ctx, "read_yaml", side_effect=modified), self.assertRaisesRegex(ValueError, "reviewed evidence entrypoint"):
+                    ctx.validate_repository()
+
     def test_summary_then_token_reaches_next_agent(self):
         self.assertEqual(self.route_response("coordinate", "## Operation report\nSaved and verified.\n\ndesign\n\n"),
                          "design")

@@ -19,11 +19,11 @@ PAGE_HEADERS = {**PRIVATE_HEADERS, "Content-Security-Policy":
     "script-src 'self'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'none'"}
 
 
-def browser_router(ctx, requests) -> APIRouter:
+def browser_router(ctx, owner_requests) -> APIRouter:
     from aicl.owner_requests.routes import request_url
 
     router, csrf = APIRouter(), require_csrf(ctx)
-    broker = browser_broker(ctx, requests)
+    broker = browser_broker(ctx, owner_requests)
 
     def version(form):
         value = str(form.get("expected_version", ""))
@@ -40,7 +40,7 @@ def browser_router(ctx, requests) -> APIRouter:
         auth = ctx.auth_provider.resolve(dict(request.cookies))
         if auth is None:
             return RedirectResponse("/auth/sign-in", 303, headers=PRIVATE_HEADERS)
-        item = requests.get(auth, request_id)
+        item = owner_requests.get(auth, request_id)
         if item["kind"] != "authentication":
             raise AiclError("not_found", "Sign-in request not found.")
         state = broker.status(auth, request_id)

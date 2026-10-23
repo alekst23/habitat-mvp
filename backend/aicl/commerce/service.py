@@ -88,10 +88,14 @@ class MockCommerceService:
         return row
 
     def _owned_resource(self, conn, auth, table, resource_id):
-        # Table names are a closed internal set, never supplied by a caller.
-        if table not in {"mock_commerce_order", "mock_commerce_run", "mock_commerce_purchase"}:
+        queries = {
+            "mock_commerce_order": "SELECT * FROM mock_commerce_order WHERE id = ? AND tenant_id = ? AND owner_id = ?",
+            "mock_commerce_run": "SELECT * FROM mock_commerce_run WHERE id = ? AND tenant_id = ? AND owner_id = ?",
+            "mock_commerce_purchase": "SELECT * FROM mock_commerce_purchase WHERE id = ? AND tenant_id = ? AND owner_id = ?",
+        }
+        if table not in queries:
             raise ValueError("unsupported resource")
-        row = conn.execute(f"SELECT * FROM {table} WHERE id = ? AND tenant_id = ? AND owner_id = ?",
+        row = conn.execute(queries[table],
                            (resource_id, auth.tenant_id, auth.owner_id)).fetchone()
         if row is None:
             raise AiclError("not_found", "commerce record not found")

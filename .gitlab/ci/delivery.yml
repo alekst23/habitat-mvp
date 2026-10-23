@@ -19,13 +19,12 @@ include:
       - .ctx/acceptance.json
 
 ctx:verify:
-  extends: .ctx-check
+  extends: [.ctx-check, .ctx-docker]
   stage: verify
   before_script:
-    - python -m pip install --disable-pip-version-check -r requirements-workflow.txt
-    - if [ -d backend ]; then python -m pip install --disable-pip-version-check --require-hashes -r backend/requirements.lock; fi
+    - apk add --no-cache git
   script:
-    - python scripts/ctx_workflow.py run verify
+    - sh scripts/ctx_verify_container.sh
 
 ctx:acceptance:
   extends: .ctx-check

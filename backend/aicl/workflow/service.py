@@ -600,10 +600,11 @@ class MockWorkflowService(AdWorkflowMixin):
         snapshot, spec = json.loads(row["config_json"]), json.loads(row["spec_json"])
         latest = self._latest(conn, row["id"])
         occurrence = conn.execute("SELECT scheduled_for FROM mock_workflow_occurrence WHERE id=?", (row["occurrence_id"],)).fetchone()
-        commerce_ids = [row["commerce_run_id"]] + [r[0] for r in conn.execute(
-            "SELECT p.run_id FROM mock_commerce_purchase p JOIN mock_workflow_purchase w ON w.purchase_id=p.id WHERE w.workflow_run_id=?", (row["id"],))]
-        marks = ",".join("?" for _ in set(commerce_ids))
-        costs = conn.execute(f"SELECT COALESCE(SUM(inference_cost_micro_usd),0),COALESCE(SUM(input_tokens),0),COALESCE(SUM(output_tokens),0) FROM mock_commerce_run WHERE id IN ({marks})", tuple(set(commerce_ids))).fetchone()
+        costs = conn.execute(
+            "SELECT COALESCE(SUM(inference_cost_micro_usd),0),COALESCE(SUM(input_tokens),0),COALESCE(SUM(output_tokens),0) "
+            "FROM mock_commerce_run WHERE id=? OR id IN (SELECT p.run_id FROM mock_commerce_purchase p "
+            "JOIN mock_workflow_purchase w ON w.purchase_id=p.id WHERE w.workflow_run_id=?)",
+            (row["commerce_run_id"], row["id"])).fetchone()
         state = row["state"]
         blocked_reason = row["blocked_reason"]
         inference_attempt = None

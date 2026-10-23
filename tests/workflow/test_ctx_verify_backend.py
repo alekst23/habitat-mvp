@@ -214,8 +214,10 @@ class VerifyAdapterTests(unittest.TestCase):
         self.assertEqual(verify["argv"], ["python", "scripts/ctx_verify_backend.py"])
         self.assertLessEqual(verify["timeout_seconds"], 900)
         jobs = ctx.read_yaml(ROOT / ".gitlab/ci/delivery.yml")
-        self.assertEqual(jobs["ctx:verify"]["script"], ["python scripts/ctx_workflow.py run verify"])
-        self.assertNotIn("services", jobs["ctx:verify"])  # E11 uses SQLite: no database service
+        self.assertEqual(jobs["ctx:verify"]["script"], ["sh scripts/ctx_verify_container.sh"])
+        wrapper = (ROOT / "scripts/ctx_verify_container.sh").read_text()
+        self.assertIn('docker exec "$container" python scripts/ctx_workflow.py run verify || result=$?', wrapper)
+        self.assertNotIn("services", jobs["ctx:verify"])  # SQLite needs no database service; Docker setup is inherited.
         self.assertIs(jobs[".ctx-check"]["allow_failure"], False)
         self.assertNotIn("CTX_APPLICATION_CHECKS", json.dumps(jobs))
         self.assertIn(".ctx/acceptance.json", jobs[".ctx-check"]["artifacts"]["paths"])

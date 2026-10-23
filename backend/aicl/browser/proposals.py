@@ -155,12 +155,13 @@ class BrowserPurchaseProposalService:
     def list(self, auth, instance_id=None):
         with self.db.reader() as conn:
             self.workflow._auth(auth)
-            params, where = [auth.tenant_id, auth.owner_id], "tenant_id=? AND owner_id=?"
             if instance_id:
                 self.workflow._instance(conn, auth, instance_id)
-                where += " AND instance_id=?"
-                params.append(instance_id)
-            return [self._project(row) for row in conn.execute("SELECT * FROM browser_purchase_proposal WHERE " + where + " ORDER BY created_at,id", params)]
+            selected_instance = instance_id or None
+            return [self._project(row) for row in conn.execute(
+                "SELECT * FROM browser_purchase_proposal WHERE tenant_id=? AND owner_id=? "
+                "AND (? IS NULL OR instance_id=?) ORDER BY created_at,id",
+                (auth.tenant_id, auth.owner_id, selected_instance, selected_instance))]
 
     def decide(self, auth, proposal_id, decision, expected_version):
         if decision not in ("approve", "decline") or type(expected_version) is not int or expected_version < 1:

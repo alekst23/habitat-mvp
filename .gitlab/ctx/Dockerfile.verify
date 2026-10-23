@@ -1,0 +1,10 @@
+# Keep Chromium aligned with requirements-browser.txt and the deployed browser service.
+FROM mcr.microsoft.com/playwright/python:v1.63.0-noble@sha256:72bd171a9ffc2b4b59532aaa6210e21014d07093120dc25528870c0b840da1f0
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 BROWSER_REAL_TEST=1
+WORKDIR /workspace
+COPY backend/requirements.lock backend/requirements.lock
+COPY requirements-workflow.txt requirements-browser.txt requirements-render.txt ./
+RUN python -m pip install --disable-pip-version-check --require-hashes -r backend/requirements.lock \
+    && python -m pip install --disable-pip-version-check -r requirements-workflow.txt -r requirements-browser.txt -r requirements-render.txt \
+    && python -m pip check
+USER pwuser

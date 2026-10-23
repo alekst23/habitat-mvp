@@ -37,7 +37,13 @@ test('scheduled work, independent purchases, versioned deliverables and AG Grid 
     await page.locator(`#deliverable-description-${index}`).fill(scope);
     await page.locator(`#deliverable-criteria-${index}`).fill(criteria.join('\n'));
     await page.locator(`#purchase-required-${index}`).check();
-    await page.getByRole('button', { name: 'Save configuration' }).click();
+    // Each save replaces the document. Wait for that response before adding
+    // another deliverable or reloading to check the persisted configuration.
+    await Promise.all([
+      page.waitForEvent('domcontentloaded'),
+      page.getByRole('button', { name: 'Save configuration' }).click(),
+    ]);
+    await expect(page.getByRole('status')).toContainText('Configuration saved');
   }
   await page.reload();
   await expect(page.getByLabel('Agent goal', { exact: true })).toHaveValue(goal);
