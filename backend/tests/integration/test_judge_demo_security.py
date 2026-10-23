@@ -13,6 +13,7 @@ from aicl.db import to_iso
 from aicl.ports import build_ports
 from aicl.settings import Settings
 from test_hosted_runtime import hosted_env
+from test_judge_demo import ACCESS_TOKEN, open_access_link
 
 ORIGIN = "https://habitat.example"
 ENTRY_COOKIE = "aicl_judge_entry"
@@ -24,6 +25,7 @@ def judge_app(base_env, monkeypatch):
     settings = Settings.from_env({
         **hosted_env(base_env),
         "AICL_JUDGE_DEMO_MODE": "1",
+        "AICL_ACCESS_LINK_TOKEN": ACCESS_TOKEN,
         "AICL_SMTP_HOST": "", "AICL_SMTP_FROM": "",
         "AICL_PAYMENT_MODE": "paypal_sandbox",
         "AICL_PAYPAL_CLIENT_ID": "fixture-paypal-client",
@@ -49,7 +51,7 @@ def records(app, table):
 
 
 def entry(client):
-    page = client.get("/auth/sign-in")
+    page = open_access_link(client)
     assert page.status_code == 200
     assert page.headers["referrer-policy"] == "same-origin"
     nonce = client.cookies[ENTRY_COOKIE]
@@ -58,7 +60,7 @@ def entry(client):
 
 
 def start(client, nonce, **extra):
-    return client.post("/judge/start", data={"csrf_token": nonce, **extra}, headers={"origin": ORIGIN})
+    return client.post("/judge/start", data={"csrf_token": nonce, "email": "same-demo@example.test", **extra}, headers={"origin": ORIGIN})
 
 
 @pytest.mark.parametrize("failure", ["no_origin", "null_origin", "foreign_origin", "cross_site", "no_cookie", "wrong_cookie", "forged_nonce"])
@@ -83,7 +85,7 @@ def test_entry_requires_same_origin_and_browser_bound_signed_nonce(judge_app, fa
             nonce = nonce[:-1] + ("a" if nonce[-1] != "a" else "b")
             client.cookies.clear()
             client.cookies.set(ENTRY_COOKIE, nonce)
-        response = client.post("/judge/start", data={"csrf_token": nonce}, headers=headers)
+        response = client.post("/judge/start", data={"csrf_token": nonce, "email": "same-demo@example.test"}, headers=headers)
         assert response.status_code in (400, 403)
     assert records(judge_app, "owner") == []
     assert records(judge_app, "session") == []
@@ -109,7 +111,7 @@ def test_concurrent_anonymous_replay_consumes_one_entry_nonce(judge_app):
     assert len(records(judge_app, "agent_instance")) == 1
 
 
-def test_judge_sessions_keep_tenant_and_csrf_isolation_without_fake_funding(judge_app):
+def test_same_email_keeps_separate_sessions_and_tenant_isolation_without_fake_funding(judge_app):
     ctx = judge_app.state.ctx
     with TestClient(judge_app, base_url=ORIGIN, follow_redirects=False) as a, TestClient(judge_app, base_url=ORIGIN, follow_redirects=False) as b:
         nonce_a = entry(a)
@@ -121,6 +123,9 @@ def test_judge_sessions_keep_tenant_and_csrf_isolation_without_fake_funding(judg
         nonce_b = entry(b)
         assert start(b, nonce_b, owner_id=auth_a.owner_id, tenant_id=auth_a.tenant_id).status_code == 303
         auth_b = ctx.auth_provider.resolve(dict(b.cookies))
+        # The shared entered email is not an account lookup or identity key.
+        assert all(owner["email_hash"] != ctx.sign_in.email_hash("same-demo@example.test")
+                   for owner in records(judge_app, "owner"))
         assert auth_a.owner_id != auth_b.owner_id
         assert auth_a.owner_id == auth_a.tenant_id and auth_b.owner_id == auth_b.tenant_id
         assert auth_a.session_id != auth_b.session_id
@@ -213,3 +218,29 @@ def test_existing_named_owner_is_preserved_if_judge_mode_was_enabled_later(judge
         assert len(records(judge_app, "owner")) == 1
         session, = records(judge_app, "session")
         assert session["owner_id"] == signed.context.owner_id and session["revoked_at"] is None
+
+
+def test_private_access_link_is_required_before_an_email_form_or_session(judge_app):
+    with TestClient(judge_app, base_url=ORIGIN, follow_redirects=False) as client:
+        for path in ("/", "/auth/sign-in", "/auth/access", "/auth/access?token=wrong"):
+            denied = client.get(path)
+            assert denied.status_code == 403 and "Private access link required" in denied.text
+            assert 'name="email"' not in denied.text and 'name="csrf_token"' not in denied.text
+            assert "set-cookie" not in denied.headers
+            assert denied.headers["cache-control"] == "no-store"
+            assert denied.headers["referrer-policy"] == "no-referrer"
+        client.cookies.set(ENTRY_COOKIE, "forged-proof")
+        assert client.get("/auth/sign-in").status_code == 403
+        assert start(client, "forged-proof").status_code == 403
+        client.cookies.clear()
+        assert start(client, "").status_code == 403
+        assert records(judge_app, "owner") == records(judge_app, "session") == []
+        nonce = entry(client)
+        # Public GETs reuse access, without refreshing its ten-minute lifetime.
+        page = client.get("/")
+        assert page.status_code == 200 and nonce in page.text and "set-cookie" not in page.headers
+        assert ACCESS_TOKEN not in page.text
+        judge_app.state.ctx.clock.advance(timedelta(seconds=601))
+        assert client.get("/auth/sign-in").status_code == 403
+        assert start(client, nonce).status_code == 403
+        assert records(judge_app, "owner") == records(judge_app, "session") == []

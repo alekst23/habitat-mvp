@@ -1,4 +1,4 @@
-"""Email-free demonstration entry with isolated, expiring owner workspaces.
+"""Private-link demonstration entry with isolated, expiring owner workspaces.
 
 This grants access only to a newly created anonymous workspace, never to an
 existing named account. Sessions and subsequent CSRF checks are the normal
@@ -34,8 +34,9 @@ _TOKEN = re.compile(r"^[0-9]{1,12}\.[A-Za-z0-9_-]{43}\.[0-9a-f]{64}$")
 
 
 def _signature(ctx, payload: str) -> str:
+    access_hash = _sha256(ctx.settings.access_link_token.get_secret_value())
     return hmac.new(ctx.settings.session_secret.encode(),
-                    ("habitat-judge-entry-v1:" + payload).encode(), hashlib.sha256).hexdigest()
+                    ("habitat-private-entry-v2:" + access_hash + ":" + payload).encode(), hashlib.sha256).hexdigest()
 
 
 def entry_token(ctx) -> str:
@@ -43,17 +44,33 @@ def entry_token(ctx) -> str:
     return payload + "." + _signature(ctx, payload)
 
 
+def accept_access_link(ctx, token: str) -> str | None:
+    """Exchange the configured reusable private link for a short-lived form proof."""
+    configured = ctx.settings.access_link_token.get_secret_value()
+    if (not ctx.settings.judge_demo_mode or not configured
+            or re.fullmatch(r"[A-Za-z0-9_-]{32,128}", token) is None
+            or not hmac.compare_digest(token, configured)):
+        return None
+    return entry_token(ctx)
+
+
+def valid_entry_token(ctx, token: str | None) -> bool:
+    if not ctx.settings.judge_demo_mode or not ctx.settings.access_link_token.get_secret_value():
+        return False
+    if not token or not _TOKEN.fullmatch(token):
+        return False
+    payload, signature = token.rsplit(".", 1)
+    expires = int(payload.split(".", 1)[0])
+    now = int(ctx.clock.now().timestamp())
+    return now < expires <= now + ENTRY_TTL_SECONDS and hmac.compare_digest(signature, _signature(ctx, payload))
+
+
 def verify_entry(ctx, submitted: str, cookie: str | None, origin: str | None, fetch_site: str | None) -> None:
     expected = ctx.settings.public_base_url.rstrip("/")
     if (origin != expected or fetch_site == "cross-site" or not cookie
-            or not _TOKEN.fullmatch(submitted) or not _TOKEN.fullmatch(cookie)
+            or not valid_entry_token(ctx, submitted) or not _TOKEN.fullmatch(cookie)
             or not hmac.compare_digest(submitted, cookie)):
-        raise AiclError("denied", "Open the demo page and try again.", reason="csrf_failed")
-    payload, signature = submitted.rsplit(".", 1)
-    expires = int(payload.split(".", 1)[0])
-    now = int(ctx.clock.now().timestamp())
-    if not now < expires <= now + ENTRY_TTL_SECONDS or not hmac.compare_digest(signature, _signature(ctx, payload)):
-        raise AiclError("denied", "Open the demo page and try again.", reason="csrf_failed")
+        raise AiclError("denied", "Open your private access link and try again.", reason="csrf_failed")
 
 
 def _sample(ctx, auth) -> None:
@@ -81,6 +98,8 @@ def start_workspace(ctx, token: str, previous_cookie: str | None) -> SignedInSes
     """
     if not ctx.settings.judge_demo_mode:
         raise AiclError("not_found", "Page not found.")
+    if not valid_entry_token(ctx, token):
+        raise AiclError("denied", "Open your private access link and try again.", reason="csrf_failed")
     with ctx.db.transaction() as conn:
         now = ctx.clock.now()
         previous = ctx.sign_in.resolve_session(previous_cookie) if previous_cookie else None

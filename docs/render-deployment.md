@@ -5,16 +5,32 @@ remains the authority for owner identity, configuration, budgets, inference,
 PayPal approval and durable results. It uses one reviewed PocketPlan marketing
 agent, not arbitrary uploaded programs.
 
-The hackathon Blueprint enables email-free judge access. Publish the permanent
-HTTPS app URL in the project instructions. Each visitor enters a separate,
+The hackathon Blueprint requires a private access link to open its sign-in form.
+The link is reusable and grants a browser-bound form valid for ten minutes. A
+visitor then enters any email address and signs in immediately. No email is sent,
+and the address is neither verified nor stored. It cannot be used to recover
+another browser session's workspace. Each new visitor receives a separate
 temporary workspace with a configured PocketPlan sample agent and its schedule
-paused. No email account or shared sign-in link is required. The sample has no
+paused. The existing entry and budget limits still apply. The sample has no
 fabricated PayPal funding, purchase approval or deliverable history.
-Workspaces and their browser access last at most 24 hours. The public demo admits
+Workspaces and their browser access last at most 24 hours. The demo admits
 at most 100 workspaces per database and 10 new workspaces per minute; existing
 visitors can resume their workspace without creating another sample. Keep the
 browser session to retain access. Expiry stops new execution and preserves
 completed work and accounting history.
+
+`AICL_ACCESS_LINK_TOKEN` is required in judge mode: use 32–128 random URL-safe
+characters. The Blueprint generates it on the web service. Privately construct
+`<public HTTPS origin>/auth/access?token=<AICL_ACCESS_LINK_TOKEN value>` using that
+secret and share the complete link only with intended visitors. Do not put the
+token or invitation URL in source, public project instructions, or recordings.
+The plain app URL does not grant entry. Rotating the secret disables old links
+and unused browser forms; already established gated sessions retain their normal
+24-hour lifetime. The upgrade expires old open-demo workspaces and sessions,
+while preserving their history and accounting.
+
+The packaged application disables Uvicorn access logging to keep bearer tokens
+out of application request logs. Hosting-layer request logs have separate controls.
 
 The repository includes the deployment configuration and worker. A passing local
 test or Blueprint schema check is not evidence of a running Render deployment.
@@ -104,8 +120,8 @@ hosted schedule.
    | Web | `OPENAI_API_KEY`; service PayPal Sandbox `CLIENT_ID`, `CLIENT_SECRET`, `MERCHANT_ID`; the corresponding three `AICL_PAYPAL_PURCHASE_*` values for a separate Sandbox seller |
    | Cron | `RENDER_API_KEY` for starting this workspace's tasks |
 
-   The Blueprint generates separate session, identity, encryption, scheduler
-   and worker secrets. Its `fromService` references provide only the matching
+   The Blueprint generates separate access-link, session, identity, encryption,
+   scheduler and worker secrets. Its `fromService` references provide only the matching
    machine token to each process. Never rotate identity/encryption keys casually:
    keep protected recovery copies with database backups. The public URL and
    private hostport are derived from Render, and the cron task slug is derived
@@ -117,11 +133,14 @@ hosted schedule.
    `habitat_agent` task. Inspect the Workflow task page; no worker port is
    expected. Ensure the disk is writable by the image's UID 10001 and survives
    redeploy. Migrations run at application startup with the disk mounted.
-5. Open the HTTPS app and enter the judge demo. Check that a second browser
-   session receives a separate workspace and cannot access the first visitor's
-   agents, purchases or deliverables. `/__test__/last-magic-link` and other local
-   helpers must remain unavailable. The sample schedule starts paused; review
-   its configuration and fund it with PayPal Sandbox before enabling work.
+5. In a fresh browser session, verify the plain app URL cannot grant entry. Open
+   the private access link, enter any email address and sign in immediately.
+   Check that a second browser session using the access link receives a separate
+   workspace even with the same email, and cannot access the first visitor's
+   agents, purchases or deliverables. Expired browser forms must require reopening
+   the private link. No email should be sent. `/__test__/last-magic-link` and other
+   local helpers must remain unavailable. The sample schedule starts paused;
+   review its configuration and fund it with PayPal Sandbox before enabling work.
 
 The Blueprint was checked against Render's published JSON schema on 2026-10-22.
 Render's own Blueprint validation remains the authority for account-specific
@@ -201,7 +220,8 @@ and provider evidence; do not delete its hold or mint a replacement dispatch.
 
 For sponsor evidence, keep a concise screen capture of the real scheduled task
 and its linked Habitat deliverable, one denied budget attempt, durable recovery
-without duplicate effects, and the hosted URL. Revise the video's existing
+without duplicate effects, and the public base URL. Share the access link privately
+with reviewers and keep its token out of the recording. Revise the video's existing
 simulation caption only after this hosted proof is captured. The
 [Render sponsor brief](https://paypalaihackathon.devpost.com/details/render)
 specifically asks entrants to deploy on Render and use Render Workflows.
@@ -229,7 +249,7 @@ dashboard has loaded it. Live validation found and corrected the unsupported
 shutdown-delay override on a disk-backed service. Hosted execution remains to
 be verified after account billing and private service settings are configured.
 
-The email-free judge profile subsequently passed **414 backend tests**, including
+The earlier one-click judge profile passed **414 backend tests**, including
 12 independent security checks for entry replay, concurrent provisioning,
 cross-tenant access, CSRF, session expiry, existing-account preservation and
 absence of invented payment records. The one fixed-port server-start test was

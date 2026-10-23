@@ -24,6 +24,8 @@ services:
         value: '1'
       - key: AICL_JUDGE_DEMO_MODE
         value: '1'
+      - key: AICL_ACCESS_LINK_TOKEN
+        generateValue: true
       - key: AICL_SESSION_TTL_SECONDS
         value: '86400'
       - key: AICL_WORKFLOW_EXECUTION_MODE

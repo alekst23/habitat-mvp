@@ -64,6 +64,7 @@ class Settings(BaseModel):
     test_mode: bool = False
     hosted_workflow: bool = False
     judge_demo_mode: bool = False
+    access_link_token: SecretStr = SecretStr("")
     workflow_execution_mode: str = "local"
     render_max_spend_micro_usd: int = 1_000_000
     render_max_dispatches: int = 100
@@ -119,6 +120,14 @@ class Settings(BaseModel):
             raise SettingsError("AICL_JUDGE_DEMO_MODE", "requires the hosted production profile with test mode disabled")
         if self.judge_demo_mode and self.payment_mode != "paypal_sandbox":
             raise SettingsError("AICL_PAYMENT_MODE", "judge demonstration requires PayPal Sandbox")
+        access_token = self.access_link_token.get_secret_value()
+        if self.judge_demo_mode or access_token:
+            if (re.fullmatch(r"[A-Za-z0-9_-]{32,128}", access_token) is None
+                    or access_token.startswith(("CHANGE_ME", "YOUR_"))):
+                raise SettingsError("AICL_ACCESS_LINK_TOKEN", "must contain 32–128 non-placeholder URL-safe characters")
+            if access_token in (self.session_secret, self.identity_hmac_key, self.secret_encryption_key,
+                                self.scheduler_token.get_secret_value(), self.worker_token.get_secret_value()):
+                raise SettingsError("AICL_ACCESS_LINK_TOKEN", "must differ from session, identity, encryption and machine keys")
         if type(self.render_max_spend_micro_usd) is not int or not 1 <= self.render_max_spend_micro_usd <= 10_000_000:
             raise SettingsError("AICL_RENDER_MAX_SPEND_MICRO_USD", "must be between 1 and 10000000")
         if type(self.render_max_dispatches) is not int or not 1 <= self.render_max_dispatches <= 1000:
@@ -294,6 +303,7 @@ class Settings(BaseModel):
             environment=environment, test_mode=flag == "1", public_base_url=base_url, database_url=database_url,
             hosted_workflow=hosted_flag == "1",
             judge_demo_mode=judge_flag == "1",
+            access_link_token=SecretStr(env.get("AICL_ACCESS_LINK_TOKEN") or ""),
             workflow_execution_mode=env.get("AICL_WORKFLOW_EXECUTION_MODE") or "local",
             render_max_spend_micro_usd=integer("AICL_RENDER_MAX_SPEND_MICRO_USD", 1_000_000, 1, 10_000_000),
             render_max_dispatches=integer("AICL_RENDER_MAX_DISPATCHES", 100, 1, 1000),

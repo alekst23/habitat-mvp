@@ -15,4 +15,5 @@ RUN apk add --no-cache zlib=1.3.2-r1 \
 COPY --chown=10001:10001 backend/aicl /app/backend/aicl
 USER 10001:10001
 EXPOSE 8000
-CMD ["python", "-m", "uvicorn", "aicl.runtime:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--no-proxy-headers"]
+# Access URLs contain a bearer token; omit application access logs to keep queries private.
+CMD ["python", "-m", "uvicorn", "aicl.runtime:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--no-proxy-headers", "--no-access-log"]

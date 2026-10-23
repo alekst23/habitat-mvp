@@ -26,11 +26,15 @@ that evidence.
 The [Render deployment](docs/render-deployment.md) adds unattended scheduled work
 through Render Workflows and a cron dispatcher. AICL keeps credentials, reserves
 inference and compute allowances, verifies outputs and preserves independent
-purchase approval. The hackathon profile offers email-free entry into a separate
-temporary workspace for each judge, with a paused PocketPlan sample agent. It uses
-real session isolation, excludes local test helpers, and shares operator-controlled
-inference and compute ceilings across visitors. A live Render deployment and its
-scheduled execution proof are still required.
+purchase approval. The hackathon profile requires a private access link before
+visitors can enter any email address and sign in immediately. The link opens a
+browser-bound sign-in form for ten minutes. Each visitor gets an isolated temporary
+workspace with a paused PocketPlan sample agent. No email is sent, verified or
+stored, and the address cannot recover another browser session's workspace.
+Shared operator-controlled inference and compute ceilings still apply. Configure
+`AICL_ACCESS_LINK_TOKEN` and share the resulting access link privately as described
+in the deployment guide. Local test helpers remain unavailable. A live Render
+deployment and its scheduled execution proof are still required.
 
 ## Run locally
 

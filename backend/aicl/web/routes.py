@@ -11,7 +11,8 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
 
 from aicl.auth.session import GENERIC_LINK_SENT, SESSION_COOKIE
-from aicl.auth.judge_demo import ENTRY_COOKIE, ENTRY_TTL_SECONDS, entry_token, verify_entry, start_workspace
+from aicl.auth.judge_demo import (ENTRY_COOKIE, ENTRY_TTL_SECONDS, accept_access_link, valid_entry_token,
+                                  verify_entry, start_workspace)
 from aicl.control.csrf import require_csrf
 from aicl.control.errors import AiclError
 from aicl.control.instances import CATALOG_CAPABILITIES
@@ -72,16 +73,23 @@ def web_router(ctx) -> APIRouter:
     def signed_in(request: Request):
         return ctx.auth_provider.resolve(dict(request.cookies))
 
-    def judge_entry(request: Request):
+    def access_required():
+        response = _page("access_required", 403, title="Private access link required")
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        return response
+
+    def judge_entry(request: Request, status: int = 200, error: str | None = None):
         if signed_in(request) is not None:
-            return RedirectResponse("/workspace", status_code=303)
-        token = entry_token(ctx)
-        response = _page("judge_entry", title="Try Habitat", csrf=token)
+            return RedirectResponse("/workspace", status_code=303,
+                                    headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
+        token = request.cookies.get(ENTRY_COOKIE)
+        if not valid_entry_token(ctx, token):
+            return access_required()
+        response = _page("judge_entry", status, title="Sign in", csrf=token, error=error)
         response.headers["Cache-Control"] = "no-store"
         # HTML form POSTs need their same-origin Origin header for entry CSRF checks.
         response.headers["Referrer-Policy"] = "same-origin"
-        response.set_cookie(ENTRY_COOKIE, token, max_age=ENTRY_TTL_SECONDS, path="/",
-                            httponly=True, samesite="strict", secure=True)
         return response
 
     @router.get("/", response_class=HTMLResponse)
@@ -97,12 +105,30 @@ def web_router(ctx) -> APIRouter:
         return _page("sign_in", title="Sign in")
 
     if ctx.settings.judge_demo_mode:
+        @router.get("/auth/access")
+        def access_link(token: str = ""):
+            proof = accept_access_link(ctx, token)
+            if proof is None:
+                return access_required()
+            # Exchange the private URL for browser-bound proof before showing the form.
+            response = RedirectResponse("/auth/sign-in", status_code=303,
+                                        headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
+            # Lax carries the proof through a top-level redirect from another site;
+            # the form POST still requires a signed nonce and the exact Origin.
+            response.set_cookie(ENTRY_COOKIE, proof, max_age=ENTRY_TTL_SECONDS, path="/",
+                                httponly=True, samesite="lax", secure=True)
+            return response
+
         @router.post("/judge/start")
         async def judge_start(request: Request):
             form = await request.form()
             token = str(form.get("csrf_token", ""))
             verify_entry(ctx, token, request.cookies.get(ENTRY_COOKIE), request.headers.get("origin"),
                          request.headers.get("sec-fetch-site"))
+            email = str(form.get("email", "")).strip()
+            if not email or len(email) > 254:
+                return judge_entry(request, 422, "Enter an email using 254 characters or fewer.")
+            # Demo entry only: the supplied email is neither stored nor used as identity.
             result = start_workspace(ctx, token, request.cookies.get(SESSION_COOKIE))
             response = RedirectResponse("/workspace", status_code=303,
                                         headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})

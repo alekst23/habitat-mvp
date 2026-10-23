@@ -184,6 +184,13 @@ service or production payment path. PayPal/funding, live model/tool integrations
 an autonomous runner and external MCP are follow-on work outside E11. Current
 ticket and epic acceptance status is recorded [with the E11 evidence](plan/E11/completion.md).
 
+The optional hosted judge profile uses a private access link instead of emailed
+sign-in. `AICL_ACCESS_LINK_TOKEN` unlocks a browser-bound form for ten minutes;
+entering any email then opens an isolated temporary workspace without sending,
+verifying or storing the address. The address cannot recover another browser
+session's workspace. See the [Render guide](render-deployment.md) for private
+link setup, rotation and existing-session behavior.
+
 ## Packaged runtime validation
 
 The reviewed Dockerfile pins its Python base image and installs the hashed backend
