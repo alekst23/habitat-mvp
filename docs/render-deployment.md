@@ -110,6 +110,13 @@ Workflow instances or Cron, and this SQLite deployment must stay at one web
 instance. Disk deployments can briefly interrupt the web app. See
 [persistent disks](https://render.com/docs/disks).
 
+Render does not allow a custom shutdown delay on a service with a disk. Before
+redeploying AICL, pause agent schedules and suspend the cron dispatcher, then let
+in-flight tasks and payment requests finish. If shutdown interrupts a provider
+request, retain its unresolved reservation and reconcile against provider evidence;
+do not release the hold or resend the operation just because the app restarted.
+Resume scheduling after the health check and saved state have been verified.
+
 ## First hosted proof
 
 1. Create the PocketPlan agent with inference enabled and use the app marketing

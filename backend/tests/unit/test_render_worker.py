@@ -150,6 +150,7 @@ def test_blueprint_does_not_share_spending_or_database_credentials_with_workers(
     root = Path(__file__).parents[3]
     services = {item["type"]: item for item in yaml.safe_load((root / "render.yaml").read_text())["services"]}
     assert services["web"]["disk"]["mountPath"] == "/data"
+    assert "maxShutdownDelaySeconds" not in services["web"]  # Render rejects an override with a disk.
     for kind in ("workflow", "cron"):
         keys = {item["key"] for item in services[kind]["envVars"]}
         assert not keys & {"OPENAI_API_KEY", "AICL_DATABASE_URL", "AICL_PAYPAL_CLIENT_SECRET", "AICL_SESSION_SECRET"}
