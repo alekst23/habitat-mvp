@@ -5,7 +5,7 @@ LABEL org.opencontainers.image.revision=${SOURCE_SHA}
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PYTHONPATH=/app/backend
 WORKDIR /app
 COPY backend/requirements.lock /app/backend/requirements.lock
-RUN apk add --no-cache zlib=1.3.2-r1 \
+RUN apk add --no-cache musl=1.2.6-r3 musl-utils=1.2.6-r3 zlib=1.3.2-r1 \
     && python -m pip install --no-cache-dir --only-binary=:all: --require-hashes -r backend/requirements.lock \
     && python -m pip uninstall --yes pip \
     && rm -rf /usr/local/lib/python3.12/ensurepip \
