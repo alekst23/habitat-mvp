@@ -41,6 +41,13 @@ class CaptureMagicLinkSender:
         return None
 
 
+class DisabledMagicLinkSender:
+    """Explicit public judge mode does not issue or capture email sign-in links."""
+
+    def send(self, email: str, link: str) -> None:
+        raise RuntimeError("Email sign-in is disabled for this demonstration")
+
+
 @dataclass(frozen=True)
 class SmtpConfig:
     """AICL_SMTP_* settings (all empty by default; the password is read from the environment only)."""

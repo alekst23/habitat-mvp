@@ -1,0 +1,23 @@
+# Optional private browser service. Read docs/cloud-browser.md before deploying.
+# This is separate from render.yaml so the existing app is not switched to an
+# unverified browser host. Chromium MUST pass its sandbox startup probe.
+services:
+  - type: pserv
+    name: habitat-browser
+    runtime: docker
+    dockerfilePath: ./browser-service/Dockerfile
+    dockerContext: .
+    region: oregon
+    plan: 1c-2g
+    numInstances: 1
+    autoDeployTrigger: 'off'
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: BROWSER_ENVIRONMENT
+        value: production
+      - key: BROWSER_TEST_MODE
+        value: '0'
+      - key: BROWSER_MAX_SESSIONS
+        value: '1'
+      - key: BROWSER_SERVICE_TOKEN
+        generateValue: true

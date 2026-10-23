@@ -1,0 +1,10 @@
+*
+!requirements-browser.txt
+!backend/
+!backend/browser_service/
+!backend/browser_service/**
+**/__pycache__
+**/*.pyc
+**/.env*
+**/*.sqlite*
+**/*.db

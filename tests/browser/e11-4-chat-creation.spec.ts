@@ -43,7 +43,7 @@ test('seeded sign-in, chat denial for invalid instructions, then chat creates a 
   await expect(page.getByText('Chat Helper')).toHaveCount(1);
 
   // another seeded owner has their own empty workspace and cannot see it
-  const second = await browser.newContext({ baseURL: 'http://127.0.0.1:4173' });
+  const second = await browser.newContext({ baseURL: new URL(page.url()).origin });
   const secondPage = await second.newPage();
   expect((await secondPage.request.post('/__test__/seed-session', { data: { fixture: 'owner-b' } })).status()).toBe(200);
   await secondPage.goto('/workspace');

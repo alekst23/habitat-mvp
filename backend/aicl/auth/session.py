@@ -193,9 +193,14 @@ class SqliteSignInService:
         with self.db.reader() as conn:
             row = conn.execute("SELECT * FROM session WHERE id_hash = ? AND revoked_at IS NULL AND expires_at > ?",
                                (_sha256(cookie), to_iso(self.clock.now()))).fetchone()
+            if row is not None:
+                demo = conn.execute("SELECT expires_at FROM judge_demo_workspace WHERE owner_id=?", (row["owner_id"],)).fetchone()
+                if demo is not None and demo["expires_at"] <= to_iso(self.clock.now()):
+                    return None
         if row is None:
             return None
-        return AuthContext(row["owner_id"], row["owner_id"], row["id_hash"], from_iso(row["expires_at"]))
+        display_name = row["display_name"] if "display_name" in row.keys() else None
+        return AuthContext(row["owner_id"], row["owner_id"], row["id_hash"], from_iso(row["expires_at"]), display_name)
 
     def logout(self, auth: AuthContext) -> None:
         with self.db.transaction() as conn:

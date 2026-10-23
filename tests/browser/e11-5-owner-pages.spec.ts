@@ -65,8 +65,9 @@ test('real sign-in, owner pages, gating, confirmation, revocation, isolation and
   // instance detail: lifecycle, activation, capability, limits, domain
   await page.getByRole('link', { name: 'Same Helper' }).first().click();
   const instanceId = page.url().match(/\/instances\/([0-9a-f-]{36})/)![1];
-  await expect(page.getByText(/real provider adapters are not enabled/i)).toBeVisible();
-  await expect(page.getByText(/revocation does not undo/i)).toBeVisible();
+  await page.goto(`/instances/${instanceId}`);
+  await expect(page.locator('.simulation-note')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Boundaries & activity' })).toBeVisible();
   await page.getByRole('button', { name: /^activate$/i }).click();
   await expect(page.getByText(/active/i).first()).toBeVisible();
 
@@ -98,7 +99,7 @@ test('real sign-in, owner pages, gating, confirmation, revocation, isolation and
   await expect(page.getByText(/inference_daily_micro_usd|out_of_range|invalid/i).first()).toBeVisible();  // truthful field error
   await setLimits('1', '10', '1', '10');
   await expect(page.getByText('10.000000').first()).toBeVisible();  // USD with six decimals
-  await page.getByRole('button', { name: /re-check and clear/i }).click();
+  await expect(page.getByRole('button', { name: /re-check and clear/i })).toHaveCount(0);
   await expect(page.getByText(/budget_exhausted/)).toHaveCount(0);  // gate cleared once all four limits are positive
 
   // simulated work settled and shown in usage; allow-listed budget.* audit appears, no body/token/secret_ref
@@ -106,7 +107,7 @@ test('real sign-in, owner pages, gating, confirmation, revocation, isolation and
   expect(ok.status()).toBe(200);
   await page.reload();
   await expect(page.getByText('0.010000').first()).toBeVisible();  // 2 compute minutes at 5000 micro-USD/minute
-  await expect(page.getByText(/simulated/i).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Usage', exact: true })).toBeVisible();
   await expect(page.getByText(/budget\.settled/)).toBeVisible();
   const detail = await page.content();
   for (const hidden of ['PAYLOAD-BODY-MUST-NOT-RENDER', 'secret_ref', 'access_token', 'refresh_token', 'fake-code']) {
@@ -141,13 +142,14 @@ test('real sign-in, owner pages, gating, confirmation, revocation, isolation and
 
   // revocation detaches and gates; revocation does not undo what already happened
   await page.goto('/connections');
+  await expect(page.getByText(/does not undo actions already taken/i)).toBeVisible();
   await page.getByRole('button', { name: /revoke/i }).first().click();
   await expect(page.getByText(/revoked/i).first()).toBeVisible();
   await page.goto(`/instances/${instanceId}`);
   await expect(page.getByText(/connection_revoked/)).toBeVisible();
 
   // another tenant's isolation, with its own non-empty list
-  const second = await browser.newContext({ baseURL: 'http://127.0.0.1:4173' });
+  const second = await browser.newContext({ baseURL: new URL(page.url()).origin });
   const other = await second.newPage();
   await signIn(other, 'e5-other@example.com');
   await expect(other.getByText('Same Helper')).toHaveCount(0);

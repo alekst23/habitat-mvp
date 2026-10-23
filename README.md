@@ -5,16 +5,44 @@ agent instance through a wizard or built-in chat. The owner controls capabilitie
 daily/monthly inference and compute budgets, connections, network domains and
 per-action confirmations. The application shows usage, gating and redacted history.
 
-This E11 implementation is a control-plane prototype: chat is scripted, OAuth
-providers and work execution are simulated, and no model call or Gmail/Reddit
-action is performed. SMTP sign-in delivery is the one configurable real outbound
-edge. PayPal, a running autonomous agent and deployment are outside E11.
+The original E11 implementation used scripted chat and simulated provider/work
+adapters. Optional extensions below add a real interviewing assistant, model
+inference, PayPal Sandbox and hosted scheduling. Gmail/Reddit actions and ad
+delivery remain simulated.
 
-The stable baseline includes the responsive E11-6 owner UI and the proposed PayPal
-funding/purchase designs. See the [itemized implementation backlog](docs/paypal-mvp-backlog.md)
-for the next release. PayPal and real inference remain unimplemented.
+The local [mock PayPal MVP](docs/mock-paypal-mvp.md) extends that baseline with a
+funding → inference → exact purchase approval → buyer checkout → task-resume
+journey. Payments, the merchant and model responses are local fixtures; balances,
+policy checks, receipts and task state persist in SQLite.
+
+The optional [PayPal Sandbox integration](docs/paypal-sandbox.md) uses PayPal-hosted
+buyer checkout and server-verified captures for funding and approved purchases.
+It runs separately on port 4180 with its own database and requires Sandbox app
+credentials and test accounts. Real inference is an explicit option below; ad delivery remains simulated;
+there is no live-payment mode. Both service funding and an owner-approved purchase
+have completed PayPal-hosted Sandbox checkout and capture; the setup guide records
+that evidence.
+
+The [Render deployment](docs/render-deployment.md) adds unattended scheduled work
+through Render Workflows and a cron dispatcher. AICL keeps credentials, reserves
+inference and compute allowances, verifies outputs and preserves independent
+purchase approval. The hackathon profile requires a private access link before
+visitors can enter any email address and sign in immediately. The link opens a
+browser-bound sign-in form for ten minutes. Each visitor gets an isolated temporary
+workspace with a paused PocketPlan sample agent. No email is sent, verified or
+stored, and the address cannot recover another browser session's workspace.
+Shared operator-controlled inference and compute ceilings still apply. Configure
+`AICL_ACCESS_LINK_TOKEN` and share the resulting access link privately as described
+in the deployment guide. Local test helpers remain unavailable. A live Render
+deployment and its scheduled execution proof are still required.
 
 ## Run locally
+
+In the existing `habitat-ai` workspace, the canonical application checkout is
+`habitat-mvp` on local `main`. The former `e11-epic-completion` path is a local
+compatibility link. Use this checkout's own `.venv`; archived repositories are
+not required for new launches. See the [consolidation record](docs/development/repository-consolidation.md)
+for the preserved history and backup locations.
 
 Use Python 3.12 from the repository root:
 
@@ -22,16 +50,101 @@ Use Python 3.12 from the repository root:
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --require-hashes -r backend/requirements.lock
-PYTHONPATH=backend python -m aicl.test_server
+PYTHONPATH=backend python -m aicl.demo_server
 ```
 
 Open <http://127.0.0.1:4173>, request a sign-in link for `demo@example.test`, then
 open <http://127.0.0.1:4173/__test__/last-magic-link?email=demo%40example.test>
 and follow the captured link. Confirm sign-in to reach the workspace. This local
-test composition needs no SMTP account and removes its temporary database on exit.
+demo needs no SMTP account and keeps its database in `.ctx/mock-commerce/demo.db`
+across restarts. Use `--port 4174` if 4173 is occupied. The isolated automated-test
+server remains available as `python -m aicl.test_server`.
 
 The [application guide](docs/aicl-mvp.md) covers the full demo, persistent local
 configuration, routes, checks and operational limits.
+
+### GPT-6 Sol inference for the PocketPlan demo
+
+The scheduled PocketPlan workflow can call OpenAI's Responses API with the exact
+model `gpt-6-sol` to write campaign plans and interpret performance reports from
+saved goals, criteria and supplied evidence. Enable this explicitly:
+
+```sh
+PYTHONPATH=backend python -m aicl.demo_server \
+  --inference openai --inference-key-file /absolute/path/to/private-openai.env
+```
+
+The private file contains `OPENAI_API_KEY=...`. It is read as literal text, never
+executed or sent to the browser. An existing `OPENAI_API_KEY` environment variable
+can be used instead by omitting `--inference-key-file`. API access and billing
+must be enabled for this model on that key's account. The existing mock demo
+remains the default and requires no OpenAI account. The same inference flags
+work with `aicl.sandbox_server` to combine real inference with PayPal Sandbox.
+
+AICL reserves at most **$0.052 per model request** (16,000 input and 2,000 output
+tokens at the pinned standard rates) before dispatch. A separate **$1 total API
+ceiling per database** includes unresolved reservations; mock or Sandbox funding
+cannot enlarge it. Agent resource limits and service credit are also enforced.
+Use `--inference-max-spend-micro-usd` to set a lower ceiling. Known usage settles
+once; ambiguous provider outcomes retain their reservation and are not silently
+retried. Restarting the server against the same database preserves this history.
+
+Create or open a PocketPlan workflow, save its goals and criteria, fund service
+credit, enable inference and the schedule, then advance the demo's scheduled
+occurrence. Campaign plan/report details show the model, provider response ID,
+token usage and cost. The completion gate checks the output structure and the
+model's assessment of the saved criteria; the owner still reviews quality and
+factual correctness. Nothing is generated by merely opening an Audit page.
+
+Advertising metrics and delivery, the schedule clock, and quote-bound creative
+remain fixtures. GPT-6 Sol interprets supplied metrics rather than claiming to
+measure real advertising performance. The owner still approves the exact fixed
+merchant offer. General workflows remain simulated. The owner assistant is a
+separate opt-in below. This inference flag does not activate a background scheduler or buy ads.
+
+Model and pricing reference: [GPT-6 Sol](https://developers.openai.com/api/docs/models/gpt-6-sol).
+The request uses explicit prompt caching with no cache breakpoints to avoid
+cache writes; see [OpenAI prompt caching](https://developers.openai.com/api/docs/guides/prompt-caching).
+
+### Interviewing and monitoring assistant
+
+The owner assistant uses the OpenAI Agents SDK for Python and GPT-6 Sol. It asks
+about outcomes, audience, inputs and completion criteria, then prepares a visible
+agent proposal. It can inspect owned agents, spending, scheduled jobs, purchases
+and deliverables, and prepare pause/resume proposals. Enable it with:
+
+```sh
+PYTHONPATH=backend python -m aicl.demo_server \
+  --inference openai --chat openai \
+  --inference-key-file /absolute/path/to/private-openai.env
+```
+
+Open **Assistant** in the sidebar. Review the saved proposal and click **Create
+agent** to create its draft and workflow atomically. The draft has inference
+permission, zero resource limits and a disabled schedule. Set controls and fund
+it through the existing owner flow. The supported worker remains the reviewed
+PocketPlan marketing example; the assistant does not create arbitrary executable
+agents or claim that simulated advertising is real. Budget notes in a proposal
+are informational; enforceable limits remain in the owner's controls.
+
+Only owner-authenticated confirmation POSTs apply proposals. Confirmations bind
+to the exact proposal version; schedule changes also recheck configuration and
+policy versions. The model cannot confirm changes, approve purchases, fund work,
+increase budgets or obtain credentials. Reads never dispatch scheduled work.
+
+Assistant inference has a separate persistent **$1 operator-funded allowance per
+database**, configurable with `--assistant-max-spend-micro-usd` or
+`AICL_ASSISTANT_MAX_SPEND_MICRO_USD`. It does not spend a not-yet-created agent's
+credit. Every request reserves $0.12 before dispatch, has a 2,000-token
+output limit, and a chat turn is bounded to five model requests. The tool loop
+uses escaped text, strict function schemas and bounded context. Requests have
+durable replay keys; SDK/provider retries and exported tracing are disabled.
+Unknown charges retain their hold and stop further requests until an operator
+reconciles them against provider usage. Restarting does not replenish allowance.
+
+For hosted configuration, set `AICL_CHAT_MODEL_MODE=openai` and `OPENAI_API_KEY` in
+the control-plane server environment. The existing `fake` mode remains available
+for deterministic tests and offline demonstrations.
 
 ## Implementation and acceptance
 
@@ -51,14 +164,18 @@ including 73 backend tests and four browser journeys. The combined stable-main
 integration is tracked by [MR !45](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/45).
 Its current pipeline records integration evidence; no deployment is implied.
 
-In the owner UI, use **Budgets**, **Capabilities** and **Activity** to jump between
-controls. **Simulated work request** sends the selected capability and compute
-minutes; it does not accept model tokens or an email body. After a result, use its
-reload link to see persisted usage, gates or pending confirmations. An uncertain
-result disables repeat submission until the page is reloaded and activity checked.
+Click anywhere on an agent card to open its details. **Budget** contains resource
+limits and the separate purchase allowance; **Funding** contains service credit,
+top-ups and payment history. **Task** runs the mocked purchase journey and explains
+missing setup in a dialog. These sections share one page with **Capabilities** and
+**Activity**. The separate **Simulated control test** exercises existing controls;
+it does not generate model output or buy an asset. Known results refresh the page's
+usage and controls; uncertain results ask you to review activity before retrying.
 
 ## Repository guide
 
+- [Local mock PayPal MVP and walkthrough](docs/mock-paypal-mvp.md)
+- [PayPal Sandbox setup, checkout and verification](docs/paypal-sandbox.md)
 - [Stable baseline and itemized PayPal MVP updates](docs/paypal-mvp-backlog.md)
 - [Current E11 scope and decisions](docs/plan/E11/_epic.md)
 - [Design index and contracts](docs/design/README.md)
@@ -73,3 +190,9 @@ result disables repeat submission until the page is reloaded and activity checke
 This repository is the Transcend Hackathon Showcase workspace. The earlier E2
 PayPal/marketing proposal remains for traceability; it is not the implemented
 E11 scope.
+
+Cloud sign-in requests now support an owner-controlled private browser handoff,
+encrypted access for the same agent's scheduled jobs, and a restricted worker
+page-read tool. See [Cloud browser setup and rollout](docs/cloud-browser.md).
+The browser runtime is optional and separate from the web app; the Render host's
+Chromium sandbox support must be verified before enabling it.

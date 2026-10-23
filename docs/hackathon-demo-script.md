@@ -1,184 +1,83 @@
-# Habitat PayPal demo script
+# Habitat demo — scheduled work, reviewed outcomes
 
-Updated October 19, 2026. The submission focus is **Habitat for the PayPal AI
-Hackathon**. The previous software-development-workflow presentation is retired.
-Target recording length: **2 minutes 50 seconds**, with at most 330 spoken words.
+Updated October 22, 2026. **Target: 2:48.** The intro establishes the owner journey; PayPal funding appears at 0:22, inside the first 30 seconds. Fresh browser captures now cover this scheduled workflow and its independent Audit review. The current edition is captions only, with no narration. It preserves the 168-second visual edit: 1920×1080 H.264, using 25 browser captures. The captions-only export is verified: 168.00 seconds, 5,546,916 bytes, no audio stream, full decode and browser playback passed. The H.264 video was copied without re-encoding.
 
-**Demo promise:** PayPal funds the agent's inference, and the agent uses a
-controlled PayPal purchasing tool to obtain a useful resource on the owner's
-behalf. AICL enforces the owner's separate funding, inference, purchase, and
-approval controls throughout one launch-kit task.
+The editable [recording script](../../demo-recordings/habitat-scheduled-workflow-2026-10-22/script.md), [scene plan](../../demo-recordings/habitat-scheduled-workflow-2026-10-22/plan.json) and [bottom text](../../demo-recordings/habitat-scheduled-workflow-2026-10-22/bottom-text.txt) live with the new demo artifacts. The prior local-voice draft is retained separately as an optional archive.
 
-**Readiness: TARGET — not implemented.** The current MVP has working owner
-controls and simulated work, but no PayPal integration, merchant purchasing tool,
-or real AI execution. Every payment, purchase, and model scene below requires
-implementation and verification before recording. The
-[rehearsal notes](hackathon-demo-rehearsal.md) preserve the controls already tested.
-The [funding specification](design/paypal-funding/spec.md),
-[funding technical design](design/paypal-funding/technical.md), and
-[agent purchase specification](design/agent-purchases/spec.md) define the proposed
-contracts.
+[Watch the video](../../demo-recordings/habitat-scheduled-workflow-2026-10-22/habitat-scheduled-workflow-captions-only.mp4) · [Local review player](http://127.0.0.1:8851/)
 
-## Smallest recording scenario
+## The story
 
-Use one reviewed marketing agent and one deliverable: a launch kit for the owner's
-app, consisting of a short plan, a purchased marketing template, and three draft
-posts using that template. The template is an artifact we own or have permission
-to distribute through one controlled **Demo Template Shop** Sandbox merchant.
-That merchant has a different PayPal merchant identity from the Habitat merchant
-that receives service-credit top-ups. Do not add arbitrary merchants, live
-advertising, or message sending to this recording.
+The owner defines a community-garden goal, expected deliverables and completion criteria. They fund inference, enable a cadence, then review work independently in Audit. A purchase request explains which job and output require it. The owner declines one request, approves another, and completes its separate checkout. Paid work resumes on schedule. Outputs are checked before submission, accepted or revised, and retained with costs and history.
 
-The owner buys **$5 USD of Habitat service credit** through PayPal Sandbox.
-Habitat verifies a completed capture before recording credit; approval and a
-return redirect alone add no funds. The owner explicitly allocates the credit to
-the agent and sets applicable daily/monthly inference and compute limits. Each
-model call reserves a bounded maximum, settles measured usage, and releases the
-unused reservation. In-policy model calls need no additional PayPal checkout.
-[PayPal Orders integration](https://developer.paypal.com/api/rest/integration/orders-api)
+The garden project is the owner's example configuration, not a built-in product feature. Habitat's features are goal and criteria configuration, bounded scheduled work, separate purchase consent, deliverable review and cost monitoring. This MVP uses local deterministic execution, validation and payment scenarios; it does not call PayPal or an inference provider. Retain the small checkout note and final scope disclosure.
 
-Separately, the owner enables purchasing from Demo Template Shop and sets a
-**$2 purchase limit**. The agent proposes a template with a **$1 final total**,
-including any applicable tax or other charges. These are controlled demo catalog
-values, not claims about a real third-party product. The purchase limit is a
-policy ceiling, not cash or a PayPal account balance. The owner reviews the exact
-merchant, items, license/recipient, currency, and total in Habitat, then completes
-buyer approval in PayPal Sandbox Checkout. The broker verifies the approved order
-and uses the merchant adapter to capture it once. Only verified completed payment
-allows delivery of the receipt and purchased artifact to the agent.
+## Recording configuration
 
-**These are two separate payment paths.** The top-up pays Habitat for service
-credit. The purchase pays Demo Template Shop through the buyer's PayPal checkout;
-it never spends or transfers Habitat inference credit. Ordinary Orders checkout
-requires an integrated merchant and buyer approval. PayPal's `pay_order` tool
-captures an authorized order; it does not grant arbitrary buyer-wallet authority.
-[Orders flow](https://developer.paypal.com/api/rest/integration/orders-api),
-[PayPal agent tools](https://developer.paypal.com/ai-tools/agent-tools/)
+Use a new dedicated recording agent; preserve existing agents and their history. Name it **Garden Pilot Assistant**. Enable inference. Prepare the saved configuration and limits, but leave funding, schedule activation, decisions and reviews for the walkthrough.
 
-**Sandbox credit does not pay real model bills.** The operator pays the model
-provider through an independently capped account. Record actual measured usage
-and the resulting credit balance; never invent charges or provider output.
+- **Goal:** Help our community garden recruit volunteers for the spring planting day.
+- **Context:** Neighbors who are new to gardening. Use friendly, practical language and invite them to take part.
+- **Invitation copy:** A welcoming invitation with a clear next step. Criteria: identify the audience; describe a practical benefit; include a next action. No purchased resource; passing scenario.
+- **Pilot launch checklist:** A practical checklist for organizing the first session. Criteria: include at least three actions; identify a coordinator; explain the next step. Requires a purchased resource; passing scenario.
+- **Outreach resource brief:** A short plan for reaching nearby residents. Criteria: identify the audience; suggest an outreach channel; identify a success measure. Requires a purchased resource; passing scenario. Decline this request in the walkthrough.
+- **Schedule:** Every hour, America/New_York.
+- **Controls:** $1 daily and $10 monthly inference/compute limits; purchases enabled with a $3 cumulative allowance.
+- **Funding:** $5 service credit. Each merchant resource quote is expected to be $1; verify the actual screen instead of assuming.
+- **Revision feedback:** Make the invitation shorter and give neighbors one clear next step.
 
-## Timed target script
+Record saved values rather than prolonged typing. Capture genuine UI states and actions. Do not imply the demo clock is a production background worker. If a quote expires during setup, refresh it and review the current quote before recording its decision. Keep the related source job visible so each purchase remains distinguishable.
 
-All screen actions below are proposed behavior. Read the quoted narration only
-after it works. Keep **PayPal Sandbox · test money** visible in payment scenes.
-The quoted narration contains 251 words; allow the remaining time for interaction
-and inspection. Verify timing with a full rehearsal.
+## Intro diagram
 
-### 0:00–0:15 — The owner problem
+Use the existing Habitat sprout logo and wordmark with three simple swimlanes: **Configure** (goals, deliverables and criteria; funding and limits), **Scheduled work** (hourly or daily jobs within controls), and **Audit** (purchase decisions, deliverable review, costs). Connect scheduled work to Audit records. Purchases are one possible result of a job, not a mandatory next step or direct continuation after every run. Do not add implementation infrastructure to this short owner-journey diagram.
 
-**Screen:** Habitat workspace and the reviewed marketing agent.
+## Script and bottom text
 
-> An agent needs money to think and sometimes needs to buy something to finish a
-> task. Habitat makes both visible and controlled. I'll use PayPal to fund this
-> agent and approve one useful purchase.
+The bottom caption is the on-screen explanation for the captions-only video. The earlier voice script remains archived in `narration.txt` and is not part of this edition.
 
-### 0:15–0:45 — Fund and allocate inference credit
+| Time | Screen/action | Bottom caption |
+| --- | --- | --- |
+| 0:00–0:10 | **01-intro · A home for useful agent work**<br>Habitat logo and simplified workflow diagram. Make Audit a separate review lane, connected to scheduled work; approval is not a required step after every run. | Configure the outcome → schedule funded work → review purchases, deliverables and costs. |
+| 0:10–0:22 | **02-configure · Define what complete means**<br>Saved goal and context, then Invitation copy criteria. Briefly reveal the named checklist and outreach deliverables. Routine typing is prepared offscreen. | The owner defines the goal, deliverables and completion criteria. The garden project is one example. |
+| 0:22–0:33 | **03-funding · Fund inference with PayPal**<br>Funding amount and $5 checkout with Habitat as recipient; authorize payment and show credited balance. Keep the final checkout disclosure visible. | PayPal funds service credit for inference. Purchase allowance is a separate spending control. |
+| 0:33–0:43 | **04-schedule · Enable scheduled work**<br>Show hourly cadence and next occurrence, Enable schedule, then Demo controls → Advance to next scheduled run. Do not imply a real background cron is running. | Choose hourly or daily work. This walkthrough advances the demo clock to the next occurrence. |
+| 0:43–0:54 | **05-audit · Review on your own schedule**<br>Audit Purchases showing both pending requests, the Deliverables badge with one ready output, and the compact tab/filter layout. | Audit gathers past purchase requests, completed outputs and costs. Other eligible work can continue. |
+| 0:54–1:07 | **06-source-job · See the work behind a purchase**<br>Outreach resource brief purchase: hold Supports deliverable, saved scope and Why requested. Open View source job; show original requirements and linked requests. Return with Back to purchases. | Each request identifies its deliverable and source job, including the original goal, criteria and scheduled occurrence. |
+| 1:07–1:21 | **07-decline · Decline a purchase**<br>Outreach request before decision, click Decline purchase, then hold on declined state. Keep the deliverable identity visible so this cannot be confused with the checklist approval. | Decline stops this purchase and releases its allowance. The decision and prior inference usage remain recorded. |
+| 1:21–1:33 | **08-approve · Approve an exact purchase**<br>Checklist request with seller, $1 total and license. Show Resume on schedule selected next to Run now, then click Approve purchase. | Review the item, seller, license and total. Choose Resume on schedule, then approve this purchase. |
+| 1:33–1:43 | **09-checkout · Remember details, require consent**<br>Prepared $1 merchant checkout with remembered buyer and source-job link. Complete payment and show paid/delivered result; preserve the small demo checkout note. | The saved PayPal buyer carries forward. Each merchant payment still needs the owner’s consent. |
+| 1:43–1:53 | **10-continue · Continue the waiting job**<br>Paid purchase waiting for scheduled continuation. Advance the next demo occurrence, then follow View resulting deliverable or its Audit output card. | After payment and delivery, the waiting job continues at its next eligible scheduled occurrence. |
+| 1:53–2:06 | **11-accept · Review the actual output**<br>Checklist content and completion criteria, then Accept deliverable and hold on Accepted. Keep version/source-job provenance visible. | Read the deliverable and its completion checks. Accept the exact version you reviewed. |
+| 2:06–2:19 | **12-revise · Ask for a useful revision**<br>Invitation copy review. Enter Make the invitation shorter and give neighbors one clear next step. Click Request changes; hold on saved feedback, then advance next demo occurrence. | Give specific feedback. A revision is queued for the next scheduled occurrence, with history preserved. |
+| 2:19–2:28 | **13-versions · Keep review history**<br>Version 2 with Proposed revision and its shorter invitation; show previous version link/history. | Version history preserves the original, feedback and revised output. Validation and owner acceptance are separate. |
+| 2:28–2:39 | **14-costs · Understand the costs**<br>Costs & statistics summary for the recording agent, then AG Grid usage ledger. Demonstrate one sort or filter; use actual balances from recording, never hard-coded totals. | AG Grid makes usage and costs sortable and filterable. Service credit, merchant spending and holds stay distinct. |
+| 2:39–2:48 | **15-close · Scheduled work. Reviewed outcomes.**<br>Pause schedule, hold paused state, then logo end-card if space allows. Keep a readable final demo-scope line. | Pause future work; preserve history. Demo MVP: local simulated execution, validation and payments. |
 
-**Screen:** Add $5 through PayPal Sandbox Checkout. Show the verified completed
-capture, then explicitly allocate the credit to the agent. Show applicable
-inference/compute limits and the independent operator real-cost ceiling.
+## Editing and evidence rules
 
-> First, I buy five dollars of Habitat service credit through PayPal Sandbox.
-> Habitat verifies the completed payment, then I allocate that credit to my agent.
-> This is test money; real inference uses a separately capped operator account.
+- Keep captions and states readable at the established timing. Target 2:48; the exported video must remain below 3:00.
+- Keep the diagram readable for at least eight seconds. Do not open on an unexplained purchase or a later result.
+- The decline scene has 14 seconds: show the identified outreach request for at least five seconds and its recorded declined state for at least seven.
+- Hold source-job requirements long enough to connect the resource to its work. Do not omit this screen to gain time.
+- Approval, checkout and scheduled continuation are separate actions. Preserve that order.
+- Allow at least four seconds on Accepted and five on saved revision feedback. Do not compress these outcomes into a flash.
+- Keep output text legible; crop or scroll deliberately rather than shrinking a full-page screenshot. Use gentle transitions and avoid continuous decorative zooming.
+- Captions must not cover the controls or statuses they describe. Verify the final artifact at ordinary playback size.
+- Use actual final balances. Do not manufacture a zero hold or a particular inference total if additional scheduled jobs were created during the demo.
+- Call the artifact an **edited walkthrough** if it is assembled from browser screenshots. Do not describe still-image edits as a continuous screen recording.
 
-### 0:45–1:05 — The agent proposes a purchase
+## Recording artifacts
 
-**Screen:** Ask, “Prepare a launch kit for my app, using a suitable marketing
-template.” Show an actual model-produced plan and the allowlisted merchant's
-trusted $1 quote. Show the $2 purchase policy separately from service credit.
+- [plan.json](../../demo-recordings/habitat-scheduled-workflow-2026-10-22/plan.json): renderer input, with scene IDs, durations, captions, narration and capture instructions.
+- [timeline.json](../../demo-recordings/habitat-scheduled-workflow-2026-10-22/timeline.json): planned timing mirror; replace or supplement with actual render timings after assembly.
+- [bottom-text.txt](../../demo-recordings/habitat-scheduled-workflow-2026-10-22/bottom-text.txt): current on-screen captions, grouped by scene.
+- [narration.txt](../../demo-recordings/habitat-scheduled-workflow-2026-10-22/narration.txt): optional archived voice script from the earlier draft.
+- [captures.json](../../demo-recordings/habitat-scheduled-workflow-2026-10-22/captures.json): maps each scene to the actual browser captures from the recording pass.
 
-> The agent plans my launch kit and proposes a one-dollar marketing template from
-> our demo merchant. Its purchase limit is separate from its inference credit.
-> Finding a product does not authorize payment.
+## Earlier recording
 
-### 1:05–1:30 — Owner review and PayPal buyer approval
-
-**Screen:** Review the exact seller, item, license/recipient, currency, and final
-total. Approve in Habitat, then complete PayPal Sandbox buyer checkout. Both
-approvals bind to this purchase; changed details require a new approval.
-
-> I review the seller, template, and final total, then approve this specific
-> purchase. PayPal lets me review and approve the payment. The merchant receives
-> this payment directly; my Habitat service credit does not pay for it.
-
-### 1:30–1:50 — Verify payment and deliver the resource
-
-**Screen:** Broker verifies order identity, seller, contents, total, and approval;
-merchant adapter captures once. Show completed capture, merchant receipt, and the
-delivered template. Payment pending is never shown as paid or fulfilled.
-
-> Habitat verifies the order and completed capture before delivering the template.
-> Here are the merchant receipt and purchased file. Repeating the request cannot
-> create another charge or spend the approval twice.
-
-### 1:50–2:20 — Use the purchase and meter inference
-
-**Screen:** Agent uses the delivered template to produce actual draft posts.
-Show the saved launch kit, measured model usage, released reservation, remaining
-service credit, and separate merchant purchase record.
-
-> Now the agent uses that template to create my launch kit. Each model call
-> reserves a bounded cost, settles measured usage, and releases unused credit.
-> I can inspect the result, inference charges, and merchant purchase separately.
-
-### 2:20–2:40 — Refuse an unapproved purchase
-
-**Screen:** Request another allowed-catalog purchase without owner approval.
-Show a readable approval-required response before payment dispatch. Other policy
-checks pass so the demonstration proves the approval gate. A separate acceptance
-test must also prove that changing an approved quote invalidates its approval.
-
-> A second purchase has no approval, so Habitat stops before payment. The agent
-> cannot approve itself. A changed price or different item also needs a fresh
-> approval.
-
-### 2:40–2:50 — Close on the product
-
-**Screen:** Finished launch kit, both payment records, remaining credit, and the
-blocked purchase.
-
-> Habitat connects funded intelligence with controlled purchasing: useful work,
-> clear receipts, and an owner who stays in charge.
-
-## Implementation needed for this recording
-
-| Work | Minimum completion evidence |
-| --- | --- |
-| Real AI task | Reviewed agent plans the launch kit, proposes the allowlisted template, consumes the delivered artifact, and saves actual model output with usage. Current scripted chat and fake work are insufficient. |
-| PayPal funding | Owner-bound Sandbox Orders `CAPTURE` flow; verified amount, currency, Habitat merchant, and completed capture; one durable credit per capture. Approval or pending capture adds no credit. |
-| Allocation and inference | Explicit allocation of existing credit, applicable daily/monthly limits, atomic bounded reservations, measured settlement at versioned prices, and release of unused credit. Sandbox funding cannot increase the operator real-cost ceiling. |
-| Merchant purchase tool | One controlled seller identity distinct from Habitat's funding merchant, a trusted owned/licensed digital-product quote, and a server-side merchant adapter behind AICL. Agent context never receives payment credentials. |
-| Purchase policy and approval | Separate purchase-spend policy; exact merchant, items, total, currency, license/recipient and expiry bound to owner approval; buyer Checkout approval bound to the corresponding order. Agent cannot widen policy or approve its own proposal. |
-| Purchase execution and fulfillment | Broker verifies the order, captures through the merchant adapter, and delivers receipt plus artifact only after verified completed capture. Preserve stable operation identities and prevent duplicate charges and fulfillment. |
-| Recovery | Verified/deduplicated webhooks, pending/unknown reconciliation, refund/reversal handling and restart readback for each payment path. Uncertain capture never starts a replacement payment. |
-| Owner UI | Funding credit, agent allocation, inference limits, purchase policy, approval details, pending states, two payment records, delivered artifact, usage and remaining credit are clearly distinct and update immediately. |
-| Full rehearsal | Actual Sandbox top-up and separate merchant capture, useful real-model output using the purchased asset, and an unapproved-purchase refusal before payment dispatch. Separately verify changed-quote denial and duplicate-safe execution. |
-
-Reuse current authentication, owner controls, reservation/settlement concepts and
-audit history. Payment and purchase operations need their own contracts; simulated
-Gmail/Reddit approvals do not constitute payment support. MCP can carry the tools,
-but the AICL policy checks and approval enforcement live in the trusted service.
-Broader merchant discovery and delegated payment programs remain later work.
-
-## Recording and submission constraints
-
-The PayPal rules require a functional application with PayPal Sandbox integration
-and an AI tool, model, or platform; PayPal must be central. A working local build
-with complete setup instructions can satisfy demo access. Public hosting is not
-mandatory. The repository needs an open source license, and the video should be
-under three minutes and publicly visible on YouTube.
-[Official rules, checked October 19, 2026](https://paypalaihackathon.devpost.com/rules)
-
-Prepare fresh top-up and purchase orders for the take. Sign into the Sandbox buyer
-in advance, verify both Sandbox merchant identities, and keep the catalog/template
-license and price ready. Rehearse with a stopwatch; shorten introduction and
-accounting narration if needed, preserving both real Sandbox checkout sequences,
-owner approval, purchased artifact, useful model output, and denial evidence.
-Keep the operator real-cost ceiling enabled throughout.
-
-The existing control-only walkthrough is development evidence. It does not replace
-the missing payment, purchase, and AI scenes. Final narration must match the final
-implementation and the transaction states actually observed.
+The [October 21 script](hackathon-demo-script-2026-10-21.md) and its
+[2:49 walkthrough](../../demo-recordings/habitat-paypal-journey-2026-10-21/index.html)
+remain historical artifacts. They show the earlier manually started task flow and
+do not demonstrate this scheduled workflow or the current source-job review.

@@ -184,6 +184,13 @@ service or production payment path. PayPal/funding, live model/tool integrations
 an autonomous runner and external MCP are follow-on work outside E11. Current
 ticket and epic acceptance status is recorded [with the E11 evidence](plan/E11/completion.md).
 
+The optional hosted judge profile uses a private access link instead of emailed
+sign-in. `AICL_ACCESS_LINK_TOKEN` unlocks a browser-bound form for ten minutes;
+entering any email then opens an isolated temporary workspace without sending,
+verifying or storing the address. The address cannot recover another browser
+session's workspace. See the [Render guide](render-deployment.md) for private
+link setup, rotation and existing-session behavior.
+
 ## Packaged runtime validation
 
 The reviewed Dockerfile pins its Python base image and installs the hashed backend
@@ -198,3 +205,55 @@ The resulting staging manifest explicitly records `validation_only: true` and
 `applied: false`, plus unverified external services. This is build and configuration
 validation, not a deployed Google Cloud environment. A runner supporting Docker
 28.5.1 DinD with TLS is required; no registry or cloud credential is required.
+
+## Unified owner Requests
+
+`/requests` is the shared inbox for questions, sign-in needs, scoped permission
+requests, and purchases. Workspace and agent pages link to the same records;
+the navigation badge refreshes every 30 seconds while the page is visible.
+The pending view contains requests awaiting action, and All activity preserves
+responses. Audit retains costs, source work, purchase history and receipts.
+
+A request identifies its agent, source job, reason and continuation. Questions
+accept suggested or written answers. Answers belong to the originating job and
+do not rewrite future agent configuration. The owner can resume now or on the
+schedule. Both paths recheck current controls. An unresolved request parks the
+job durably; repeated scheduled occurrences do not duplicate the prompt or run
+that blocked work. Declining stops the affected job.
+
+Purchase entries project the canonical purchase under `purchase:<id>`; there is
+no second payment record. Exact purchase approval, provider authorization and
+verified completion remain separate stages of that one request. Checkout links
+back to it and returns there after payment. Approval alone never marks it paid.
+Responses require owner authentication, CSRF and the current request version.
+
+The bounded inference worker can return a structured clarification instead of a
+deliverable. Its observed usage is settled once, the worker exits while waiting,
+and the answer reaches a fresh bounded inference attempt on the same job.
+Unknown provider outcomes retain their reservation and are not resent. A job is
+limited to twelve inference attempts, including clarification rounds.
+
+Reviewed Render workers can propose an owner request through
+`POST /internal/render/jobs/{dispatch_id}/owner-request`. The worker token and
+claimed task bind the request to a job in that dispatch. The worker cannot submit
+an owner answer or approve its own proposal.
+
+**Cloud sign-in uses an optional private browser service.** Dynamic requests
+name the actual domain and purpose. The owner controls a fresh browser while the
+job waits, then returns its session and chooses immediate or scheduled
+continuation. Browser state is encrypted and reusable only by the same owner's
+agent on that domain for up to 24 hours. Revocation, expiry and uncertain shutdown
+block access. The worker receives page content, never cookies or login input.
+
+The handoff records **Session provided**, not verified provider authentication.
+A worker must recheck the required resource. The reviewed writing worker has not
+been converted into a general browser agent, and no live Snapchat campaign or
+purchase is executed by this change. Browser hosting and Render sandbox readiness
+are separate deployment steps; see [Cloud browser setup](cloud-browser.md).
+Permission responses retain their exact scope without changing global capabilities
+or authorizing payments.
+
+Focused verification: `PYTHONPATH=backend python -m pytest
+backend/tests/integration/test_owner_requests.py
+backend/tests/integration/test_owner_request_execution.py
+backend/tests/integration/test_owner_request_pages.py`.

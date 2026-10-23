@@ -1,9 +1,204 @@
 # Habitat PayPal demo readiness and usability findings
 
-The active submission is now the PayPal AI Hackathon. The earlier development-
-workflow presentation is retired. The observations below still apply to Habitat's
-owner controls, but they demonstrate only part of the new
-[PayPal demo script](hackathon-demo-script.md).
+The active submission is the PayPal AI Hackathon. The current app implements the
+mocked owner workflow in the [change plan](design/owner-workflow-change-plan.md):
+configure goals and deliverables, enable scheduled work, then independently
+review purchases and outputs in Audit. The earlier development-workflow
+presentation is retired.
+
+## Fresh scheduled-workflow walkthrough — October 22, 2026
+
+**Browser walkthrough and captions-only export verification complete.**
+The [new video](../../demo-recordings/habitat-scheduled-workflow-2026-10-22/habitat-scheduled-workflow-captions-only.mp4) runs **2:48 (168.00 seconds)**, with a Habitat logo and
+workflow-diagram intro and PayPal funding by 0:22. The media is an edited walkthrough
+of fresh actual browser captures, not a continuous screen recording. The current
+default is captions only, with no audio. The previous local-voice draft is retained
+as an optional archive.
+
+The dedicated recording agent **Garden Pilot Assistant**,
+`bcfe7b60-967d-4c96-98a1-ae95012e6e5e`, has three configured outputs:
+**Invitation copy**, **Pilot launch checklist**, and **Outreach resource brief**.
+The walkthrough funded **$5** of service credit and set a separate **$3 purchase
+allowance**, then exercised scheduled occurrences through the demo clock.
+
+| Review step | Observed result |
+| --- | --- |
+| Inspect a purchase's work context | Purchase identifies the supported deliverable and links its saved goal, criteria and occurrence through the source job. |
+| Decline the outreach resource | One request was declined; its decision remains in history. |
+| Approve the checklist resource | One **$1** resource was paid and delivered, with continuation on schedule. |
+| Review the checklist | **Version 1 accepted** after inspecting its output and completion checks. |
+| Revise the invitation | Feedback requested a shorter invitation and one clear next step; **version 2** retains the earlier output and review history. |
+| Monitor costs | AG Grid showed **$4.986 service credit**, **$0.014 inference usage**, **$1 merchant spending**, and **five jobs**. |
+| Stop future work | Schedule left **paused**; existing decisions and outputs remain available. |
+
+The current export preserves the **168-second, 1920×1080 H.264** visual edit
+assembled from **25 actual browser captures** and removes audio. The **5,546,916-byte**
+file contains no audio stream; its video was copied without re-encoding. Full
+decode passed. CUA playback used the captions-only source, reported `readyState=4`,
+duration 168 and no media error, and played successfully. The
+[local review player](http://127.0.0.1:8851/) was left paused at the intro.
+
+The prior narrated draft passed full decode and browser playback: `readyState=4`,
+no media error, duration 168, advancing playback time, and successful seeking to
+the decline scene at 67 seconds. Those earlier checks remain historical media
+evidence and do not verify the new audio-free export.
+
+Captures, current [bottom text](../../demo-recordings/habitat-scheduled-workflow-2026-10-22/bottom-text.txt), and the editing plan are in the
+[new demo directory](../../demo-recordings/habitat-scheduled-workflow-2026-10-22/script.md).
+Execution, completion checks, merchant responses and payments remain local scenario
+fixtures. These observations do not claim production scheduling, real PayPal
+charges or real inference. Existing agents were preserved.
+
+## Mock owner workflow verification — October 22, 2026
+
+**Outcome:** local verification passed **142 backend tests and five browser
+journeys**. The application now supports saved completion criteria, validation
+before submission, hourly/daily schedule settings, an independent purchase inbox,
+payment-gated **Run now / Resume on schedule**, **Accept / Request changes** with
+version history, and AG Grid cost/statistics monitoring. Existing owner isolation,
+payment recovery, reservations and accounting remain covered.
+
+Scheduled occurrences are mocked. Open **Demo controls** on the agent's
+**Goals & schedule** page and select **Advance to next scheduled run** to demonstrate
+due work without waiting. This control advances the saved demo schedule; it does
+not start a real cron worker, inference request or external purchase. Mock funding,
+checkout consent, decisions, receipts and deliverable history persist across reloads.
+
+The [updated script and bottom captions](hackathon-demo-script.md) now target
+**2:48**. The fresh browser walkthrough above covers the current app; the new 168.00-second
+captions-only export passed media QA. These results are local verification, not a
+new remote CI or deployment claim.
+
+## Historical recording — October 21, 2026
+
+The [October 21 owner journey](../../demo-recordings/habitat-paypal-journey-2026-10-21/README.md)
+is an edited 2:49 recording of the earlier workflow, with saved task customization,
+remembered PayPal buyer, funding, decline, pending payment, delivery, explicit
+resume and pause. It does not cover the new scheduled work or independent Audit
+and deliverable-review flow. Its
+[review evidence](../../demo-recordings/habitat-paypal-journey-2026-10-21/qa-review.md)
+records the fresh browser run and media checks. Payments and inference use local
+demo adapters. The October 19 findings below are retained as historical evidence.
+
+## Usability fix verification — October 19, 2026
+
+**Outcome:** the three rehearsal UI issues are fixed locally on
+`codex/demo-script-rehearsal`, based on stable main `68993e2`. This is local
+verification and independent code review, not a new remote CI or deployment claim.
+
+- Known work results now refresh status, budgets, confirmations and activity
+  together while keeping the result notice visible. A failed follow-up read
+  preserves the known outcome and requires explicit review before another request.
+- Draft, paused, archived, gated and capability-empty instances disable the test.
+  Only enabled capabilities appear. Budget and connection guidance gives the next
+  step; the simulator explicitly explains zero inference tokens and no real output
+  or payments. Network tests now have a destination field.
+- Manual recheck appears only for a persisted gate. Saving corrected limits clears
+  it automatically. Uncertain-response recovery uses a button-styled activity link
+  with an explicit reload, including when already at the same URL/anchor.
+
+Verification: **73 backend tests passed; all four existing browser journeys
+passed**, followed by a passing targeted rerun of the expanded E11-6 journey.
+The final journey covers automatic denial/success refresh, no-enabled-capability
+and paused states, duplicate suppression, failed state refresh, unknown/lost work
+responses, dirty budget-form preservation, newly inserted confirmation handlers,
+network destination denial, and desktop/375px layout. Unknown/lost response and
+failed-refresh cases use HTTP interception; normal work, gate, confirmation and
+network checks use the real local service with simulated provider/executor ports.
+Independent implementation review found no must-fix issues. Backend authorization,
+CSRF, owner/tenant derivation, reservations and version checks are unchanged.
+
+The preview was restarted from the changed checkout on `http://127.0.0.1:4173`,
+retaining its existing SQLite demo database. A fresh in-app browser walkthrough
+created **PayPal Demo — Verified Controls**,
+`7a89f4f5-809e-48b3-81b6-8e87aa22dc88`. It verified draft disabled state, zero-budget
+denial with automatically gated summary, four limits saved at daily 1/monthly 10,
+automatic success/usage refresh, and paused disabled state. No manual page refresh
+was needed after known work outcomes. The success recorded October 20 at 01:29 UTC
+(October 19 EDT): **one minute, 0.005000 USD simulated compute, zero inference,
+0.995000 daily compute available**. The new agent was left paused; earlier agents
+were preserved. This was not a timed video or a real payment/model run.
+
+Screenshots and receipt: `.ctx/completion-evidence/demo-ui-fixes/`. The current
+[demo script](hackathon-demo-script.md) removes manual refresh and paused-submit
+workarounds. A human timed take is still needed. The remaining product work is the
+[PayPal implementation backlog](paypal-mvp-backlog.md).
+
+## Stable-main rehearsal — October 19, 2026
+
+**Outcome:** the current control walkthrough completed in the browser. The PayPal
+funding, purchase, fulfillment and real-model scenes could not be run because the
+site has no such controls or adapters. This was a manual browser rehearsal with
+screenshots, not an automated acceptance run or a timed final video.
+
+Checkout: stable main `68993e286150c6eca2526b35ca6ea8aeb8c93253`, whose application
+files are identical to `419e77b`. Used the existing signed-in local preview at
+`http://127.0.0.1:4173`; did not restart it or claim a process-reported Git identity.
+Sign-in was outside this run. The approximately 730px-wide in-app viewport required
+scrolling and section jumps. Audit timestamps are UTC: the observed successful
+work was October 20, 2026 at 00:37 UTC, October 19 locally in EDT.
+
+Created **PayPal Demo — Control Rehearsal**, instance
+`c9f2405a-de40-470c-a0dc-0df1fdf44e7a`, using the wizard with only `inference` enabled.
+The saved instructions express the launch-kit goal and clearly identify this as
+a simulated rehearsal. The existing Director of Marketing, Demo Helper and prior
+Budget Control rehearsal agents were not changed.
+
+| Script step | Observed behavior | Result |
+| --- | --- | --- |
+| Create agent and review controls | Wizard saved name/instructions and one capability; creation receipt linked to a draft with four zero limits | Passed |
+| Activate before setting limits | Lifecycle became active; no work was automatically started | Passed |
+| Run one minute with zero limits | `Result: budget_exhausted. work was denied`; no usage row. Summary remained visually active until navigation/refetch | Control passed; stale-summary friction |
+| Save inference and compute limits, each daily 1/monthly 10 | Save refreshed the page; active status and full budget headroom appeared; no manual gate-clear step needed | Passed |
+| Run one simulated minute | `Result: succeeded.` appeared, but budget rows still showed zero settled and Activity still said No usage yet | Work passed; stale-summary friction |
+| Click the inline reload link | Automated pointer click left the result and stale rows unchanged. The link wrapped over two lines; its href matched the instance path | Reproduced interaction issue; cause not isolated |
+| Press Enter on that link | Page refreshed; one row showed 1 minute, inference 0.000000 USD and compute 0.005000 USD. Daily compute available became 0.995000; monthly 9.995000 | Passed |
+| Pause, then request another minute | Status became paused; request returned `instance_not_active`; prior usage and available limits were unchanged | Passed |
+| Refresh and inspect Activity | Audit included both denials, lifecycle changes, limit change, reservation, dispatch and settlement. Exactly one successful usage row remained | Passed |
+| Look for the PayPal journey | Workspace/agent navigation had no funding or purchase screen. Capability catalog had no purchase tool. Connections offered simulated Gmail and Reddit only | Blocked by missing product implementation |
+
+Final state: **paused**, only inference enabled, inference daily/monthly limits
+**1/10**, compute limits **1/10**, one simulated **0.005000 USD** compute charge,
+zero inference usage, zero held amounts. No payments, model calls, messages,
+external purchases or provider connections were performed.
+
+Local screenshots are saved under `.ctx/completion-evidence/demo-rehearsal-main/`:
+
+- `01-created.png` — creation receipt and draft state.
+- `02-budget-denied.png` — zero-budget denial.
+- `03-success-before-refresh.png` — inline success before dependent views refresh.
+- `04-usage-and-audit.png` — persisted simulated usage and audit.
+- `05-paused-refusal.png` — paused request refusal.
+- `06-final-paused.png` — final paused agent and remaining budget headroom.
+
+The local `receipt.json` captures the operation outcomes and final state. Its
+automation elapsed time includes inspection and tool waits; it is not the
+duration of a narrated demonstration.
+
+### Issues recorded before the fixes
+
+1. **Refresh dependent state after a result.** Current success/denial can disagree
+   with the header, budget table and activity. Update them together while keeping
+   the outcome visible and preserving unknown-result protections.
+2. **Make readiness and simulator meaning clear.** Active does not mean ready;
+   paused agents still display an enabled Run button. The request selector lists
+   disabled capabilities. The selected `inference` action submits zero tokens and
+   compute minutes, producing no model artifact. Give the presenter and owner a
+   plain explanation of the actual operation and relevant blocking control.
+3. **Simplify recovery.** Saving limits already clears a budget gate, while
+   **Re-check and clear** remains visible when no gate needs it. Use an actionable
+   denial message and show manual recheck only when relevant. Investigate the
+   wrapped reload link; automated pointer failure alone does not establish a
+   general human-click or browser-independent defect.
+4. **Build the PayPal task journey.** Funds/allocation, exact purchase review,
+   buyer checkout, separate seller receipts/delivery and a real agent task/output
+   are missing, not usability fixes that narration can cover. See the
+   [itemized backlog](paypal-mvp-backlog.md).
+
+For that earlier build, the workaround was browser refresh after first showing each work result,
+skip the redundant gate-clear button, paste prepared wizard text and use section
+links. The 207-word, 2:50 script is ready for a human timed read-through. The final
+PayPal sequence remains a target and cannot yet be recorded as working behavior.
 
 ## PayPal demo readiness
 
@@ -26,8 +221,8 @@ receipt recovery, and verified asset delivery. Purchase allowance is policy, not
 prepaid inference credit. Neither an MCP connection alone nor the current fake
 confirmation UI establishes this payment capability.
 
-The existing three UI priorities remain useful, especially automatic status
-updates. For the payment journey, also require a top-up preview with seller,
+The three control-UI priorities were resolved in the verification above. For the
+payment journey, also require a top-up preview with seller,
 amount, currency, sandbox environment, and intended allocation; distinct buyer
 approval and completed-capture states; and clear pending, cancelled, failed, and
 unknown outcomes. Separate the funding receipt from individual usage records.

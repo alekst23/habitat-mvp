@@ -39,7 +39,7 @@ test('real magic-link sign-in, wizard draft creation, field-error denial and a s
   await expect(page.getByText('Browser Helper')).toBeVisible();
 
   // a second user has their own empty workspace and does not see the first user's instance
-  const second = await browser.newContext({ baseURL: 'http://127.0.0.1:4173' });
+  const second = await browser.newContext({ baseURL: new URL(page.url()).origin });
   const secondPage = await second.newPage();
   await signIn(secondPage, 'second-owner@example.com');
   await expect(secondPage.getByRole('link', { name: /Create with wizard/i })).toBeVisible();

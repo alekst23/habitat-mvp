@@ -1,0 +1,4 @@
+# Official Render Workflows SDK. 1.4 supports launch idempotency and task metadata.
+# Kept separate so the AICL web service does not receive a Render API key/runtime.
+render==1.4.0
+httpx==0.28.1

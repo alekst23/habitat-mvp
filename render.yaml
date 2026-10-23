@@ -1,0 +1,137 @@
+# Deploy the complete reviewed repository revision. See docs/render-deployment.md.
+# Native Python Workflows + Cron; only the AICL web service owns persistent data.
+services:
+  - type: web
+    name: habitat-aicl
+    runtime: docker
+    region: oregon
+    plan: 0.5c-512mb
+    numInstances: 1
+    autoDeployTrigger: 'off'
+    healthCheckPath: /health/ready
+    disk:
+      name: habitat-state
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: '8000'
+      - key: AICL_ENVIRONMENT
+        value: production
+      - key: AICL_TEST_MODE
+        value: '0'
+      - key: AICL_HOSTED_WORKFLOW
+        value: '1'
+      - key: AICL_JUDGE_DEMO_MODE
+        value: '1'
+      - key: AICL_ACCESS_LINK_TOKEN
+        generateValue: true
+      - key: AICL_SESSION_TTL_SECONDS
+        value: '86400'
+      - key: AICL_WORKFLOW_EXECUTION_MODE
+        value: render
+      - key: AICL_RENDER_MAX_SPEND_MICRO_USD
+        value: '1000000'
+      - key: AICL_RENDER_MAX_DISPATCHES
+        value: '100'
+      - key: AICL_PUBLIC_BASE_URL
+        fromService:
+          type: web
+          name: habitat-aicl
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: AICL_DATABASE_URL
+        value: sqlite:////data/habitat.sqlite
+      - key: AICL_PRICE_TABLE_PATH
+        value: /app/backend/aicl/price_table.example.json
+      - key: AICL_SESSION_SECRET
+        generateValue: true
+      - key: AICL_IDENTITY_HMAC_KEY
+        generateValue: true
+      - key: AICL_SECRET_ENCRYPTION_KEY
+        generateValue: true
+      - key: AICL_SCHEDULER_TOKEN
+        generateValue: true
+      - key: AICL_WORKER_TOKEN
+        generateValue: true
+      - key: AICL_INFERENCE_MODE
+        value: openai
+      - key: AICL_INFERENCE_MAX_SPEND_MICRO_USD
+        value: '1000000'
+      - key: AICL_CHAT_MODEL_MODE
+        value: openai
+      - key: AICL_ASSISTANT_MAX_SPEND_MICRO_USD
+        value: '1000000'
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: AICL_PAYMENT_MODE
+        value: paypal_sandbox
+      - key: AICL_PAYPAL_CLIENT_ID
+        sync: false
+      - key: AICL_PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: AICL_PAYPAL_MERCHANT_ID
+        sync: false
+      - key: AICL_PAYPAL_PURCHASE_CLIENT_ID
+        sync: false
+      - key: AICL_PAYPAL_PURCHASE_CLIENT_SECRET
+        sync: false
+      - key: AICL_PAYPAL_PURCHASE_MERCHANT_ID
+        sync: false
+  - type: workflow
+    name: habitat-agent-workflow
+    runtime: python
+    region: oregon
+    buildCommand: pip install -r requirements-render.txt
+    startCommand: python -m render_worker.main
+    autoDeployTrigger: 'off'
+    envVars:
+      - key: PYTHON_VERSION
+        value: '3.12.15'
+      - key: PYTHONPATH
+        value: backend
+      - key: PYTHONUNBUFFERED
+        value: '1'
+      - key: AICL_INTERNAL_HOSTPORT
+        fromService:
+          type: web
+          name: habitat-aicl
+          property: hostport
+      - key: AICL_WORKER_TOKEN
+        fromService:
+          type: web
+          name: habitat-aicl
+          envVarKey: AICL_WORKER_TOKEN
+
+  - type: cron
+    name: habitat-schedule-dispatch
+    runtime: python
+    region: oregon
+    plan: 0.5c-512mb
+    schedule: '* * * * *'
+    buildCommand: pip install -r requirements-render.txt
+    startCommand: python scripts/render_dispatch.py
+    autoDeployTrigger: 'off'
+    envVars:
+      - key: PYTHON_VERSION
+        value: '3.12.15'
+      - key: PYTHONPATH
+        value: backend
+      - key: PYTHONUNBUFFERED
+        value: '1'
+      - key: AICL_INTERNAL_HOSTPORT
+        fromService:
+          type: web
+          name: habitat-aicl
+          property: hostport
+      - key: AICL_SCHEDULER_TOKEN
+        fromService:
+          type: web
+          name: habitat-aicl
+          envVarKey: AICL_SCHEDULER_TOKEN
+      - key: RENDER_WORKFLOW_SLUG
+        fromService:
+          type: workflow
+          name: habitat-agent-workflow
+          property: slug
+      - key: RENDER_API_KEY
+        sync: false

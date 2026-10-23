@@ -7,7 +7,7 @@ import base64
 import threading
 from dataclasses import dataclass
 
-from aicl.auth.magic_link import CaptureMagicLinkSender, SmtpConfig, SmtpMagicLinkSender
+from aicl.auth.magic_link import CaptureMagicLinkSender, DisabledMagicLinkSender, SmtpConfig, SmtpMagicLinkSender
 from aicl.auth.purge import MagicLinkPurge
 from aicl.chat.ports import ScriptedChatModel
 from aicl.clock import SystemClock
@@ -62,6 +62,8 @@ def magic_link_sender(settings: Settings):
     (startup fails when it is unset)."""
     if settings.test_mode and settings.environment == "test":
         return CaptureMagicLinkSender()
+    if settings.judge_demo_mode:
+        return DisabledMagicLinkSender()
     if not settings.smtp_host:
         raise SettingsError("AICL_SMTP_HOST", "is required outside the test composition")
     return SmtpMagicLinkSender(SmtpConfig(settings.smtp_host, settings.smtp_port, settings.smtp_username,

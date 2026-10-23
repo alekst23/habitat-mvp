@@ -155,8 +155,28 @@ known denials remain denials. A returned `unknown` outcome explains the retained
 reservation and keeps repeat submission disabled in that view. A network or
 unreadable-response failure cannot prove whether work ran: it stays disabled and
 asks the owner to reload and check activity. No automatic retry is issued. A
-known terminal result links back to the actual instance page so refreshed usage,
-gates and confirmations can be read from the server.
+known terminal success/failure or structured denial triggers a read of the same
+owner-authenticated instance page with caching disabled. The response must be
+successful, unredirected and contain the matching instance fragment before it
+replaces the status, controls, budgets, confirmations and activity together. The
+result notice remains visible, and handlers are rebound on the fresh controls.
+No POST is replayed. Unsaved owner form edits retain their original values and
+expected version, so the refresh neither erases edits nor bypasses conflicts.
+Work inputs stay disabled during the request. A failed follow-up read preserves
+the known work result while disabling submission and offering a button-styled
+activity link that explicitly reloads, including from the same URL/anchor.
+Unknown and lost responses retain the existing conservative recovery behavior.
+
+Readiness is advisory: draft, paused, archived, gated and capability-empty agents
+cannot submit through the test form. Only enabled capabilities appear. An active
+agent with exhausted budget headroom can intentionally demonstrate a denial,
+but the page explains the missing allowance first. Capability-specific guidance
+explains connections, confirmation and network destinations; `network.fetch`
+uses a labeled HTTPS destination field in the existing `destination_url` schema.
+The server remains authoritative for all controls. The test explicitly records
+simulated compute with zero inference tokens, without model output or payments.
+Manual gate re-check appears only for a persisted gate; saving corrected controls
+already performs the same existing gate re-evaluation.
 
 Confirmation and connection-begin controls likewise prevent simultaneous repeated
 clicks and show in-flight and failure feedback. A confirmation response is never
@@ -183,3 +203,94 @@ checkpoint moves to E11-6 because it consumes the fully integrated E11-5 pages;
 E11-5.AC1 and all earlier wiring evidence remain intact. Final E11-6 verification
 and independent review must name its own new candidate SHA and acceptance hash;
 the completed five-ticket baseline is not evidence for the new UI revision.
+
+## Owner task journey for local commerce
+
+This addition covers the local mock PayPal example and does not change the
+production-provider boundary. It extends the earlier control-room presentation
+with a task-first flow: define the brief, complete setup, start planning, approve
+the exact purchase, consent to buyer checkout, receive the asset, explicitly
+resume, and review the output. Payments, seller fulfillment and inference remain
+deterministic fixtures; authentication, controls, state and accounting are real.
+
+### Brief and run contracts
+
+The supported scenario identifier is `marketing_launch_kit`. Its structured brief
+contains exactly `product_name`, `audience`, and `goal`, all nonempty strings after
+trimming, with limits of 120, 240 and 600 characters respectively. These fields
+parameterize the deterministic example; general agent instructions do not become
+arbitrary executable tasks. Text is treated as data and autoescaped when rendered,
+including in completed output. No untrusted value is marked safe or interpreted as
+HTML.
+
+`POST /instances/{id}/commerce/brief` accepts those fields, the existing form CSRF
+token and `expected_version`. `MockCommerceService.save_brief` checks ownership,
+validates the brief and saves `mock_commerce_account.draft_brief_json`, incrementing
+the existing account/policy version. A stale form conflicts rather than replacing
+another edit. Saving a brief does not grant a capability, change a limit, activate
+the agent, top up credit, start work or approve payment.
+
+The start form submits the saved brief and a new intentional `request_id` to
+`POST /instances/{id}/commerce/runs`. The service copies the normalized brief into
+`mock_commerce_run.brief_json`; later draft changes cannot alter a running or
+completed task. A matching replay returns the existing result. Reusing its request
+ID with a different normalized brief conflicts. The service rejects a new task
+with `task_in_progress` while that agent has an active task, before planning is
+charged or another proposal is created. Migration `0010_task_journey.sql` adds the
+draft/run brief fields and preserves existing records with the original example.
+
+### Owner-scoped presentation
+
+The commerce dashboard includes `draft_brief`, `brief_saved`, `current_run`,
+`history_runs`, `active_run_count` and `attention_count` in addition to the existing
+readiness, funding, purchase and order projections. The current run prioritizes
+active work; otherwise the latest run remains available. Other runs appear in
+closed task history, preserving legacy records rather than deleting or rewriting
+them.
+
+The instance page renders `#task` before the general controls. The persistent
+`#setup` section contains `#task-setup`, which lists all missing readiness controls
+without requiring an attempted run. Lifecycle, inference permission, persisted
+gating, credit, resource limits and purchase allowance are checked independently,
+so one missing setting does not hide another. This projection is advisory: every
+mutation still rechecks its authoritative controls in the service transaction.
+The owner must explicitly save each permission, limit, funding and lifecycle
+choice; a readiness checklist never changes them automatically.
+
+The current task remains outside closed `#task-history`, has a stable
+`#run-{run_id}` anchor, and presents the applicable next action. The tool-testing
+confirmation panel is labelled **Tool confirmations** so it does not claim that
+the separate purchase approval queue is empty. Simulated control testing is
+secondary to the task flow and retains its truthful no-model/no-payment wording.
+
+### Consent, recovery and navigation
+
+Habitat approval binds the exact seller, item, license, amount and recipient. It
+does not substitute for separate buyer consent or complete payment. A pending
+checkout retains the same order and purchase hold and delivers nothing. Completing
+that checkout records the receipt and delivered template, then leaves the task
+`ready_to_resume`. The owner explicitly resumes; inference controls are rechecked
+before the saved brief and delivered asset produce the deterministic result.
+
+Task start, purchase decisions and task resume return to the exact run anchor.
+Purchase checkout returns to that same run; service-credit checkout returns to
+`#setup`. These links preserve context without replaying mutations. The old
+commerce dashboard URL remains a redirect to the funding section.
+
+Decline, cancellation or expiry closes the original proposal. Recovery explains
+the unpaid allowance release and previously charged planning usage, and **Start a
+fresh task** opens the preserved, editable brief at `#new-task`. A fresh task
+creates a new proposal and planning charge. It cannot reopen an old authorization,
+reuse a cancelled checkout, or silently continue without the purchased resource.
+
+### Focused acceptance
+
+`backend/tests/integration/test_owner_journey_pages.py` exercises real HTTP forms,
+the rendered form versions and CSRF tokens, SQLite state, and local adapters. It
+covers complete initial readiness, task-first hierarchy, a saved custom brief
+through approval/pending checkout/payment/resume, escaped output, unchanged funds
+after a competing start, exact-run return links, and declined-task recovery with
+collapsed history. Backend commerce tests cover normalization, replay conflicts,
+serialization, migration, ownership and accounting. Browser checks are separate
+evidence for visible layout, keyboard interaction and mobile usability; source or
+HTTP assertions alone do not establish those properties.

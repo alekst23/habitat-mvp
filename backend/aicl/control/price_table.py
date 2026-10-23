@@ -118,7 +118,7 @@ def import_price_table(conn: Connection, path: Path) -> PriceTableVersion:
 def effective_version(conn: Connection, now: datetime) -> PriceTableVersion | None:
     """Greatest effective_from not later than `now`, or None (use-time `price_unavailable`)."""
     from aicl.db import to_iso
-    row = conn.execute("SELECT version FROM price_table_version WHERE effective_from <= ? "
+    row = conn.execute("SELECT version FROM price_table_version WHERE effective_from <= ? AND explicit_only = 0 "
                        "ORDER BY effective_from DESC LIMIT 1", (to_iso(now),)).fetchone()
     return None if row is None else _load(conn, row["version"])
 
