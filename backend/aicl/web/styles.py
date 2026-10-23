@@ -70,7 +70,7 @@ CSS = r"""
   .skip-link { position: fixed; left: 12px; top: -70px; z-index: 100; padding: 12px 18px; border-radius: 8px; background: var(--green); color: white; }
   .skip-link:focus { top: 12px; color: white; }
   .app-shell { min-height: 100vh; display: grid; grid-template-columns: 196px minmax(0, 1fr); --radius: 12px; }
-  .sidebar { position: sticky; top: 0; align-self: start; height: 100vh; background: #1f3d30; color: #eaf0e6; padding: 22px 12px 18px; display: flex; flex-direction: column; }
+  .sidebar { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; background: #1f3d30; color: #eaf0e6; padding: 22px 12px 18px; display: flex; flex-direction: column; }
   .brand { display: flex; align-items: center; gap: 11px; color: inherit; text-decoration: none; }
   .brand:hover { color: inherit; }
   .brand-mark { width: 35px; height: 40px; flex: 0 0 35px; display: grid; place-items: center; color: #c9d9b6; }
@@ -88,8 +88,15 @@ CSS = r"""
   .nav-link.active, .nav-link[aria-current=page] { background: #d7e3c914; color: #f5f9ee; box-shadow: inset 3px 0 #bed0a4; }
   .nav-icon { width: 19px; height: 19px; display: grid; place-items: center; opacity: .9; }
   .nav-icon svg { width: 18px; height: 18px; }
-  .sidebar-footer { margin-top: auto; padding: 14px 8px 0; border-top: 1px solid #ffffff1f; font-size: 11px; line-height: 1.6; color: #afc1af; }
-  .sidebar-footer strong { color: #dce7d7; display: block; font-weight: 500; margin-bottom: 3px; }
+  .sidebar-footer { margin-top: auto; padding: 16px 6px 0; border-top: 1px solid #ffffff1f; }
+  .account-identity { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .account-avatar { width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center; border: 1px solid #ffffff26; border-radius: 50%; background: #ffffff0d; color: #dce7d7; font-size: 14px; font-weight: 600; }
+  .account-copy { min-width: 0; }
+  .account-status { display: block; color: #afc1af; font-size: 10px; }
+  .account-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #f5f9ee; font-size: 13px; font-weight: 600; }
+  .sidebar-account form { margin-top: 12px; }
+  .account-logout { width: 100%; justify-content: flex-start; min-height: 40px; padding: 9px 10px; background: transparent; border-color: #ffffff26; color: #dce7d7; font-size: 12px; font-weight: 500; }
+  .account-logout:hover { background: #ffffff0d; border-color: #ffffff40; }
   .app-main { min-width: 0; }
   .topbar { min-height: 44px; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); background: #fafbf7; }
   .breadcrumb { color: #778277; font-size: 12px; display: flex; align-items: center; gap: 12px; }
@@ -329,7 +336,9 @@ CSS = r"""
     .nav-link { justify-content: center; gap: 6px; min-height: 44px; padding: 8px 6px; font-size: 12px; line-height: 1.25; border-radius: 6px 6px 0 0; }
     .nav-icon { flex-shrink: 0; }
     .nav-link.active, .nav-link[aria-current=page] { box-shadow: inset 0 -3px #bed0a4; }
-    .sidebar-footer { display: none; }
+    .sidebar-account { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; padding: 10px 4px; }
+    .sidebar-account .account-identity { flex: 1; overflow: hidden; }
+    .sidebar-account form { margin: 0; flex-shrink: 0; }
     .topbar { min-height: 34px; padding: 7px 20px; }
     .app-shell .page-content { padding: 16px 20px 32px; }
     .app-shell .page-header { gap: 10px; margin-bottom: 14px; }

@@ -199,7 +199,8 @@ class SqliteSignInService:
                     return None
         if row is None:
             return None
-        return AuthContext(row["owner_id"], row["owner_id"], row["id_hash"], from_iso(row["expires_at"]))
+        display_name = row["display_name"] if "display_name" in row.keys() else None
+        return AuthContext(row["owner_id"], row["owner_id"], row["id_hash"], from_iso(row["expires_at"]), display_name)
 
     def logout(self, auth: AuthContext) -> None:
         with self.db.transaction() as conn:

@@ -15,6 +15,7 @@ class AuthContext:
     tenant_id: str
     session_id: str
     expires_at: datetime
+    display_name: str | None = None  # Cosmetic label only; never an identity or authorization key.
 
 
 class AuthProvider(Protocol):

@@ -9,7 +9,11 @@ The hackathon Blueprint requires a private access link to open its sign-in form.
 The link is reusable and grants a browser-bound form valid for ten minutes. A
 visitor then enters any email address and signs in immediately. No email is sent,
 and the address is neither verified nor stored. It cannot be used to recover
-another browser session's workspace. Each new visitor receives a separate
+another browser session's workspace. Only the part before `@` is retained as a
+short session display name, shown beside Sign out in the sidebar. It is not an
+account identity. Existing sessions without a name display "Judge" until the next
+sign-in. Signing out revokes the session and requires reopening the private link.
+Each new visitor receives a separate
 temporary workspace with a configured PocketPlan sample agent and its schedule
 paused. The existing entry and budget limits still apply. The sample has no
 fabricated PayPal funding, purchase approval or deliverable history.

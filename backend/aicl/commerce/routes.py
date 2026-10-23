@@ -13,6 +13,7 @@ from aicl.commerce.pages import FAILURES, NOTICES, render
 from aicl.commerce.factory import commerce_service
 from aicl.commerce.buyers import DEMO_BUYERS
 from aicl.control.csrf import require_csrf
+from aicl.web.account import sidebar_context
 from aicl.control.errors import AiclError
 from aicl.db import to_iso
 from aicl.workflow.factory import workflow_service
@@ -133,7 +134,7 @@ def commerce_router(ctx) -> APIRouter:
             paypal_return=paypal_return,
             paypal_approval_expired=bool(order.get("is_paypal_sandbox") and purchase
                                          and purchase["expires_at"] <= to_iso(ctx.clock.now())),
-            csrf=ctx.csrf_verifier.token_for(auth.session_id), failure=FAILURES.get(failure, "")))
+            **sidebar_context(ctx, auth), failure=FAILURES.get(failure, "")))
 
     @router.get("/commerce/orders/{order_id}", response_class=HTMLResponse)
     def checkout_page(order_id: str, request: Request, failure: str = ""):

@@ -14,6 +14,7 @@ from aicl.auth.session import GENERIC_LINK_SENT, SESSION_COOKIE
 from aicl.auth.judge_demo import (ENTRY_COOKIE, ENTRY_TTL_SECONDS, accept_access_link, valid_entry_token,
                                   verify_entry, start_workspace)
 from aicl.control.csrf import require_csrf
+from aicl.web.account import sidebar_context
 from aicl.control.errors import AiclError
 from aicl.control.instances import CATALOG_CAPABILITIES
 from aicl.creation.models import TEMPLATE_ID_DEFAULT, CreateInstanceRequest
@@ -128,8 +129,8 @@ def web_router(ctx) -> APIRouter:
             email = str(form.get("email", "")).strip()
             if not email or len(email) > 254:
                 return judge_entry(request, 422, "Enter an email using 254 characters or fewer.")
-            # Demo entry only: the supplied email is neither stored nor used as identity.
-            result = start_workspace(ctx, token, request.cookies.get(SESSION_COOKIE))
+            # Keep only a display username; the full address never becomes an identity key.
+            result = start_workspace(ctx, token, request.cookies.get(SESSION_COOKIE), email.split("@", 1)[0])
             response = RedirectResponse("/workspace", status_code=303,
                                         headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
             response.set_cookie(SESSION_COOKIE, result.cookie_value, max_age=result.max_age_seconds, path="/",
@@ -176,6 +177,7 @@ def web_router(ctx) -> APIRouter:
         service.logout(auth)
         response = RedirectResponse("/", status_code=303)
         response.delete_cookie(SESSION_COOKIE, path="/")
+        response.delete_cookie(ENTRY_COOKIE, path="/")
         return response
 
     @router.get("/workspace", response_class=HTMLResponse)
@@ -188,13 +190,13 @@ def web_router(ctx) -> APIRouter:
         return _page("workspace", title="Your workspace", instances=view.instances,
                      judge_demo_mode=ctx.settings.judge_demo_mode,
                      commerce_enabled=commerce_enabled, workflow=workflow,
-                     csrf=ctx.csrf_verifier.token_for(auth.session_id))
+                     **sidebar_context(ctx, auth))
 
     def wizard_form(auth, status=200, **values):
         defaults = {"name": "", "instructions": "", "selected": [], "errors": []}
         return _page("wizard", status, title="Create with wizard", key="wiz_" + uuid.uuid4().hex,
                      commerce_enabled=commerce_enabled,
-                     csrf=ctx.csrf_verifier.token_for(auth.session_id), capabilities=CATALOG_CAPABILITIES,
+                     **sidebar_context(ctx, auth), capabilities=CATALOG_CAPABILITIES,
                      **{**defaults, **values})
 
     @router.get("/agents/new", response_class=HTMLResponse)
@@ -226,6 +228,7 @@ def web_router(ctx) -> APIRouter:
                 raise
             return wizard_form(auth, 422, name=name, instructions=instructions, selected=selected,
                                errors=exc.extra["field_errors"])
-        return _page("created", title="Agent created", instance=result.instance, commerce_enabled=commerce_enabled)
+        return _page("created", title="Agent created", instance=result.instance, commerce_enabled=commerce_enabled,
+                     **sidebar_context(ctx, auth))
 
     return router

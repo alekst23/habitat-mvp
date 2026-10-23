@@ -13,6 +13,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from aicl.chat.service import SqliteChatOrchestrator
 from aicl.control.csrf import require_csrf
+from aicl.web.account import sidebar_context
 from aicl.control.errors import ERROR_HTTP_STATUS, AiclError
 from aicl.creation.service import validation_failed
 from aicl.web.pages import render
@@ -27,7 +28,7 @@ def chat_router(ctx) -> APIRouter:
     def page(auth, session_id: str | None, status: int = 200, error: str = "") -> HTMLResponse:
         messages = orchestrator.transcript(auth, session_id)
         return HTMLResponse(render("chat", title="Create with chat", messages=messages, session_id=session_id or "",
-                                   error=error, csrf=ctx.csrf_verifier.token_for(auth.session_id)),
+                                   error=error, **sidebar_context(ctx, auth)),
                             status_code=status)
 
     @router.get("/chat", response_class=HTMLResponse)

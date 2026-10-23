@@ -165,6 +165,10 @@ def test_expired_nonce_and_logged_out_session_cannot_reenter_the_same_account(ju
         headers = {"origin": ORIGIN, "x-csrf-token": ctx.csrf_verifier.token_for(auth.session_id)}
         assert client.post("/auth/logout", headers=headers).status_code == 303
         assert ctx.sign_in.resolve_session(cookie) is None
+        assert ENTRY_COOKIE not in client.cookies
+        assert start(client, nonce).status_code == 403
+        # Even a saved copy of the cleared proof cannot replay a consumed entry.
+        client.cookies.set(ENTRY_COOKIE, nonce, domain="habitat.example", path="/")
         assert start(client, nonce).status_code == 409
         assert len(records(judge_app, "owner")) == 1
 

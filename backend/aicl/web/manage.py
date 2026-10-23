@@ -20,6 +20,7 @@ from aicl.commerce.pages import FAILURES as COMMERCE_FAILURES, NOTICES as COMMER
 from aicl.commerce.factory import commerce_service as build_commerce_service
 from aicl.connections.models import CAPABILITY_SCOPES
 from aicl.control.csrf import require_csrf
+from aicl.web.account import sidebar_context
 from aicl.control.errors import ERROR_HTTP_STATUS, AiclError
 from aicl.creation.operations import LIMIT_FIELDS, SqliteInstanceOperations
 from aicl.creation.service import validation_failed
@@ -141,7 +142,7 @@ def manage_router(ctx) -> APIRouter:
                       work_disabled=work_disabled, work_guidance=work_guidance, gate_guidance=gate_guidance,
                       capability_guidance=capability_guidance, actions=LIFECYCLE_ACTIONS[snap.lifecycle], limit_fields=LIMIT_LABELS, limit_values=limits,
                       attach_rows=rows, hidden=hidden_fields(auth, snap.version),
-                      csrf=ctx.csrf_verifier.token_for(auth.session_id))
+                      **sidebar_context(ctx, auth))
         return HTMLResponse(html, status_code=status)
 
     @router.get("/instances/{instance_id}", response_class=HTMLResponse)
@@ -164,7 +165,7 @@ def manage_router(ctx) -> APIRouter:
         key = oauth if oauth in ("connected", "denied") else notice
         return HTMLResponse(render("connections", title="Connections", view=projections.connections(auth),
                                    notice=NOTICES.get(key, ""), hidden=hidden_fields(auth),
-                                   csrf=ctx.csrf_verifier.token_for(auth.session_id)))
+                                   **sidebar_context(ctx, auth)))
 
     async def form_values(request: Request) -> tuple[dict, int]:
         form = await request.form()  # tenant_id / owner_id fields, if any, are never read

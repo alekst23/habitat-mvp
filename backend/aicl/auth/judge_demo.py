@@ -90,7 +90,7 @@ def _sample(ctx, auth) -> None:
     # Funding requires a real, independently verified PayPal Sandbox checkout.
 
 
-def start_workspace(ctx, token: str, previous_cookie: str | None) -> SignedInSession:
+def start_workspace(ctx, token: str, previous_cookie: str | None, display_name: str = "") -> SignedInSession:
     """Consume one entry nonce and provision its sample atomically, or resume.
 
     The origin/cookie/form proof is verified by the route first. The nonce hash
@@ -129,10 +129,12 @@ def start_workspace(ctx, token: str, previous_cookie: str | None) -> SignedInSes
                      (owner_id, nonce_hash, to_iso(now), to_iso(now + timedelta(seconds=JUDGE_WORKSPACE_SECONDS))))
         if previous_cookie:
             conn.execute("UPDATE session SET revoked_at=? WHERE id_hash=? AND revoked_at IS NULL", (to_iso(now), _sha256(previous_cookie)))
+        # A short unverified label belongs to this session, never to account lookup.
+        label = " ".join("".join(c for c in display_name if c.isprintable() or c.isspace()).split())[:64] or None
         cookie = secrets.token_urlsafe(32)
-        conn.execute("INSERT INTO session(id_hash,owner_id,created_at,expires_at) VALUES (?,?,?,?)",
-                     (_sha256(cookie), owner_id, to_iso(now), to_iso(expires)))
-        auth = AuthContext(owner_id, owner_id, _sha256(cookie), from_iso(to_iso(expires)))
+        conn.execute("INSERT INTO session(id_hash,owner_id,created_at,expires_at,display_name) VALUES (?,?,?,?,?)",
+                     (_sha256(cookie), owner_id, to_iso(now), to_iso(expires), label))
+        auth = AuthContext(owner_id, owner_id, _sha256(cookie), from_iso(to_iso(expires)), label)
         _sample(ctx, auth)
         ctx.sign_in.audit.append(conn, AuditEvent("auth.signed_in", "owner", "committed", owner_id, owner_id,
                                                  details={"mode": "judge_demo"}))

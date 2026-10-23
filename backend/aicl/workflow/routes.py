@@ -13,6 +13,7 @@ from starlette.concurrency import run_in_threadpool
 
 from aicl.commerce.factory import commerce_service
 from aicl.control.csrf import require_csrf
+from aicl.web.account import sidebar_context
 from aicl.control.errors import AiclError
 from aicl.workflow.factory import workflow_service
 from aicl.workflow.pages import render
@@ -145,7 +146,7 @@ def workflow_router(ctx) -> APIRouter:
             cfg = {**cfg, **values}
         return HTMLResponse(render("workflow/config", title=agent.get("name", "Agent workflow"), cfg=cfg,
                                    agent=agent, overview=overview, notice=NOTICES.get(notice, ""), error=error,
-                                   csrf=ctx.csrf_verifier.token_for(auth.session_id)), status_code=status_code)
+                                   **sidebar_context(ctx, auth)), status_code=status_code)
 
     @router.get("/instances/{instance_id}/workflow", response_class=HTMLResponse)
     def configure_page(instance_id: str, request: Request, notice: str = "", error: str = ""):
@@ -229,7 +230,7 @@ def workflow_router(ctx) -> APIRouter:
                                    status=status, status_options=STATUS_OPTIONS.get(view, []), date_from=date_from,
                                    date_to=date_to, filters_active=bool(status or date_from or date_to),
                                    pending_purchase_count=pending_count,
-                                   csrf=ctx.csrf_verifier.token_for(auth.session_id)))
+                                   **sidebar_context(ctx, auth)))
 
     @router.get("/audit/jobs/{run_id}", response_class=HTMLResponse)
     def job_page(run_id: str, request: Request):
@@ -238,7 +239,7 @@ def workflow_router(ctx) -> APIRouter:
             return RedirectResponse("/", 303)
         item = service.job(auth, run_id)
         return HTMLResponse(render("workflow/job", title=item["deliverable_name"], job=item,
-                                   csrf=ctx.csrf_verifier.token_for(auth.session_id)))
+                                   **sidebar_context(ctx, auth)))
 
     @router.get("/audit/deliverables/{deliverable_id}", response_class=HTMLResponse)
     def deliverable_page(deliverable_id: str, request: Request, notice: str = "", error: str = ""):
@@ -248,7 +249,7 @@ def workflow_router(ctx) -> APIRouter:
         item = service.deliverable(auth, deliverable_id)
         return HTMLResponse(render("workflow/deliverable", title=item["name"], item=item,
                                    notice=NOTICES.get(notice, ""), error=error[:400],
-                                   csrf=ctx.csrf_verifier.token_for(auth.session_id)))
+                                   **sidebar_context(ctx, auth)))
 
     @router.post("/audit/deliverables/{deliverable_id}/review")
     async def review(deliverable_id: str, request: Request, auth=Depends(csrf)):
