@@ -1,5 +1,16 @@
 # Habitat development agents
 
+## Current local workspace
+
+On 2026-10-23 the current application was consolidated into `habitat-ai/habitat-mvp`
+on local `main`, preserving the former `e11-epic-completion` working changes.
+Use this checkout's `.venv`. Google Cloud delivery and the independent
+`habitat-dev` implementation are archived outside this application checkout.
+See `docs/development/repository-consolidation.md` for the migration record.
+Historical publication and E11 acceptance records below apply to their named
+revisions, not to every later application change. Local consolidation is not
+remote merge, current CI acceptance, or deployment evidence.
+
 ## Project context
 
 Read `docs/plan/E11/_epic.md` and `docs/design/README.md` for the current AICL

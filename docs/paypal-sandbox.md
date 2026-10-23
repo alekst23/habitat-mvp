@@ -40,7 +40,7 @@ refund/dispute handling and production deployment are separate follow-on work.
 
 ## Save credentials privately
 
-From the `e11-epic-completion` repository, create an ignored file such as
+From the `habitat-mvp` repository, create an ignored file such as
 `.ctx/paypal-sandbox/credentials.env`, restrict it to your account (`chmod 600`),
 and enter these values in your editor:
 
@@ -68,18 +68,17 @@ override matching environment values. Do not source this file as shell code.
 ## Start the isolated local server
 
 Use the project's Python environment with `backend/requirements.txt` installed.
-From this checkout, the existing workspace environment can run it directly:
+From this checkout, its local environment can run it directly:
 
 ```sh
-PYTHONPATH=backend ../e11-completion/.venv/bin/python -m aicl.sandbox_server \
+PYTHONPATH=backend .venv/bin/python -m aicl.sandbox_server \
   --credentials-file .ctx/paypal-sandbox/credentials.env --check-config
 
-PYTHONPATH=backend ../e11-completion/.venv/bin/python -m aicl.sandbox_server \
+PYTHONPATH=backend .venv/bin/python -m aicl.sandbox_server \
   --credentials-file .ctx/paypal-sandbox/credentials.env
 ```
 
-With a fresh checkout, create a local virtual environment, install
-`backend/requirements.txt`, and substitute `.venv/bin/python` in those commands.
+With a fresh checkout, first create `.venv` and install `backend/requirements.txt`.
 
 The configuration check makes **no API request**. Starting the server also makes
 no purchase or automatic payment; the owner initiates checkout in the app.

@@ -38,6 +38,12 @@ deployment and its scheduled execution proof are still required.
 
 ## Run locally
 
+In the existing `habitat-ai` workspace, the canonical application checkout is
+`habitat-mvp` on local `main`. The former `e11-epic-completion` path is a local
+compatibility link. Use this checkout's own `.venv`; archived repositories are
+not required for new launches. See the [consolidation record](docs/development/repository-consolidation.md)
+for the preserved history and backup locations.
+
 Use Python 3.12 from the repository root:
 
 ```sh
