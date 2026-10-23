@@ -75,9 +75,20 @@ class RenderExecution:
                 return prior
         if config.get("scenario") != SCENARIO or self.workflow.inference is None:
             raise AiclError("denied", "Render requires the reviewed PocketPlan workflow and configured real inference.", reason="unsupported_workflow")
+        self.workflow._require_demo_active(conn, auth)
         if not config["enabled"]:
             raise AiclError("denied", "The schedule is paused.", reason="schedule_paused")
         self.commerce._controls(conn, auth, config["instance_id"])
+        # The caller holds BEGIN IMMEDIATE. Count, sum and reservation must be
+        # atomic across every owner; new accounts and sandbox funding cannot
+        # increase the server's lifetime allowances. Replays above cost nothing.
+        if conn.execute("SELECT COUNT(*) FROM render_dispatch").fetchone()[0] >= self.workflow.render_max_dispatches:
+            raise AiclError("denied", "The server's Render dispatch limit is reached.", reason="render_dispatch_limit")
+        realized = conn.execute("SELECT COALESCE(SUM(cost_micro_usd),0) FROM render_compute_usage").fetchone()[0]
+        reserved = conn.execute("SELECT COALESCE(SUM(h.compute_micro_usd),0) FROM render_dispatch d "
+                                "JOIN budget_hold h ON h.id=d.hold_id WHERE h.state IN ('held','unknown')").fetchone()[0]
+        if realized + reserved + MAX_COMPUTE_COST > self.workflow.render_max_spend_micro_usd:
+            raise AiclError("denied", "The server's Render compute spend ceiling is reached. Demo funding cannot increase it.", reason="render_spend_ceiling")
         if self.commerce._balance(conn, config["instance_id"]) < MAX_COMPUTE_COST:
             raise AiclError("denied", "Service credit must cover the bounded Render runtime.", reason="credit_insufficient")
         dispatch_id = str(uuid.uuid4())
@@ -133,6 +144,18 @@ class RenderExecution:
                     "AND NOT EXISTS (SELECT 1 FROM render_dispatch other WHERE other.instance_id=d.instance_id AND other.id!=d.id AND other.state IN ('dispatching','submission_unknown','submitted','running','unknown')) "
                     "AND (d.state!='queued' OR NOT EXISTS (SELECT 1 FROM render_dispatch earlier WHERE earlier.instance_id=d.instance_id AND earlier.state='queued' AND earlier.rowid<d.rowid)) "
                     "ORDER BY d.created_at LIMIT ?", (limit,)).fetchall():
+                if self.workflow._demo_expired(conn, self._auth(conn, row["instance_id"]).owner_id):
+                    # A never-offered job cannot have started externally. An
+                    # offered job may have reached Render: retain its full hold.
+                    if row["offered_at"]:
+                        self.commerce.budget.mark_unknown(conn, row["hold_id"])
+                        state = "unknown"
+                    else:
+                        self.commerce.budget.release(conn, row["hold_id"])
+                        state = "blocked"
+                    conn.execute("UPDATE render_dispatch SET state=?,reason='Demo workspace expired' WHERE id=?", (state, row["id"]))
+                    self._event(conn, row, "render_workspace_expired", denied=True, reason="judge_demo_expired")
+                    continue
                 # Render launch idempotency lasts 24 h. Never cross that boundary.
                 if row["offered_at"] and self.clock.now() - from_iso(row["offered_at"]) >= timedelta(hours=23):
                     conn.execute("UPDATE render_dispatch SET state='unknown',reason='Submission outcome requires reconciliation' WHERE id=?", (row["id"],))
@@ -197,6 +220,7 @@ class RenderExecution:
             row = self._row(conn, dispatch_id)
             try:
                 with self.db.transaction():
+                    self.workflow._require_demo_active(conn, auth)
                     current = self.workflow._config(conn, auth, row["instance_id"])
                     if not current["enabled"]:
                         raise AiclError("denied", "The schedule is paused.", reason="schedule_paused")
@@ -304,7 +328,7 @@ class RenderExecution:
                 raise AiclError("conflict", "A provider request is still in flight or unresolved. Its reservation remains held.")
             auth = self._auth(conn, row["instance_id"])
             config = self.workflow._config(conn, auth, row["instance_id"])
-            if row["kind"] == "schedule" and config["enabled"] and config["demo_time"] == row["scheduled_for"]:
+            if row["kind"] == "schedule" and config["enabled"] and config["demo_time"] == row["scheduled_for"] and not self.workflow._demo_expired(conn, auth.owner_id):
                 try:
                     with self.db.transaction():
                         self.commerce._controls(conn, auth, row["instance_id"])

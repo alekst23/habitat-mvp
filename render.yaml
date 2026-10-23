@@ -22,8 +22,16 @@ services:
         value: '0'
       - key: AICL_HOSTED_WORKFLOW
         value: '1'
+      - key: AICL_JUDGE_DEMO_MODE
+        value: '1'
+      - key: AICL_SESSION_TTL_SECONDS
+        value: '86400'
       - key: AICL_WORKFLOW_EXECUTION_MODE
         value: render
+      - key: AICL_RENDER_MAX_SPEND_MICRO_USD
+        value: '1000000'
+      - key: AICL_RENDER_MAX_DISPATCHES
+        value: '100'
       - key: AICL_PUBLIC_BASE_URL
         fromService:
           type: web
@@ -63,17 +71,6 @@ services:
         sync: false
       - key: AICL_PAYPAL_PURCHASE_MERCHANT_ID
         sync: false
-      - key: AICL_SMTP_HOST
-        sync: false
-      - key: AICL_SMTP_PORT
-        value: '587'
-      - key: AICL_SMTP_USERNAME
-        sync: false
-      - key: AICL_SMTP_PASSWORD
-        sync: false
-      - key: AICL_SMTP_FROM
-        sync: false
-
   - type: workflow
     name: habitat-agent-workflow
     runtime: python

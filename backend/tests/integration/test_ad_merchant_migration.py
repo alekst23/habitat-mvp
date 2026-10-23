@@ -59,7 +59,7 @@ def test_ad_seller_migration_preserves_paid_pending_rows_and_append_only_receipt
 
     def assert_preserved():
         after = snapshot(env.db, original_columns)
-        for table in ("workflow_inference_attempt", "render_dispatch", "render_dispatch_attempt", "render_compute_usage"):
+        for table in ("workflow_inference_attempt", "render_dispatch", "render_dispatch_attempt", "render_compute_usage", "judge_demo_workspace"):
             assert after.pop(table) == []
         model = "gpt-6-sol-2026-10-22"
         render = "render-flex-bound-2026-10-22"

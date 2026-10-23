@@ -28,11 +28,26 @@ def _id():
 
 
 class MockWorkflowService(AdWorkflowMixin):
-    def __init__(self, db, clock, commerce=None, *, inference=None, inference_max_spend_micro_usd=1_000_000, execution_mode="local"):
+    def __init__(self, db, clock, commerce=None, *, inference=None, inference_max_spend_micro_usd=1_000_000, execution_mode="local",
+                 render_max_spend_micro_usd=1_000_000, render_max_dispatches=100):
+        if type(render_max_spend_micro_usd) is not int or render_max_spend_micro_usd <= 0:
+            raise ValueError("render_max_spend_micro_usd must be a positive integer")
+        if type(render_max_dispatches) is not int or render_max_dispatches <= 0:
+            raise ValueError("render_max_dispatches must be a positive integer")
         self.db, self.clock = db, clock
         self.commerce = commerce or MockCommerceService(db, clock)
         self.inference = WorkflowInference(self, inference, inference_max_spend_micro_usd) if inference is not None else None
         self.execution_mode = execution_mode
+        self.render_max_spend_micro_usd = render_max_spend_micro_usd
+        self.render_max_dispatches = render_max_dispatches
+
+    def _demo_expired(self, conn, owner_id):
+        demo = conn.execute("SELECT expires_at FROM judge_demo_workspace WHERE owner_id=?", (owner_id,)).fetchone()
+        return demo is not None and from_iso(demo["expires_at"]) <= self.clock.now()
+
+    def _require_demo_active(self, conn, auth):
+        if self._demo_expired(conn, auth.owner_id):
+            raise AiclError("denied", "This demo workspace has expired. New work is stopped.", reason="judge_demo_expired")
 
     def _auth(self, auth):
         if auth.expires_at <= self.clock.now():
@@ -170,6 +185,7 @@ class MockWorkflowService(AdWorkflowMixin):
             if config["enabled"] == enabled:
                 return config
             if enabled:
+                self._require_demo_active(conn, auth)
                 if self.execution_mode == "render" and (config.get("scenario") != SCENARIO or self.inference is None):
                     raise AiclError("validation_failed", "Render scheduling requires the reviewed PocketPlan marketing configuration and enabled model inference.")
                 inst = self._instance(conn, auth, instance_id)
@@ -179,6 +195,12 @@ class MockWorkflowService(AdWorkflowMixin):
                 self.commerce._controls(conn, auth, instance_id)
             anchor = max(self.clock.now(), from_iso(config["demo_time"]) if config["demo_time"] else self.clock.now())
             next_due = self._next_due(config, anchor) if enabled else config["next_due"]
+            if enabled and self.execution_mode == "render" and config["next_due"] is None and conn.execute(
+                    "SELECT 1 FROM judge_demo_workspace WHERE owner_id=?", (auth.owner_id,)).fetchone():
+                # Only the first activation starts at the next scheduler tick.
+                # Persisted next_due survives pause/resume, preventing toggles
+                # from becoming a manual-run shortcut around the saved cadence.
+                next_due = to_iso(self.clock.now())
             conn.execute("UPDATE mock_workflow_config SET enabled=?,next_due=?,updated_at=?,last_outcome=?,version=version+1 WHERE instance_id=?",
                          (int(enabled), next_due, to_iso(self.clock.now()), "Scheduled" if enabled else "Paused", instance_id))
             self.commerce._event(conn, auth, instance_id, "commerce.policy_changed", action="schedule_enabled" if enabled else "schedule_paused", enabled=enabled)

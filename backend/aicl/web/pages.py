@@ -29,6 +29,9 @@ BASE = """<!doctype html>
 
 TEMPLATES = {
     "base": BASE,
+    "judge_entry": """{% extends "base" %}{% set public_page = true %}{% block body %}
+<div class="auth-layout"><section class="auth-story"><p class="eyebrow">Useful agents. Your control.</p><h1 class="hero-title">Delegate the work.<br>Keep the decisions.</h1><p class="hero-copy">Give an agent a goal and a schedule. PayPal funds its work; Habitat’s AICL control layer enforces budgets and keeps purchases subject to your approval.</p><ul class="feature-list"><li>Define the deliverables you expect</li><li>Fund work and set spending limits</li><li>Review purchases, results and costs</li></ul></section>
+<section class="card auth-card" aria-labelledby="judge-entry-heading"><div class="card-body"><p class="eyebrow">Explore Habitat</p><h2 id="judge-entry-heading">Try the demo</h2><p>Your own workspace includes a PocketPlan marketing agent with goals and deliverables ready to review.</p><p class="muted">It starts paused. Review its limits, fund it with PayPal, then enable its schedule. Your changes stay separate from other visitors.</p><form method="post" action="/judge/start"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="primary" type="submit">Open my workspace <span aria-hidden="true">→</span></button></form><p class="field-hint">No email needed. This browser keeps access during your session; the sample workspace stops scheduled work after 24 hours.</p></div></section></div>{% endblock %}""",
     "landing": """{% extends "base" %}{% set public_page = true %}{% block body %}
 <section class="hero"><div><p class="eyebrow">AI agents, with boundaries</p><h1 class="hero-title">Give your agents<br>a place to grow.</h1><p class="hero-copy">A workspace for useful AI agents, with budgets, capabilities, and connections you control.</p>
 <a class="button primary" href="/auth/sign-in">Create your first agent <span aria-hidden="true">→</span></a>

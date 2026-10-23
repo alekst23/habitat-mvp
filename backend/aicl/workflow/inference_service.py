@@ -54,6 +54,7 @@ class WorkflowInference:
             job = self.workflow._job(conn, auth, attempt["workflow_run_id"])
             try:
                 with self.db.transaction():
+                    self.workflow._require_demo_active(conn, auth)
                     config = self.workflow._config(conn, auth, job["instance_id"])
                     if not config["enabled"]:
                         raise AiclError("denied", "Enable the schedule before generating work.", reason="schedule_paused")

@@ -63,7 +63,10 @@ class Settings(BaseModel):
     environment: str
     test_mode: bool = False
     hosted_workflow: bool = False
+    judge_demo_mode: bool = False
     workflow_execution_mode: str = "local"
+    render_max_spend_micro_usd: int = 1_000_000
+    render_max_dispatches: int = 100
     scheduler_token: SecretStr = SecretStr("")
     worker_token: SecretStr = SecretStr("")
     public_base_url: str = "http://127.0.0.1:4173"
@@ -112,15 +115,23 @@ class Settings(BaseModel):
             raise SettingsError("AICL_TEST_MODE", "1 is valid only with AICL_ENVIRONMENT=test")
         if self.hosted_workflow and self.environment != "production":
             raise SettingsError("AICL_HOSTED_WORKFLOW", "requires production authentication with test mode disabled")
+        if self.judge_demo_mode and (not self.hosted_workflow or self.environment != "production" or self.test_mode):
+            raise SettingsError("AICL_JUDGE_DEMO_MODE", "requires the hosted production profile with test mode disabled")
+        if self.judge_demo_mode and self.payment_mode != "paypal_sandbox":
+            raise SettingsError("AICL_PAYMENT_MODE", "judge demonstration requires PayPal Sandbox")
+        if type(self.render_max_spend_micro_usd) is not int or not 1 <= self.render_max_spend_micro_usd <= 10_000_000:
+            raise SettingsError("AICL_RENDER_MAX_SPEND_MICRO_USD", "must be between 1 and 10000000")
+        if type(self.render_max_dispatches) is not int or not 1 <= self.render_max_dispatches <= 1000:
+            raise SettingsError("AICL_RENDER_MAX_DISPATCHES", "must be between 1 and 1000")
         if self.workflow_execution_mode not in ("local", "render"):
             raise SettingsError("AICL_WORKFLOW_EXECUTION_MODE", "must be local or render")
         if self.workflow_execution_mode == "render" and not self.hosted_workflow:
             raise SettingsError("AICL_WORKFLOW_EXECUTION_MODE", "render requires AICL_HOSTED_WORKFLOW=1")
         if self.hosted_workflow:
             validate_public_base_url(self.environment, self.public_base_url)
-            if not self.smtp_host:
+            if not self.smtp_host and not self.judge_demo_mode:
                 raise SettingsError("AICL_SMTP_HOST", "is required for hosted sign-in")
-            if not self.smtp_from:
+            if not self.smtp_from and not self.judge_demo_mode:
                 raise SettingsError("AICL_SMTP_FROM", "is required for hosted sign-in")
         credentials = (
             ("AICL_SCHEDULER_TOKEN", self.scheduler_token.get_secret_value()),
@@ -229,6 +240,9 @@ class Settings(BaseModel):
         hosted_flag = env.get("AICL_HOSTED_WORKFLOW", "0") or "0"
         if hosted_flag not in ("0", "1"):
             raise SettingsError("AICL_HOSTED_WORKFLOW", "must be 0 or 1")
+        judge_flag = env.get("AICL_JUDGE_DEMO_MODE", "0") or "0"
+        if judge_flag not in ("0", "1"):
+            raise SettingsError("AICL_JUDGE_DEMO_MODE", "must be 0 or 1")
 
         payment_api_url = env.get("AICL_MOCK_PAYMENT_API_URL") or ""
         payment_token = env.get("AICL_MOCK_PAYMENT_TOKEN") or ""
@@ -279,7 +293,10 @@ class Settings(BaseModel):
         return cls(
             environment=environment, test_mode=flag == "1", public_base_url=base_url, database_url=database_url,
             hosted_workflow=hosted_flag == "1",
+            judge_demo_mode=judge_flag == "1",
             workflow_execution_mode=env.get("AICL_WORKFLOW_EXECUTION_MODE") or "local",
+            render_max_spend_micro_usd=integer("AICL_RENDER_MAX_SPEND_MICRO_USD", 1_000_000, 1, 10_000_000),
+            render_max_dispatches=integer("AICL_RENDER_MAX_DISPATCHES", 100, 1, 1000),
             scheduler_token=SecretStr(env.get("AICL_SCHEDULER_TOKEN") or ""),
             worker_token=SecretStr(env.get("AICL_WORKER_TOKEN") or ""),
             session_secret=session_secret, identity_hmac_key=identity_key, secret_encryption_key=encryption_key,

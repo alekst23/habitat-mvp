@@ -1,15 +1,15 @@
 """Durable Render execution proofs with real SQLite and no external calls."""
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
-from threading import Event
+from threading import Barrier, Event
 
 import pytest
 import httpx
 from fastapi.testclient import TestClient
 
 from aicl.control.errors import AiclError
-from aicl.db import from_iso
-from aicl.render.service import RenderExecution
+from aicl.db import from_iso, to_iso
+from aicl.render.service import MAX_COMPUTE_COST, RenderExecution
 from aicl.workflow.ad_scenario import pocketplan_preset
 from aicl.workflow.openai_inference import InferenceUnknownOutcomeError
 from aicl.workflow.service import MockWorkflowService
@@ -315,6 +315,186 @@ def test_denied_due_agent_does_not_starve_a_later_eligible_agent(build_env):
     row, = [r for r in rows(env, "render_dispatch") if r["id"] == eligible["id"]]
     assert row["instance_id"] == second.id
     assert adapter.calls == []
+
+
+def test_global_compute_ceiling_serializes_different_owners_and_allows_idempotent_replay(build_env):
+    from test_pocketplan_workflow import prepared
+
+    env, wf, commerce, first_auth, first, _, adapter = live(build_env)
+    _, _, _, second_auth, second, _ = prepared(lambda: env)
+    wf.render_max_spend_micro_usd = MAX_COMPUTE_COST
+    execution, barrier = RenderExecution(wf), Barrier(2)
+
+    def queue(auth, inst):
+        barrier.wait(timeout=5)
+        try:
+            with env.db.transaction() as conn:
+                config = wf._config(conn, auth, inst.id)
+                row = execution._enqueue(conn, auth, config, config["next_due"])
+                return (auth, inst, dict(row))
+        except AiclError as error:
+            return error.extra["reason"]
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(queue, auth, inst) for auth, inst in ((first_auth, first), (second_auth, second))]
+        outcomes = [future.result(timeout=5) for future in futures]
+    assert outcomes.count("render_spend_ceiling") == 1
+    auth, inst, row = next(outcome for outcome in outcomes if isinstance(outcome, tuple))
+    assert len(rows(env, "render_dispatch")) == 1
+    assert sum(h["compute_micro_usd"] for h in rows(env, "budget_hold") if h["state"] == "held") == MAX_COMPUTE_COST
+    # Restarting cannot reset the ledger. Replaying accepted work is still permitted.
+    restarted = MockWorkflowService(env.db, env.clock, commerce=commerce, inference=adapter,
+                                    render_max_spend_micro_usd=MAX_COMPUTE_COST, render_max_dispatches=1)
+    with env.db.transaction() as conn:
+        config = restarted._config(conn, auth, inst.id)
+        replay = RenderExecution(restarted)._enqueue(conn, auth, config, row["scheduled_for"])
+    assert replay["id"] == row["id"] and len(rows(env, "render_dispatch")) == 1
+    assert adapter.calls == []
+
+
+def test_global_compute_ceiling_counts_realized_usage_and_unknown_reservations(build_env):
+    from test_pocketplan_workflow import prepared
+
+    env, wf, commerce, _, _, _, adapter, execution, dispatch = queued(build_env)
+    complete(execution, dispatch, claim(execution, dispatch))
+    realized = sum(row["cost_micro_usd"] for row in rows(env, "render_compute_usage"))
+    _, _, _, other_auth, other, _ = prepared(lambda: env)
+    wf.render_max_spend_micro_usd = realized + MAX_COMPUTE_COST - 1
+    with env.db.transaction() as conn:
+        config = wf._config(conn, other_auth, other.id)
+        with pytest.raises(AiclError) as blocked:
+            execution._enqueue(conn, other_auth, config, config["next_due"])
+        assert blocked.value.extra["reason"] == "render_spend_ceiling"
+        wf.render_max_spend_micro_usd += 1
+        held = execution._enqueue(conn, other_auth, config, config["next_due"])
+        commerce.budget.mark_unknown(conn, held["hold_id"])
+        conn.execute("UPDATE render_dispatch SET state='unknown' WHERE id=?", (held["id"],))
+    mark_demo_workspace(env, other_auth, env.clock.now())
+    _, _, _, third_auth, third, _ = prepared(lambda: env)
+    restarted = RenderExecution(MockWorkflowService(env.db, env.clock, commerce=commerce, inference=adapter,
+                               render_max_spend_micro_usd=realized + MAX_COMPUTE_COST))
+    with env.db.transaction() as conn:
+        config = wf._config(conn, third_auth, third.id)
+        with pytest.raises(AiclError) as blocked:
+            restarted._enqueue(conn, third_auth, config, config["next_due"])
+        assert blocked.value.extra["reason"] == "render_spend_ceiling"
+    assert len(rows(env, "render_dispatch")) == 2
+    assert sum(h["compute_micro_usd"] for h in rows(env, "budget_hold") if h["state"] == "unknown") == MAX_COMPUTE_COST
+
+
+def test_lifetime_dispatch_count_is_global_even_after_completed_work(build_env):
+    from test_pocketplan_workflow import prepared
+
+    env, wf, commerce, _, _, _, adapter, execution, dispatch = queued(build_env)
+    complete(execution, dispatch, claim(execution, dispatch))
+    _, _, _, other_auth, other, _ = prepared(lambda: env)
+    restarted = RenderExecution(MockWorkflowService(env.db, env.clock, commerce=commerce, inference=adapter,
+                               render_max_dispatches=1))
+    with env.db.transaction() as conn:
+        config = wf._config(conn, other_auth, other.id)
+        with pytest.raises(AiclError) as blocked:
+            restarted._enqueue(conn, other_auth, config, config["next_due"])
+        assert blocked.value.extra["reason"] == "render_dispatch_limit"
+    assert len(rows(env, "render_dispatch")) == 1
+
+
+def mark_demo_workspace(env, auth, expires_at):
+    with env.db.transaction() as conn:
+        conn.execute("INSERT OR IGNORE INTO owner(id,email_hash,created_at) VALUES (?,?,?)",
+                     (auth.owner_id, auth.owner_id, to_iso(env.clock.now())))
+        conn.execute("INSERT INTO judge_demo_workspace(owner_id,entry_nonce_hash,created_at,expires_at) VALUES (?,?,?,?)",
+                     (auth.owner_id, auth.owner_id, to_iso(env.clock.now()), to_iso(expires_at)))
+
+
+def test_expired_demo_blocks_scheduled_work_and_paid_continuation_without_new_holds(build_env):
+    env, wf, commerce, auth, inst, _, adapter, execution, dispatch = queued(build_env)
+    complete(execution, dispatch, claim(execution, dispatch))
+    mark_demo_workspace(env, auth, env.clock.now())
+    wf.execution_mode = "render"
+    purchase, = wf.overview(auth, inst.id)["purchases"]
+    # The payment fixture exercises the continuation callback, not a new payment authority.
+    pay(wf, commerce, auth, purchase["id"], continuation="now")
+    assert len(rows(env, "render_dispatch")) == 1
+    with env.db.transaction() as conn:
+        config = wf._config(conn, auth, inst.id)
+        with pytest.raises(AiclError) as blocked:
+            execution._enqueue(conn, auth, config, config["next_due"])
+        assert blocked.value.extra["reason"] == "judge_demo_expired"
+    assert not any(h["state"] == "held" for h in rows(env, "budget_hold"))
+    assert len(adapter.calls) == 1
+
+
+def test_expired_demo_cannot_start_inference_but_known_response_can_settle(build_env):
+    env, wf, _, auth, inst, _, adapter, execution, dispatch = queued(build_env)
+    claimed = claim(execution, dispatch)
+    attempt, = claimed["attempts"]
+    mark_demo_workspace(env, auth, env.clock.now())
+    assert execution.generate(dispatch["id"], "render-task-1", attempt["id"])["state"] == "blocked"
+    assert adapter.calls == []
+
+    # A separate already-dispatched provider result remains chargeable after expiry.
+    with env.db.transaction() as conn:
+        conn.execute("UPDATE judge_demo_workspace SET expires_at=? WHERE owner_id=?", (to_iso(env.clock.now() + timedelta(hours=1)), auth.owner_id))
+        conn.execute("UPDATE workflow_inference_attempt SET state='pending' WHERE id=?", (attempt["id"],))
+    generated = execution.generate(dispatch["id"], "render-task-1", attempt["id"])
+    with env.db.transaction() as conn:
+        conn.execute("UPDATE judge_demo_workspace SET expires_at=? WHERE owner_id=?", (to_iso(env.clock.now()), auth.owner_id))
+    assert execution.generate(dispatch["id"], "render-task-1", attempt["id"])["result"] == generated["result"]
+    execution.complete_attempt(dispatch["id"], "render-task-1", attempt["id"], {"passed": True})
+    assert execution.finish(dispatch["id"], "render-task-1")["state"] == "completed"
+    assert len(adapter.calls) == 1
+    assert sum(u["inference_micro_usd"] for u in rows(env, "budget_usage")) == 700
+    assert wf.overview(auth, inst.id)["purchases"] == []  # Expiry cannot create a fresh campaign proposal.
+
+
+@pytest.mark.parametrize("stage,expected_state,hold_state", [
+    ("queued", "blocked", "released"),
+    ("offered", "unknown", "unknown"),
+    ("submitted", "blocked", "settled"),
+])
+def test_expiry_stops_new_external_work_without_releasing_uncertain_compute(build_env, stage, expected_state, hold_state):
+    env, wf, _, auth, inst, _, adapter = live(build_env)
+    execution = RenderExecution(wf)
+    with env.db.transaction() as conn:
+        config = wf._config(conn, auth, inst.id)
+        dispatch = dict(execution._enqueue(conn, auth, config, config["next_due"]))
+    if stage != "queued":
+        assert execution.dispatch()["dispatches"][0]["id"] == dispatch["id"]
+    if stage == "submitted":
+        execution.submitted(dispatch["id"], "expired-task")
+    mark_demo_workspace(env, auth, env.clock.now())
+    if stage == "submitted":
+        assert execution.claim(dispatch["id"], "expired-task")["state"] == expected_state
+    else:
+        assert execution.dispatch()["dispatches"] == []
+    row, = rows(env, "render_dispatch")
+    assert row["state"] == expected_state
+    hold, = [h for h in rows(env, "budget_hold") if h["id"] == dispatch["hold_id"]]
+    assert hold["state"] == hold_state
+    assert rows(env, "mock_workflow_run") == []
+    assert adapter.calls == []
+
+
+def test_judge_first_schedule_runs_on_next_cron_tick_and_toggle_does_not_repeat_it(build_env):
+    env, wf, _, auth, inst, _, adapter = live(build_env)
+    wf.execution_mode = "render"
+    # Model the provisioner's saved but never-enabled sample configuration.
+    with env.db.transaction() as conn:
+        conn.execute("UPDATE mock_workflow_config SET enabled=0,next_due=NULL WHERE instance_id=?", (inst.id,))
+    mark_demo_workspace(env, auth, env.clock.now() + timedelta(hours=24))
+    config = wf.schedule(auth, inst.id, True)
+    assert config["next_due"] == to_iso(env.clock.now())
+    assert rows(env, "render_dispatch") == [] and adapter.calls == []
+    execution = RenderExecution(wf)
+    dispatch, = execution.dispatch()["dispatches"]
+    complete(execution, dispatch, claim(execution, dispatch))
+    next_due = wf.config(auth, inst.id)["next_due"]
+    assert from_iso(next_due) > env.clock.now()
+    wf.schedule(auth, inst.id, False)
+    resumed = wf.schedule(auth, inst.id, True)
+    assert resumed["next_due"] == next_due
+    assert execution.dispatch()["dispatches"] == []
+    assert len(rows(env, "render_dispatch")) == 1
 
 
 def test_machine_api_separates_roles_and_cannot_authorize_payments(build_env, base_env, monkeypatch):

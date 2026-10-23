@@ -11,6 +11,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import ValidationError
 
 from aicl.auth.session import GENERIC_LINK_SENT, SESSION_COOKIE
+from aicl.auth.judge_demo import ENTRY_COOKIE, ENTRY_TTL_SECONDS, entry_token, verify_entry, start_workspace
 from aicl.control.csrf import require_csrf
 from aicl.control.errors import AiclError
 from aicl.control.instances import CATALOG_CAPABILITIES
@@ -71,16 +72,47 @@ def web_router(ctx) -> APIRouter:
     def signed_in(request: Request):
         return ctx.auth_provider.resolve(dict(request.cookies))
 
+    def judge_entry(request: Request):
+        if signed_in(request) is not None:
+            return RedirectResponse("/workspace", status_code=303)
+        token = entry_token(ctx)
+        response = _page("judge_entry", title="Try Habitat", csrf=token)
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.set_cookie(ENTRY_COOKIE, token, max_age=ENTRY_TTL_SECONDS, path="/",
+                            httponly=True, samesite="strict", secure=True)
+        return response
+
     @router.get("/", response_class=HTMLResponse)
-    def landing():
+    def landing(request: Request):
+        if ctx.settings.judge_demo_mode:
+            return judge_entry(request)
         return _page("landing", title="Habitat")
 
     @router.get("/auth/sign-in", response_class=HTMLResponse)
-    def sign_in_page():
+    def sign_in_page(request: Request):
+        if ctx.settings.judge_demo_mode:
+            return judge_entry(request)
         return _page("sign_in", title="Sign in")
+
+    if ctx.settings.judge_demo_mode:
+        @router.post("/judge/start")
+        async def judge_start(request: Request):
+            form = await request.form()
+            token = str(form.get("csrf_token", ""))
+            verify_entry(ctx, token, request.cookies.get(ENTRY_COOKIE), request.headers.get("origin"),
+                         request.headers.get("sec-fetch-site"))
+            result = start_workspace(ctx, token, request.cookies.get(SESSION_COOKIE))
+            response = RedirectResponse("/workspace", status_code=303,
+                                        headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
+            response.set_cookie(SESSION_COOKIE, result.cookie_value, max_age=result.max_age_seconds, path="/",
+                                httponly=True, samesite="lax", secure=True)
+            return response
 
     @router.post("/auth/magic-link", response_class=HTMLResponse)
     async def request_link(request: Request):
+        if ctx.settings.judge_demo_mode:
+            raise AiclError("not_found", "Page not found.")
         form = await request.form()
         client_ip = request.client.host if request.client else "unknown"
         service.request_link(str(form.get("email", "")), client_ip)
@@ -88,10 +120,14 @@ def web_router(ctx) -> APIRouter:
 
     @router.get("/auth/verify", response_class=HTMLResponse)
     def verify_page(token: str = ""):
+        if ctx.settings.judge_demo_mode:
+            raise AiclError("not_found", "Page not found.")
         return _page("verify", title="Confirm sign-in", token=token)
 
     @router.post("/auth/verify")
     async def verify(request: Request):
+        if ctx.settings.judge_demo_mode:
+            raise AiclError("not_found", "Page not found.")
         public = urlsplit(ctx.settings.public_base_url)
         expected_origin = f"{public.scheme}://{public.netloc}"
         # A valid link proves email ownership, not that this browser intended to sign in.
@@ -123,6 +159,7 @@ def web_router(ctx) -> APIRouter:
         view = SqliteProjectionService(ctx.db, ctx.clock, ctx.settings.hold_stale_seconds).workspace(auth)
         workflow = workflow_service(ctx).overview(auth) if commerce_enabled else None
         return _page("workspace", title="Your workspace", instances=view.instances,
+                     judge_demo_mode=ctx.settings.judge_demo_mode,
                      commerce_enabled=commerce_enabled, workflow=workflow,
                      csrf=ctx.csrf_verifier.token_for(auth.session_id))
 

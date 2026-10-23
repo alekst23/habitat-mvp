@@ -15,4 +15,6 @@ def workflow_service(ctx):
     return MockWorkflowService(ctx.db, ctx.clock, commerce=commerce_service(ctx),
                                inference=inference,
                                execution_mode=settings.workflow_execution_mode,
+                               render_max_spend_micro_usd=settings.render_max_spend_micro_usd,
+                               render_max_dispatches=settings.render_max_dispatches,
                                inference_max_spend_micro_usd=settings.inference_max_spend_micro_usd)

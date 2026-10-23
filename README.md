@@ -19,15 +19,18 @@ The optional [PayPal Sandbox integration](docs/paypal-sandbox.md) uses PayPal-ho
 buyer checkout and server-verified captures for funding and approved purchases.
 It runs separately on port 4180 with its own database and requires Sandbox app
 credentials and test accounts. Real inference is an explicit option below; ad delivery remains simulated;
-there is no live-payment mode. The first external payment still needs verification
-with configured Sandbox accounts.
+there is no live-payment mode. Both service funding and an owner-approved purchase
+have completed PayPal-hosted Sandbox checkout and capture; the setup guide records
+that evidence.
 
 The [Render deployment](docs/render-deployment.md) adds unattended scheduled work
 through Render Workflows and a cron dispatcher. AICL keeps credentials, reserves
 inference and compute allowances, verifies outputs and preserves independent
-purchase approval. The hosted profile uses real owner authentication and excludes
-the local demo clock. Deployment configuration and local verification are ready;
-a live Render deployment and provider proof are still required.
+purchase approval. The hackathon profile offers email-free entry into a separate
+temporary workspace for each judge, with a paused PocketPlan sample agent. It uses
+real session isolation, excludes local test helpers, and shares operator-controlled
+inference and compute ceilings across visitors. A live Render deployment and its
+scheduled execution proof are still required.
 
 ## Run locally
 

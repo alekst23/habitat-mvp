@@ -5,6 +5,17 @@ remains the authority for owner identity, configuration, budgets, inference,
 PayPal approval and durable results. It uses one reviewed PocketPlan marketing
 agent, not arbitrary uploaded programs.
 
+The hackathon Blueprint enables email-free judge access. Publish the permanent
+HTTPS app URL in the project instructions. Each visitor enters a separate,
+temporary workspace with a configured PocketPlan sample agent and its schedule
+paused. No email account or shared sign-in link is required. The sample has no
+fabricated PayPal funding, purchase approval or deliverable history.
+Workspaces and their browser access last at most 24 hours. The public demo admits
+at most 100 workspaces per database and 10 new workspaces per minute; existing
+visitors can resume their workspace without creating another sample. Keep the
+browser session to retain access. Expiry stops new execution and preserves
+completed work and accounting history.
+
 The repository includes the deployment configuration and worker. A passing local
 test or Blueprint schema check is not evidence of a running Render deployment.
 Capture the hosted proof below after deploying a complete reviewed revision.
@@ -13,7 +24,7 @@ Capture the hosted proof below after deploying a complete reviewed revision.
 
 | Service | Responsibility | Credentials and storage |
 | --- | --- | --- |
-| `habitat-aicl` | HTTPS owner app, machine API, durable schedule/outbox, budget reservations, inference proxy, PayPal verification, Audit and deliverables | Sole SQLite writer at `/data/habitat.sqlite`; persistent disk; owner, model, PayPal and SMTP secrets |
+| `habitat-aicl` | HTTPS owner app, machine API, durable schedule/outbox, budget reservations, inference proxy, PayPal verification, Audit and deliverables | Sole SQLite writer at `/data/habitat.sqlite`; persistent disk; owner, model and PayPal secrets |
 | `habitat-agent-workflow` | Registered `habitat_agent` task: claim saved work, prepare its criteria, request bounded inference, validate the response, submit and finish | Worker token only; no database, owner session, model key or PayPal key |
 | `habitat-schedule-dispatch` | Once per minute, ask AICL for due work, start Render tasks and acknowledge their IDs | Scheduler token and Render API key; no model/payment authority |
 
@@ -55,6 +66,12 @@ overhead. The inference ceiling defaults to $1 of real model usage for the
 server; test PayPal credit cannot raise this ceiling. Do not advertise an exact
 match between the Habitat compute ledger and Render's bill.
 
+The public deployment also shares a $1 internal compute allowance across all
+tenants, counting settled estimates and outstanding reservations, and permits
+at most 100 new dispatches per database. These operator limits cannot be raised
+by a visitor. They bound public demo execution but are not a Render account
+billing limit: hosting, cron, bandwidth and storage remain separate charges.
+
 Pending purchases end the active task. Approval and buyer payment occur in the
 owner's independent Audit flow. Eligible continuation becomes a new durable
 dispatch, either promptly or at the saved schedule, with current controls
@@ -84,7 +101,7 @@ hosted schedule.
 
    | Service | Values supplied during creation |
    | --- | --- |
-   | Web | `OPENAI_API_KEY`; service PayPal Sandbox `CLIENT_ID`, `CLIENT_SECRET`, `MERCHANT_ID`; the corresponding three `AICL_PAYPAL_PURCHASE_*` values for a separate Sandbox seller; `AICL_SMTP_HOST`, `AICL_SMTP_USERNAME`, `AICL_SMTP_PASSWORD`, `AICL_SMTP_FROM` |
+   | Web | `OPENAI_API_KEY`; service PayPal Sandbox `CLIENT_ID`, `CLIENT_SECRET`, `MERCHANT_ID`; the corresponding three `AICL_PAYPAL_PURCHASE_*` values for a separate Sandbox seller |
    | Cron | `RENDER_API_KEY` for starting this workspace's tasks |
 
    The Blueprint generates separate session, identity, encryption, scheduler
@@ -92,15 +109,19 @@ hosted schedule.
    machine token to each process. Never rotate identity/encryption keys casually:
    keep protected recovery copies with database backups. The public URL and
    private hostport are derived from Render, and the cron task slug is derived
-   from the Workflow service. SMTP uses port 587 by default.
+   from the Workflow service. Judge-demo mode does not need SMTP. To use ordinary
+   emailed owner sign-in instead, disable `AICL_JUDGE_DEMO_MODE` and configure
+   `AICL_SMTP_HOST`, `AICL_SMTP_FROM` and the provider's username/password; port
+   587 with STARTTLS is the default.
 4. Wait for the web health check `/health/ready` and the registered
    `habitat_agent` task. Inspect the Workflow task page; no worker port is
    expected. Ensure the disk is writable by the image's UID 10001 and survives
    redeploy. Migrations run at application startup with the disk mounted.
-5. Open the HTTPS app and sign in through a real emailed magic link. Check that
-   `/__test__/last-magic-link` is unavailable. Do not expose captured sign-in
-   links or a shared demo account to the internet. Configure only the intended
-   demo agent before enabling its schedule.
+5. Open the HTTPS app and enter the judge demo. Check that a second browser
+   session receives a separate workspace and cannot access the first visitor's
+   agents, purchases or deliverables. `/__test__/last-magic-link` and other local
+   helpers must remain unavailable. The sample schedule starts paused; review
+   its configuration and fund it with PayPal Sandbox before enabling work.
 
 The Blueprint was checked against Render's published JSON schema on 2026-10-22.
 Render's own Blueprint validation remains the authority for account-specific
@@ -119,15 +140,18 @@ Resume scheduling after the health check and saved state have been verified.
 
 ## First hosted proof
 
-1. Create the PocketPlan agent with inference enabled and use the app marketing
-   example. Save the goals, deliverable criteria and schedule. Set positive
+1. Use the provided PocketPlan sample with inference enabled and the app marketing
+   example. Review the goals, deliverable criteria and schedule. Set positive
    daily and monthly inference **and compute** limits; the compute daily limit
    must cover the six-minute reservation. Add service credit through verified
    PayPal Sandbox checkout. See [PayPal setup](paypal-sandbox.md) for the two
    test sellers and buyer.
 2. Enable the schedule and leave the browser idle. The cron dispatcher checks
    for work every minute; the agent's configured cadence controls when work is
-   actually due. Observe a real Render task without using the local demo clock.
+   actually due. A judge sample's first activation is due on the next cron tick;
+   subsequent work follows its configured cadence. Pausing and resuming does not
+   trigger repeated immediate jobs. Observe a real Render task without using the
+   local demo clock.
 3. Follow the same dispatch/run identity in Render and Habitat. Show the
    generated campaign plan, configured criteria and inference usage, plus the
    separately labeled compute estimate. Verify the model request used the
@@ -199,7 +223,16 @@ original import record after a restart. This check used disposable credentials
 and did not contact OpenAI, PayPal or Render. The local review summary is saved
 in `.ctx/render-verification/verification.json` (ignored operational evidence).
 
-The Render dashboard currently requires sign-in. No cloud resources, hosted
-provider transaction, repository push or production deployment was performed
-by this verification. The complete source revision and private hosted settings
-must be supplied before the first hosted proof above.
+The verification above did not contact Render or provider services. The source
+has since been published on `codex/paypal-mock-mvp` and the signed-in Render
+dashboard has loaded it. Live validation found and corrected the unsupported
+shutdown-delay override on a disk-backed service. Hosted execution remains to
+be verified after account billing and private service settings are configured.
+
+The email-free judge profile subsequently passed **414 backend tests**, including
+12 independent security checks for entry replay, concurrent provisioning,
+cross-tenant access, CSRF, session expiry, existing-account preservation and
+absence of invented payment records. The one fixed-port server-start test was
+excluded because the existing local demonstration was listening on port 4173.
+Global compute limits, unresolved reservations, workspace expiry and first-cron
+activation are covered. The welcome-page layout was inspected in a browser.
