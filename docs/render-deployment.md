@@ -93,7 +93,7 @@ by a visitor. They bound public demo execution but are not a Render account
 billing limit: hosting, cron, bandwidth and storage remain separate charges.
 
 Pending purchases end the active task. Approval and buyer payment occur in the
-owner's independent Audit flow. Eligible continuation becomes a new durable
+owner's independent Requests flow; Audit retains purchase history. Eligible continuation becomes a new durable
 dispatch, either promptly or at the saved schedule, with current controls
 checked again. A worker cannot approve or capture a purchase.
 
@@ -105,6 +105,13 @@ document launch and metadata behavior. Review current
 hosted schedule.
 
 ## Deploy the reviewed revision
+
+The Blueprint enables the owner assistant with `AICL_CHAT_MODEL_MODE=openai`,
+using the existing control-plane OpenAI key and a separate persistent $1
+assistant allowance (`AICL_ASSISTANT_MAX_SPEND_MICRO_USD=1000000`). This does not
+increase agent inference or compute budgets. The optional cloud-browser service
+is configured separately; leave its URL and token unset until its deployment and
+sandbox readiness have been verified.
 
 1. Include the complete app in the deployment revision: the commerce and
    workflow packages, migrations, static assets, machine API, worker,
@@ -179,7 +186,7 @@ Resume scheduling after the health check and saved state have been verified.
    generated campaign plan, configured criteria and inference usage, plus the
    separately labeled compute estimate. Verify the model request used the
    reviewed adapter and that no model key or owner text appears in Render logs.
-4. Open Audit independently and review the purchase alongside its source work.
+4. Open Requests independently and review the purchase alongside its source work.
    The worker must already have exited while awaiting the owner's decision.
    Approve the exact quote, complete PayPal Sandbox buyer consent, and observe
    the selected continuation behavior without another automatic payment.

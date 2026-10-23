@@ -57,6 +57,10 @@ services:
         value: openai
       - key: AICL_INFERENCE_MAX_SPEND_MICRO_USD
         value: '1000000'
+      - key: AICL_CHAT_MODEL_MODE
+        value: openai
+      - key: AICL_ASSISTANT_MAX_SPEND_MICRO_USD
+        value: '1000000'
       - key: OPENAI_API_KEY
         sync: false
       - key: AICL_PAYMENT_MODE
