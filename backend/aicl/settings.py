@@ -72,6 +72,8 @@ class Settings(BaseModel):
     worker_token: SecretStr = SecretStr("")
     browser_service_url: str = ""
     browser_service_token: SecretStr = SecretStr("")
+    waitlist_webhook_url: str = ""
+    waitlist_webhook_token: SecretStr = SecretStr("")
     public_base_url: str = "http://127.0.0.1:4173"
     database_url: str
     session_secret: str
@@ -110,6 +112,25 @@ class Settings(BaseModel):
     def workflow_enabled(self) -> bool:
         """Product workflow pages are separate from the guarded test helpers."""
         return self.environment in ("development", "test") or self.hosted_workflow
+
+    @property
+    def waitlist_enabled(self) -> bool:
+        return bool(self.waitlist_webhook_url and self.waitlist_webhook_token.get_secret_value())
+
+    @model_validator(mode="after")
+    def validate_waitlist_configuration(self) -> "Settings":
+        url, token = self.waitlist_webhook_url, self.waitlist_webhook_token.get_secret_value()
+        if not url and not token:
+            return self
+        if re.fullmatch(r"https://script\.google\.com/macros/s/[A-Za-z0-9_-]+/exec", url) is None:
+            raise SettingsError("AICL_WAITLIST_WEBHOOK_URL", "must be the Google Apps Script HTTPS deployment URL ending in /exec")
+        if re.fullmatch(r"[A-Za-z0-9_-]{32,128}", token) is None or token.startswith(("CHANGE_ME", "YOUR_")):
+            raise SettingsError("AICL_WAITLIST_WEBHOOK_TOKEN", "must contain 32–128 non-placeholder URL-safe characters")
+        if token in (self.session_secret, self.identity_hmac_key, self.secret_encryption_key,
+                     self.access_link_token.get_secret_value(), self.scheduler_token.get_secret_value(),
+                     self.worker_token.get_secret_value(), self.browser_service_token.get_secret_value()):
+            raise SettingsError("AICL_WAITLIST_WEBHOOK_TOKEN", "must differ from session, identity, encryption and machine keys")
+        return self
 
     @model_validator(mode="after")
     def validate_hosted_configuration(self) -> "Settings":
@@ -351,6 +372,8 @@ class Settings(BaseModel):
             worker_token=SecretStr(env.get("AICL_WORKER_TOKEN") or ""),
             browser_service_url=env.get("AICL_BROWSER_SERVICE_URL") or "",
             browser_service_token=SecretStr(env.get("AICL_BROWSER_SERVICE_TOKEN") or ""),
+            waitlist_webhook_url=env.get("AICL_WAITLIST_WEBHOOK_URL") or "",
+            waitlist_webhook_token=SecretStr(env.get("AICL_WAITLIST_WEBHOOK_TOKEN") or ""),
             session_secret=session_secret, identity_hmac_key=identity_key, secret_encryption_key=encryption_key,
             price_table_path=get("AICL_PRICE_TABLE_PATH"),
             session_ttl_seconds=integer("AICL_SESSION_TTL_SECONDS", 28800, 300, 604800),

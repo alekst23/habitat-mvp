@@ -243,6 +243,11 @@ CSS = r"""
   .judge-access-details { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 24px 0 0; }
   .judge-access-details dt { font-weight: 650; color: var(--ink); }
   .judge-access-details dd { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+  .judge-waitlist { padding: 28px 40px; border-top: 1px solid var(--line); }
+  .waitlist-page { width: calc(100% - 40px); max-width: 560px; margin: 70px auto; padding: 32px; }
+  .waitlist-copy { color: var(--muted); font-size: 13px; margin: 10px 0 18px; }
+  .waitlist-form .field-hint { margin-top: 12px; }
+  .waitlist-back { display: inline-block; margin-top: 24px; font-size: 13px; }
   .auth-centered { max-width: 470px; margin: 70px auto; }
   .auth-card > .card-body { padding: 0; }
   .auth-card h2 { font: 400 32px/1.2 Georgia, serif; letter-spacing: -.8px; }
@@ -387,6 +392,8 @@ CSS = r"""
     .public-header { padding: 20px; }
     .judge-intro { margin: 24px 20px 40px; }
     .judge-intro-story, .judge-access { padding: 26px; }
+    .judge-waitlist { padding: 24px; }
+    .waitlist-page { margin: 32px auto; padding: 26px; }
     .judge-access-details { grid-template-columns: 1fr; gap: 18px; }
     .public-header .brand-tagline { display: none; }
     .auth-layout { display: flex; flex-direction: column; align-items: stretch; gap: 26px; margin: 30px auto; padding: 0 20px; }

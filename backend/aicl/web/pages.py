@@ -32,6 +32,18 @@ BASE = """<!doctype html>
 TEMPLATES = {
     "requests/attention": """{% if pending_requests %}<section class="request-attention" aria-label="Requests needing your attention"><div class="request-attention-heading"><strong>Needs your attention</strong><a href="/requests{% if request_instance_id|default('') %}?instance_id={{ request_instance_id }}{% endif %}">View requests{% if agent_pending_count|default(0) %} ({{ agent_pending_count }}){% endif %} →</a></div><ul>{% for r in pending_requests[:3] %}<li><a href="/requests?selected={{ r.id|urlencode }}"><span><strong>{{ r.title }}</strong><small>{{ r.agent_name }} · {{ r.kind|replace('_', ' ')|capitalize }}</small></span><span aria-hidden="true">→</span></a></li>{% endfor %}</ul></section>{% endif %}""",
     "base": BASE,
+    "waitlist/form": """<p class="waitlist-copy">Get an email when Habitat is ready for you.</p>
+{% if waitlist_error %}<p class="notice error" role="alert">{{ waitlist_error }}</p>{% endif %}
+<form class="waitlist-form" method="post" action="/waitlist" enctype="application/x-www-form-urlencoded">
+<div class="inline-form"><div class="field"><label for="waitlist-email">Email</label><input id="waitlist-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required maxlength="254" value="{{ waitlist_email|default('') }}" aria-describedby="waitlist-privacy"></div><button class="primary" type="submit">Join the waitlist <span aria-hidden="true">→</span></button></div>
+<div hidden aria-hidden="true"><label for="waitlist-website">Leave this field empty</label><input id="waitlist-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+<p id="waitlist-privacy" class="field-hint">We’ll only use your email for Habitat availability updates.</p></form>""",
+    "waitlist": """{% extends "base" %}{% set public_page = true %}{% block body %}
+<section class="card waitlist-page" aria-labelledby="waitlist-heading"><p class="eyebrow">A home for your agents</p>
+{% if waitlist_success %}<h1 id="waitlist-heading">You’re on the list.</h1><p class="waitlist-copy" role="status">Thanks for your interest in Habitat.</p>
+{% elif waitlist_enabled %}<h1 id="waitlist-heading">Join the waitlist</h1>{% include "waitlist/form" %}
+{% else %}<h1 id="waitlist-heading">Waitlist unavailable</h1><p class="waitlist-copy">Sign-ups are temporarily unavailable. Please try again later.</p>{% endif %}
+<a class="waitlist-back" href="/">Back to home</a></section>{% endblock %}""",
     "access_required": """{% extends "base" %}{% set public_page = true %}{% block body %}
 <article class="card judge-intro" aria-labelledby="project-heading">
 <div class="judge-intro-story"><p class="eyebrow">Habitat · Hackathon project</p><h1 id="project-heading">Give agents work.<br>Keep the decisions.</h1>
@@ -40,7 +52,7 @@ TEMPLATES = {
 <section class="judge-access" aria-labelledby="judge-access-heading"><p class="eyebrow">For hackathon judges</p><h2 id="judge-access-heading">{{ title }}</h2>
 <p>This demo uses real AI inference, so access is limited to people with the private judge link. Open the link shared with you to sign in.</p>
 <dl class="judge-access-details"><div><dt>Your own workspace</dt><dd>Separate from other visitors, with access for up to 24 hours.</dd></div><div><dt>Spending limits</dt><dd>AI calls and scheduled work have spending caps. Payments use PayPal Sandbox.</dd></div></dl>
-</section></article>{% endblock %}""",
+</section>{% if waitlist_enabled %}<section class="judge-waitlist" aria-labelledby="waitlist-heading"><h2 id="waitlist-heading">Join the waitlist</h2>{% include "waitlist/form" %}</section>{% endif %}</article>{% endblock %}""",
     "judge_entry": """{% extends "base" %}{% set public_page = true %}{% block body %}
 <div class="auth-layout"><section class="auth-story"><p class="eyebrow">Useful agents. Your control.</p><h1 class="hero-title">Delegate the work.<br>Keep the decisions.</h1><p class="hero-copy">Give an agent a goal and a schedule. PayPal funds its work; Habitat’s AICL control layer enforces budgets and keeps purchases subject to your approval.</p><ul class="feature-list"><li>Define the deliverables you expect</li><li>Fund work and set spending limits</li><li>Review purchases, results and costs</li></ul></section>
 <section class="card auth-card" aria-labelledby="judge-entry-heading"><div class="card-body"><p class="eyebrow">Explore Habitat</p><h2 id="judge-entry-heading">Sign in</h2><p>Your own workspace includes a PocketPlan marketing agent with goals and deliverables ready to review.</p><p class="muted">It starts paused. Review its limits, fund it with PayPal, then enable its schedule. Your changes stay separate from other visitors.</p>{% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}<form method="post" action="/judge/start"><input type="hidden" name="csrf_token" value="{{ csrf }}"><div class="field"><label for="email">Email</label><input id="email" name="email" type="text" inputmode="email" autocomplete="email" placeholder="you@example.com" required maxlength="254" aria-describedby="email-hint"><p id="email-hint" class="field-hint">Use any email to enter the demo. No email will be sent.</p></div><button class="primary" type="submit">Sign in <span aria-hidden="true">→</span></button></form><p class="field-hint">This browser keeps access during your session; the sample workspace stops scheduled work after 24 hours.</p></div></section></div>{% endblock %}""",
