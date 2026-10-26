@@ -16,6 +16,7 @@ from aicl.connections.ports import AesGcmSecretStore, SecretUnavailable
 from aicl.control.errors import AiclError
 from aicl.owner_requests.service import OwnerRequestService
 from aicl.settings import Settings, SettingsError
+from support import historical_budget_fixture
 from test_owner_requests import request_env, rejection
 
 
@@ -524,7 +525,8 @@ def test_close_lease_migration_preserves_existing_parent_child_and_encrypted_sta
     with monkeypatch.context() as historical:
         historical.setattr(db_module, "MIGRATIONS_DIR", old_migrations)
         historical.setattr(MockWorkflowService, "overview", historical_overview)
-        env, _, auth, inst, job, _, login, store, _, _ = prepared_browser(build_env, base_env)
+        with historical_budget_fixture(build_env) as historical_build:
+            env, _, auth, inst, job, _, login, store, _, _ = prepared_browser(historical_build, base_env)
     secret_ref = store.put(auth.owner_id, "old-owner", "browser_storage_state", COOKIE.encode())
     now = db_module.to_iso(env.clock.now())
     with env.db.transaction() as conn:

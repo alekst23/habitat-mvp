@@ -30,7 +30,7 @@ def setup(env, base_env, auth=None):
 
 def data():
     preset = pocketplan_preset()
-    return {"name": "PocketPlan marketer", "goal": preset["goal"], "inputs": preset["inputs"],
+    return {"scenario": "pocketplan_ads", "name": "PocketPlan marketer", "goal": preset["goal"], "inputs": preset["inputs"],
             "cadence": preset["cadence"], "timezone": preset["timezone"], "budget_notes": "$30 is a proposed ad budget, not approval.",
             "deliverables": [{key: item[key] for key in ("key", "name", "description", "criteria")} for item in preset["deliverables"]]}
 
@@ -38,6 +38,50 @@ def data():
 def count(tools, table):
     with tools.db.reader() as conn:
         return conn.execute("SELECT count(*) FROM " + table).fetchone()[0]
+
+
+def test_custom_proposal_keeps_owner_goal_tools_and_creates_general_draft(build_env, base_env):
+    tools = setup(build_env(), base_env)
+    request = {"name": "Trail maintenance planner", "goal": "Prepare trail maintenance recommendations, prioritizing drainage and visitor accessibility.",
+               "inputs": "For volunteer coordinators. Cite public guidance and distinguish findings from assumptions.",
+               "cadence": "daily", "timezone": "America/New_York", "budget_notes": "Review limits before running.",
+               "tools": ["web_search"],
+               "deliverables": [{"key": "maintenance_plan", "name": "Maintenance plan", "description": "A concise plan supported by relevant public guidance.",
+                                 "criteria": ["Link the sources", "Prioritize drainage", "Address visitor accessibility"]}]}
+    proposal = tools.invoke("save_agent_proposal", request)["proposal"]
+    assert tools.invoke("validate_agent_proposal", {})["valid"]
+    assert count(tools, "agent_instance") == 0
+    result = tools.confirm(proposal["id"], proposal["version"])
+    config = tools.workflow.config(tools.auth, result["instance_id"])
+    assert config["scenario"] == "general" and config["goal"] == request["goal"]
+    assert config["tools"] == request["tools"]
+    assert [s["key"] for s in config["deliverables"]] == ["maintenance_plan"]
+    assert not config["enabled"] and count(tools, "workflow_inference_attempt") == 0
+    capabilities = tools.invoke("get_supported_capabilities", {})
+    assert capabilities["worker"]["id"] == "general"
+    assert capabilities["worker"]["inference_mode"] == "unavailable"
+    assert {s["id"] for s in capabilities["tools"]} >= {"web_search"}
+    for invalid in (["shell"], ["web_search", "web_search"]):
+        with pytest.raises(AiclError, match="validation_failed"):
+            tools.invoke("save_agent_proposal", request | {"tools": invalid})
+    supplied_only = {key: value for key, value in request.items() if key != "tools"}
+    pending = tools.invoke("save_agent_proposal", supplied_only)["proposal"]
+    assert pending["tools"] == [] and tools.proposal()["data"]["tools"] == []
+    assert count(tools, "agent_instance") == 1
+
+
+def test_saved_legacy_marketing_proposal_preserves_its_workflow(build_env, base_env):
+    tools = setup(build_env(), base_env)
+    proposal = tools.invoke("save_agent_proposal", data())["proposal"]
+    # A persisted pre-upgrade proposal has no scenario/tool fields.
+    with tools.db.transaction() as conn:
+        saved = json.loads(conn.execute("SELECT data_json FROM assistant_proposal WHERE id=?", (proposal["id"],)).fetchone()[0])
+        saved.pop("scenario", None)
+        saved.pop("tools", None)
+        conn.execute("UPDATE assistant_proposal SET data_json=? WHERE id=?", (json.dumps(saved), proposal["id"]))
+    assert tools.invoke("validate_agent_proposal", {})["valid"]
+    result = tools.confirm(proposal["id"], proposal["version"])
+    assert tools.workflow.config(tools.auth, result["instance_id"])["scenario"] == "pocketplan_ads"
 
 
 def test_only_explicit_current_confirmation_creates_atomic_zero_budget_draft(build_env, base_env):
@@ -139,7 +183,7 @@ def test_monitoring_and_proposals_are_owner_and_session_scoped_and_reads_do_not_
     assert inspected["recent_runs"] == inspected["recent_purchases"] == inspected["recent_deliverables"] == []
     assert len(json.dumps(inspected)) < 16000
     assert "tenant_id" not in inspected and "owner_id" not in inspected and "credential" not in inspected
-    assert tools.invoke("get_supported_capabilities", {})["worker"]["inference_mode"] == "fixture"
+    assert tools.invoke("get_supported_capabilities", {})["worker"]["inference_mode"] == "unavailable"
     with tools.db.reader() as conn:
         assert conn.execute("SELECT count(*) FROM audit_event").fetchone()[0] == before
 

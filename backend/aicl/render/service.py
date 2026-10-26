@@ -1,6 +1,6 @@
 """Durable Render dispatch with authority and accounting retained by AICL.
 
-Reviewed PocketPlan and browser-proposal workflows are supported. Scheduler identity can queue
+General writing/research and reviewed example workflows are supported. Scheduler identity can queue
 eligible occurrences; worker identity can execute only its bound task. Neither
 identity has a purchase approval or payment capability. Network I/O never holds
 a SQLite transaction. Unknown provider outcomes are never automatically resent.
@@ -78,8 +78,8 @@ class RenderExecution:
                 key += ":" + str(uuid.uuid4())
             else:
                 return prior
-        if config.get("scenario") not in (SCENARIO, "browser_purchase") or self.workflow.inference is None:
-            raise AiclError("denied", "Render requires a reviewed advertising or browser purchase workflow and configured inference.", reason="unsupported_workflow")
+        if config.get("scenario") not in ("general", SCENARIO, "browser_purchase") or self.workflow.inference is None:
+            raise AiclError("denied", "Render requires a supported workflow and configured inference.", reason="unsupported_workflow")
         self.workflow._require_demo_active(conn, auth)
         if not config["enabled"]:
             raise AiclError("denied", "The schedule is paused.", reason="schedule_paused")
@@ -405,7 +405,7 @@ class RenderExecution:
                 return {"state": attempt["state"], "result": None}
         attempt, job = claimed
         try:
-            result = self.workflow.inference.adapter.generate(self.workflow.inference.input_snapshot(job), json.loads(job["spec_json"]), attempt["feedback"])
+            result = self.workflow.inference.generate(auth, attempt, job)
         except InferenceNoChargeError as error:
             self.workflow.inference._failure(auth, attempt, job, no_charge=True, reason=error.reason)
         except Exception:

@@ -1,5 +1,15 @@
 # Design index
 
+## Durable general-agent execution
+
+- [Durable execution plan](durable-agent-execution.md): proposed run/plan/step
+  model, saved evidence, owner conversations, worker recovery, tool and budget
+  boundaries, and an incremental implementation plan. Current runtime limitations
+  remain documented in [General agents](../general-agents.md).
+- [Agent data and trust](agent-data-trust.md): proposed confidentiality, access,
+  processing/disclosure, encrypted content, worker identity and retention contracts,
+  including confirmed gaps in the current implementation.
+
 ## Owner workflow implementation plan
 
 - [Owner workflow change plan](owner-workflow-change-plan.md): current implementation

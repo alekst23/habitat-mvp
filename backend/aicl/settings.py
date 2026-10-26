@@ -90,6 +90,9 @@ class Settings(BaseModel):
     executor_mode: str = "fake"
     chat_model_mode: str = "fake"
     assistant_max_spend_micro_usd: int = 1_000_000
+    studio_license_key: SecretStr = SecretStr("")
+    studio_ai_enabled: bool = False
+    studio_ai_max_spend_micro_usd: int = 1_000_000
     inference_mode: str = "mock"
     openai_api_key: SecretStr = SecretStr("")
     inference_max_spend_micro_usd: int = 1_000_000
@@ -227,7 +230,9 @@ class Settings(BaseModel):
             raise SettingsError("AICL_INFERENCE_MODE", "must be mock or openai")
         if not 1 <= self.inference_max_spend_micro_usd <= 10_000_000:
             raise SettingsError("AICL_INFERENCE_MAX_SPEND_MICRO_USD", "must be between 1 and 10000000")
-        if self.inference_mode == "mock" and self.chat_model_mode == "fake":
+        if type(self.studio_ai_max_spend_micro_usd) is not int or not 1 <= self.studio_ai_max_spend_micro_usd <= 10_000_000:
+            raise SettingsError("AICL_STUDIO_AI_MAX_SPEND_MICRO_USD", "must be between 1 and 10000000")
+        if self.inference_mode == "mock" and self.chat_model_mode == "fake" and not self.studio_ai_enabled:
             return self
         if not self.workflow_enabled:
             raise SettingsError("AICL_INFERENCE_MODE", "openai requires development, test or explicit hosted workflow mode")
@@ -314,6 +319,9 @@ class Settings(BaseModel):
         judge_flag = env.get("AICL_JUDGE_DEMO_MODE", "0") or "0"
         if judge_flag not in ("0", "1"):
             raise SettingsError("AICL_JUDGE_DEMO_MODE", "must be 0 or 1")
+        studio_ai_flag = env.get("AICL_STUDIO_AI_ENABLED", "0") or "0"
+        if studio_ai_flag not in ("0", "1"):
+            raise SettingsError("AICL_STUDIO_AI_ENABLED", "must be 0 or 1")
 
         payment_api_url = env.get("AICL_MOCK_PAYMENT_API_URL") or ""
         payment_token = env.get("AICL_MOCK_PAYMENT_TOKEN") or ""
@@ -384,6 +392,9 @@ class Settings(BaseModel):
             inference_mode=env.get("AICL_INFERENCE_MODE") or "mock",
             chat_model_mode=env.get("AICL_CHAT_MODEL_MODE") or "fake",
             assistant_max_spend_micro_usd=integer("AICL_ASSISTANT_MAX_SPEND_MICRO_USD", 1_000_000, 1, 10_000_000),
+            studio_license_key=SecretStr(env.get("AICL_STUDIO_LICENSE_KEY") or ""),
+            studio_ai_enabled=studio_ai_flag == "1",
+            studio_ai_max_spend_micro_usd=integer("AICL_STUDIO_AI_MAX_SPEND_MICRO_USD", 1_000_000, 1, 10_000_000),
             openai_api_key=SecretStr(env.get("OPENAI_API_KEY") or ""),
             inference_max_spend_micro_usd=integer("AICL_INFERENCE_MAX_SPEND_MICRO_USD", 1_000_000, 1, 10_000_000),
             payment_api_url=payment_api_url, payment_token=SecretStr(payment_token),

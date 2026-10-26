@@ -2,14 +2,17 @@
   "name": "habitat",
   "private": true,
   "version": "0.0.0",
-  "description": "Browser-harness manifest only; start:test runs python -m aicl.test_server; browser tests live in tests/browser.",
+  "description": "Habitat browser harness and pinned, self-hosted analytics assets.",
   "scripts": {
-    "start:test": "PYTHONPATH=backend python -m aicl.test_server"
+    "start:test": "PYTHONPATH=backend python -m aicl.test_server",
+    "build:studio": "node scripts/build-studio.mjs",
+    "test:studio-runtime": "node --test tests/studio-runtime.test.cjs"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0"
   },
   "dependencies": {
-    "ag-grid-community": "36.2.0"
+    "ag-grid-community": "36.2.0",
+    "ag-studio": "3.0.0"
   }
 }

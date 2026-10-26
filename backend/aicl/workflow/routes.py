@@ -114,6 +114,8 @@ def _configuration(form) -> dict:
             "deliverables": specs, "cadence": str(form.get("cadence", "daily")),
             "timezone": str(form.get("timezone", "America/New_York")),
             "scenario": str(form.get("scenario", "generic"))}
+    if result["scenario"] == "general":
+        result["tools"] = [str(value) for value in form.getlist("tools")]
     if result["scenario"] == BROWSER_SCENARIO:
         raw_amount = str(form.get("browser_max_amount", "")).strip()
         if not re.fullmatch(r"[0-9]{1,5}(?:\.[0-9]{1,2})?", raw_amount):
@@ -241,6 +243,7 @@ def workflow_router(ctx) -> APIRouter:
             return RedirectResponse("/", 303)
         view = view if view in ("costs", "actions", "purchases", "deliverables", "campaigns") else "costs"
         data = {**service.overview(auth, instance_id or None), "inference_mode": ctx.settings.inference_mode}
+        data["has_general_agents"] = any(agent.get("scenario") == "general" for agent in data["agents"])
         agents = service.overview(auth)["agents"] if instance_id else data["agents"]
         pending_count = sum(p["state"] in ("awaiting_approval", "awaiting_checkout", "payment_pending") for p in data["purchases"])
         data, status, date_from, date_to, filter_error = _audit_filter(data, view, status, date_from, date_to)

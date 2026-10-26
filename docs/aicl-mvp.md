@@ -1,5 +1,15 @@
 # Running and using the AICL MVP
 
+**Scope of this guide:** the E11 sections below describe the original deterministic
+control-plane baseline. The current application also includes optional real
+OpenAI inference and an interviewing assistant, PayPal Sandbox, Render scheduling
+and unified owner Requests. Start with the [current README](../README.md) and use
+the [Sandbox](paypal-sandbox.md), [Render](render-deployment.md) and
+[cloud-browser](cloud-browser.md) guides for those extensions. The October 23
+release is deployed on Render; its browser runtime is unconfigured and a complete
+hosted scheduled paid-work journey remains to be verified. Historical E11 limits
+below do not mean these later integrations are absent.
+
 E11 provides a server-rendered FastAPI application backed by SQLite. Its owner
 controls and audit records are implemented. Its built-in chat, Gmail/Reddit OAuth
 and work executor use deterministic fakes. “Work succeeded” in this prototype
@@ -8,7 +18,8 @@ email was sent or a Reddit post was created.
 
 ## Local demonstration
 
-Follow the [README setup](../README.md#run-locally). The test server binds only to
+Follow the [README setup](../README.md#run-locally) for the persistent local demo.
+The separate `aicl.test_server` described in this baseline walkthrough binds only to
 `127.0.0.1:4173`, creates a temporary database below `backend/.ctx/tmp/`, supplies
 test secrets and captures sign-in mail in memory. Its `__test__` endpoints are
 available only with both `AICL_ENVIRONMENT=test` and `AICL_TEST_MODE=1`. Do not use

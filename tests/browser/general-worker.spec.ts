@@ -1,0 +1,52 @@
+import { test, expect } from '@playwright/test';
+
+// Real browser + persisted configuration. This server has no model credentials;
+// the UI must explain that boundary without claiming a generated result.
+test('custom agent workflow preserves tools, deliverables and a paused schedule', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('response', response => {
+    if (response.status() >= 500) errors.push(`${response.status()} ${response.url()}`);
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  expect((await page.request.post('/__test__/seed-session', { data: { fixture: 'owner-a' } })).status()).toBe(200);
+  await page.goto('/agents/new');
+  await page.getByLabel('Name', { exact: true }).fill('Library program planner');
+  await page.getByLabel('Instructions', { exact: true }).fill('Prepare public library program ideas for adults and identify accessible activities.');
+  await page.getByRole('checkbox', { name: 'inference', exact: true }).check();
+  await page.getByRole('button', { name: 'Create', exact: true }).click();
+  await page.getByRole('link', { name: /Configure goals & schedule/ }).click();
+  await page.getByLabel('Workflow type', { exact: true }).selectOption('general');
+  await page.getByLabel('Context and inputs').fill('For library volunteers planning free neighborhood events.');
+  await page.locator('#deliverable-name-0').fill('Program ideas');
+  await page.locator('#deliverable-description-0').fill('Practical program recommendations with supporting public sources.');
+  await page.locator('#deliverable-criteria-0').fill('Cite supporting sources\nPrioritize accessible activities');
+  await page.getByRole('button', { name: 'Save configuration' }).click();
+  await expect(page.getByRole('status')).toContainText('Configuration saved');
+  await expect(page.getByRole('heading', { name: 'Schedule paused', exact: true })).toBeVisible();
+  await expect(page.getByText(/This workflow requires real model inference/)).toBeVisible();
+  await expect(page.locator('input[name="scenario"]')).toHaveValue('general');
+  await expect(page.locator('[name="purchase_required_0"]')).toHaveCount(0);
+  await expect(page.locator('[name="validation_scenario_0"]')).toHaveCount(0);
+  await page.locator('#tool-web_search').check();
+  await page.getByText('Add another deliverable', { exact: true }).click();
+  await page.locator('#deliverable-name-1').fill('Volunteer checklist');
+  await page.locator('#deliverable-description-1').fill('A preparation checklist for the recommended activities.');
+  await page.locator('#deliverable-criteria-1').fill('Identify materials and accessibility needs');
+  await page.getByLabel('Schedule', { exact: true }).selectOption('hourly');
+  await page.getByRole('button', { name: 'Save configuration' }).click();
+  await expect(page.getByRole('status')).toContainText('Configuration saved');
+  await page.reload();
+  await expect(page.locator('#tool-web_search')).toBeChecked();
+  await expect(page.getByLabel('Schedule', { exact: true })).toHaveValue('hourly');
+  await expect(page.locator('#deliverable-name-1')).toHaveValue('Volunteer checklist');
+  await expect(page.getByRole('heading', { name: 'Schedule paused', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Review AICL controls', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Fund with PayPal', exact: true })).toBeVisible();
+  await page.screenshot({ path: '.ctx/general-worker-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('#tool-web_search')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  await page.screenshot({ path: '.ctx/general-worker-mobile.png', fullPage: true });
+  expect(errors).toEqual([]);
+});

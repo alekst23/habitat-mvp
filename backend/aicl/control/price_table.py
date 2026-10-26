@@ -13,6 +13,7 @@ from sqlite3 import Connection
 from aicl.control.errors import AiclError
 
 METERS: tuple[str, ...] = ("inference.input_tokens", "inference.output_tokens", "compute.minutes")
+OPTIONAL_METERS: tuple[str, ...] = ("inference.web_search_calls",)
 _VERSION = re.compile(r"^[A-Za-z0-9._-]{1,32}$")
 _STAMP = re.compile(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")
 
@@ -41,7 +42,7 @@ def _is_int(value: object) -> bool:
 
 
 def parse_price_table(raw: bytes) -> PriceTableVersion:
-    """Validate schema (version pattern, three meters exactly once, positive unit_size, no floats).
+    """Validate three required meters and optional priced tools, with no duplicates or floats.
 
     Invalid input raises AiclError('validation_failed')."""
     try:
@@ -66,13 +67,13 @@ def parse_price_table(raw: bytes) -> PriceTableVersion:
         if not isinstance(item, dict):
             raise _invalid("rate must be an object")
         meter, unit, price = item.get("meter"), item.get("unit_size"), item.get("micro_usd")
-        if meter not in METERS or meter in rates:
+        if meter not in METERS + OPTIONAL_METERS or meter in rates:
             raise _invalid("unknown or duplicate meter")
         if not _is_int(unit) or unit <= 0 or not _is_int(price) or price < 0:
             raise _invalid("unit_size must be a positive integer and micro_usd a nonnegative integer")
         rates[meter] = Rate(meter, unit, price)
-    if set(rates) != set(METERS):
-        raise _invalid("every meter must appear exactly once")
+    if not set(METERS).issubset(rates):
+        raise _invalid("every required meter must appear exactly once")
     ordered = tuple(rates[m] for m in sorted(rates))
     canonical = json.dumps({"version": version, "effective_from": stamp,
                             "rates": [{"meter": r.meter, "unit_size": r.unit_size, "micro_usd": r.micro_usd}
@@ -124,8 +125,10 @@ def effective_version(conn: Connection, now: datetime) -> PriceTableVersion | No
 
 
 def cost_micro_usd(version: PriceTableVersion, meter: str, units: int) -> int:
-    """ceil(units * micro_usd / unit_size); a missing meter raises AiclError('unavailable')."""
+    """Price observed units; an absent optional meter is safe only for zero use."""
     for rate in version.rates:
         if rate.meter == meter:
             return -(-(units * rate.micro_usd) // rate.unit_size)
+    if meter in OPTIONAL_METERS and units == 0:
+        return 0
     raise AiclError("unavailable", f"no rate for meter {meter}")

@@ -14,8 +14,9 @@ from aicl.work.routes import router_factory as work_router
 from aicl.workflow.routes import workflow_router
 from aicl.render.routes import render_router
 from aicl.owner_requests.routes import owner_requests_router
+from aicl.studio.routes import studio_router
 
 # Ordered tuple of `(AppContext) -> fastapi.APIRouter`.
 ROUTE_FACTORIES: tuple[Callable[..., object], ...] = (tool_router, work_router, web_router, chat_router,
                                                           manage_router, commerce_router, workflow_router, render_router,
-                                                          owner_requests_router, waitlist_router)
+                                                          owner_requests_router, waitlist_router, studio_router)

@@ -32,6 +32,7 @@ class Estimate:
     inference_input_tokens: int
     inference_output_tokens: int
     compute_minutes: int
+    web_search_calls: int = 0
 
 
 @dataclass(frozen=True)
@@ -39,6 +40,7 @@ class MeasuredUsage:
     inference_input_tokens: int
     inference_output_tokens: int
     compute_minutes: int
+    web_search_calls: int = 0
 
 
 @dataclass(frozen=True)
@@ -69,6 +71,7 @@ class Usage:
     window_day: str
     window_month: str
     recorded_at: datetime
+    web_search_calls: int = 0
 
 
 @dataclass(frozen=True)
@@ -133,7 +136,8 @@ def _usage(row) -> Usage:
                  inference_output_tokens=row["inference_output_tokens"], compute_minutes=row["compute_minutes"],
                  inference_micro_usd=row["inference_micro_usd"], compute_micro_usd=row["compute_micro_usd"],
                  price_table_version=row["price_table_version"], window_day=row["window_day"],
-                 window_month=row["window_month"], recorded_at=from_iso(row["recorded_at"]))
+                 window_month=row["window_month"], recorded_at=from_iso(row["recorded_at"]),
+                 web_search_calls=row["web_search_calls"])
 
 
 class SqliteBudgetPort:
@@ -204,30 +208,37 @@ class SqliteBudgetPort:
     # -- operations ----------------------------------------------------------------------------
     def reserve(self, conn, instance_id, work_id, estimate, *, price_table_version=None):
         inst = self._instance(conn, instance_id)
+        values = (estimate.inference_input_tokens, estimate.inference_output_tokens,
+                  estimate.compute_minutes, estimate.web_search_calls)
+        if any(not isinstance(v, int) or isinstance(v, bool) or v < 0 for v in values):
+            raise AiclError("validation_failed", "estimate must be nonnegative integers")
         existing = conn.execute("SELECT * FROM budget_hold WHERE instance_id = ? AND work_id = ?",
                                 (instance_id, work_id)).fetchone()
         if existing is not None:
             if price_table_version is not None and existing["price_table_version"] != price_table_version:
                 raise AiclError("conflict", "work_id already reserved with a different price version")
-            if (existing["est_input_tokens"], existing["est_output_tokens"], existing["est_compute_minutes"]) != (
-                    estimate.inference_input_tokens, estimate.inference_output_tokens, estimate.compute_minutes):
+            if (existing["est_input_tokens"], existing["est_output_tokens"], existing["est_compute_minutes"],
+                    existing["est_web_search_calls"]) != values:
                 raise AiclError("conflict", "work_id already reserved with a different estimate",
                                 existing_result_id=existing["id"])
             return _hold(existing)
-        values = (estimate.inference_input_tokens, estimate.inference_output_tokens, estimate.compute_minutes)
-        if any(not isinstance(v, int) or isinstance(v, bool) or v < 0 for v in values):
-            raise AiclError("validation_failed", "estimate must be nonnegative integers")
         now = self.clock.now()
         version = load_version(conn, price_table_version) if price_table_version else effective_version(conn, now)
         if version is None or version.effective_from > now:
             raise _denied("price_unavailable")
         if self._blocking(conn, instance_id, now) > 0:
             raise _denied("reconciliation_pending")
-        cost = {
-            "inference": cost_micro_usd(version, "inference.input_tokens", values[0])
-            + cost_micro_usd(version, "inference.output_tokens", values[1]),
-            "compute": cost_micro_usd(version, "compute.minutes", values[2]),
-        }
+        try:
+            cost = {
+                "inference": cost_micro_usd(version, "inference.input_tokens", values[0])
+                + cost_micro_usd(version, "inference.output_tokens", values[1])
+                + cost_micro_usd(version, "inference.web_search_calls", values[3]),
+                "compute": cost_micro_usd(version, "compute.minutes", values[2]),
+            }
+        except AiclError as error:
+            if error.error == "unavailable":
+                raise _denied("price_unavailable") from None
+            raise
         for category, windows in self._amounts(conn, inst, now).items():
             for amounts in windows.values():
                 if amounts.limit < 0:
@@ -237,20 +248,22 @@ class SqliteBudgetPort:
         hold_id, stamp = str(uuid.uuid4()), to_iso(now)
         conn.execute(
             "INSERT INTO budget_hold (id, instance_id, work_id, price_table_version, est_input_tokens, "
-            "est_output_tokens, est_compute_minutes, inference_micro_usd, compute_micro_usd, window_day, "
-            "window_month, state, created_at, state_changed_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,'held',?,?)",
+            "est_output_tokens, est_compute_minutes, est_web_search_calls, inference_micro_usd, compute_micro_usd, window_day, "
+            "window_month, state, created_at, state_changed_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'held',?,?)",
             (hold_id, instance_id, work_id, version.version, *values, cost["inference"], cost["compute"],
              now.strftime("%Y-%m-%d"), now.strftime("%Y-%m"), stamp, stamp))
         return _hold(self._get_hold(conn, hold_id))
 
     def settle(self, conn, hold_id, measured):
         row = self._get_hold(conn, hold_id)
-        values = (measured.inference_input_tokens, measured.inference_output_tokens, measured.compute_minutes)
+        values = (measured.inference_input_tokens, measured.inference_output_tokens,
+                  measured.compute_minutes, measured.web_search_calls)
         if any(not isinstance(v, int) or isinstance(v, bool) or v < 0 for v in values):
             raise AiclError("validation_failed", "measured usage must be nonnegative integers")
         if row["state"] == "settled":
             usage = conn.execute("SELECT * FROM budget_usage WHERE hold_id = ?", (hold_id,)).fetchone()
-            if (usage["inference_input_tokens"], usage["inference_output_tokens"], usage["compute_minutes"]) == values:
+            if (usage["inference_input_tokens"], usage["inference_output_tokens"], usage["compute_minutes"],
+                    usage["web_search_calls"]) == values:
                 return _usage(usage)
             raise AiclError("conflict", "hold already settled with different usage")
         if row["state"] == "released":
@@ -260,13 +273,14 @@ class SqliteBudgetPort:
             raise error
         version = load_version(conn, row["price_table_version"])
         inference = (cost_micro_usd(version, "inference.input_tokens", values[0])
-                     + cost_micro_usd(version, "inference.output_tokens", values[1]))
+                     + cost_micro_usd(version, "inference.output_tokens", values[1])
+                     + cost_micro_usd(version, "inference.web_search_calls", values[3]))
         compute = cost_micro_usd(version, "compute.minutes", values[2])
         now = self.clock.now()
         conn.execute(
             "INSERT INTO budget_usage (hold_id, instance_id, inference_input_tokens, inference_output_tokens, "
-            "compute_minutes, inference_micro_usd, compute_micro_usd, price_table_version, window_day, "
-            "window_month, recorded_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            "compute_minutes, web_search_calls, inference_micro_usd, compute_micro_usd, price_table_version, window_day, "
+            "window_month, recorded_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
             (hold_id, row["instance_id"], *values, inference, compute, version.version, row["window_day"],
              row["window_month"], to_iso(now)))
         self._transition(conn, row, "settled", now)
