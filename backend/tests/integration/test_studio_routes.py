@@ -25,7 +25,7 @@ def test_studio_auth_layout_conflicts_and_owner_isolation(base_env):
         client.post("/__test__/seed-session", json={"fixture": "owner-b"})
         assert client.get("/audit/studio/state").json() == {"state": None, "version": 0}
         assert client.get("/audit/studio/data").json()["costs"] == []
-        assert client.post("/audit/studio/ai", json={}, headers=headers).status_code == 503
+        assert client.post("/audit/studio/ai", json={}, headers=headers).status_code == 403
         with client.app.state.ctx.db.reader() as conn:
             assert conn.execute("SELECT count(*) FROM workflow_inference_attempt").fetchone()[0] == 0
             assert conn.execute("SELECT count(*) FROM mock_commerce_order").fetchone()[0] == 0

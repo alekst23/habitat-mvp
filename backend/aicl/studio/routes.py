@@ -1,4 +1,4 @@
-"""Owner-scoped dashboard reads, layout saves and a bounded Studio AI adapter."""
+"""Owner-scoped reporting and layout saves; Studio AI is hard disabled."""
 from __future__ import annotations
 
 import json
@@ -32,11 +32,10 @@ def studio_router(ctx):
     router = APIRouter()
     if not ctx.settings.workflow_enabled:
         return router
-    from aicl.studio.ai import StudioAI
     from aicl.studio.data import StudioData
     from aicl.studio.pages import render_studio
 
-    state, data, ai = StudioState(ctx), StudioData(ctx), StudioAI(ctx)
+    state, data = StudioState(ctx), StudioData(ctx)
     csrf = require_csrf(ctx)
 
     def authenticated(request):
@@ -53,8 +52,7 @@ def studio_router(ctx):
         auth = ctx.auth_provider.resolve(dict(request.cookies))
         if auth is None:
             return RedirectResponse("/", 303)
-        return HTMLResponse(render_studio(ai_enabled=ctx.settings.studio_ai_enabled,
-                             studio_license_key=ctx.settings.studio_license_key.get_secret_value(),
+        return HTMLResponse(render_studio(studio_license_key=ctx.settings.studio_license_key.get_secret_value(),
                              **sidebar_context(ctx, auth)), headers={"Cache-Control": "no-store"})
 
     @router.get("/audit/studio/data")
@@ -74,12 +72,9 @@ def studio_router(ctx):
         return json_response(state.save(auth, body["state"], body["expected_version"]))
 
     @router.post("/audit/studio/ai")
-    async def analyst(request: Request, auth=Depends(csrf)):
-        if not ctx.settings.studio_ai_enabled:
-            raise AiclError("unavailable", "The dashboard assistant is not configured. Filters and saved layouts remain available.")
-        body = await _body(request, 64_000)
-        if set(body) != {"request_id", "request"}:
-            raise AiclError("validation_failed", "Supply request_id and the Studio request only.")
-        return json_response(await ai.respond(auth, body["request_id"], body["request"]))
+    async def analyst_disabled(auth=Depends(csrf)):
+        # Keep an explicit denial for old clients. No request body, model,
+        # transport or inference journal is touched by this route.
+        raise AiclError("denied", "Studio AI is hard disabled by policy. Use the dashboard filters and source records.")
 
     return router

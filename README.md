@@ -27,7 +27,7 @@ on that deployment.
 | PayPal | Real Sandbox Orders API, hosted buyer consent and server-verified capture; separate $5 service funding and $30 seller purchase were verified with test money |
 | Scheduling | Durable jobs and Render Workflows integration; deployment is verified separately from end-to-end hosted work execution |
 | Owner Requests | Questions, scoped permissions, sign-in handoffs and exact purchase decisions; work waits durably for the owner |
-| Audit | AG Grid history plus an AG Studio Agent Operations dashboard with linked costs/jobs, current owner requests, saved layouts and an optional bounded analyst; see [AG Studio setup](docs/ag-studio.md) |
+| Audit | AG Grid history plus an AG Studio Agent Operations dashboard with linked costs/jobs, current owner requests and saved layouts. Studio AI is hard disabled; see [AG Studio setup](docs/ag-studio.md) |
 | Advertising | Fixed merchant offers, creative, ad delivery and campaign metrics remain scenario fixtures; no real ads are placed |
 
 The local demo below runs without provider credentials. To reproduce external
