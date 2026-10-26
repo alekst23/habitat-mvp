@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import uuid
+from contextlib import contextmanager
 from datetime import timezone
 from pathlib import Path
 
@@ -17,6 +18,33 @@ EXAMPLE_PRICE_TABLE = REPO / "backend" / "aicl" / "price_table.example.json"
 # A startup failure is a typed error or an OS/storage error. NotImplementedError (an unimplemented
 # stub) and AssertionError are deliberately NOT in this tuple, so a stub can never satisfy it.
 STARTUP_FAILURES = (AiclError, SettingsError, ValueError, OSError, sqlite3.Error)
+
+
+@contextmanager
+def historical_budget_fixture(build_env):
+    """Seed old-schema fixtures using current budget code, then restore the schema.
+
+    The added counters are only a fixture-construction bridge. Removing them
+    before migration ensures the test still exercises genuinely historical rows.
+    """
+    databases = []
+    columns = (("budget_hold", "est_web_search_calls"), ("budget_usage", "web_search_calls"))
+    def build(*args, **kwargs):
+        env = build_env(*args, **kwargs)
+        with env.db.transaction() as conn:
+            for table, column in columns:
+                assert column not in {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} INTEGER NOT NULL DEFAULT 0")
+        databases.append(env.db)
+        return env
+    try:
+        yield build
+    finally:
+        for db in databases:
+            with db.transaction() as conn:
+                for table, column in columns:
+                    assert conn.execute(f"SELECT COUNT(*) FROM {table} WHERE {column} != 0").fetchone()[0] == 0
+                    conn.execute(f"ALTER TABLE {table} DROP COLUMN {column}")
 
 
 class Abort(Exception):

@@ -1,4 +1,4 @@
-"""Persistent, deterministic owner-workflow fixtures, never background execution.
+"""Persistent owner workflows with bounded model execution and legacy fixtures.
 
 The demo clock advances only schedule occurrences. Authentication, payment expiry,
 controls and accounting use the real injected clock. Reading projections has no
@@ -93,8 +93,8 @@ class MockWorkflowService(AdWorkflowMixin):
         if not isinstance(data, dict):
             raise AiclError("validation_failed", "Complete the workflow configuration.")
         scenario_id = data.get("scenario", "generic")
-        if scenario_id not in ("generic", SCENARIO, BROWSER_SCENARIO):
-            raise AiclError("validation_failed", "Choose a supported workflow example.")
+        if scenario_id not in ("generic", "general", SCENARIO, BROWSER_SCENARIO):
+            raise AiclError("validation_failed", "Choose a supported workflow.")
         goal = self._text(data.get("goal"), "Goal", 2000)
         inputs = self._text(data.get("inputs", ""), "Inputs", 4000, optional=True)
         cadence, timezone = data.get("cadence", "daily"), data.get("timezone", "UTC")
@@ -113,7 +113,13 @@ class MockWorkflowService(AdWorkflowMixin):
         for index, spec in enumerate(specs):
             if not isinstance(spec, dict):
                 raise AiclError("validation_failed", "Each deliverable needs a name and completion criteria.")
-            key = spec.get("key") or f"d{index + 1}"
+            key = spec.get("key")
+            if not key:
+                number = index + 1
+                key = f"d{number}"
+                while key in keys or any(isinstance(other, dict) and other.get("key") == key for other in specs):
+                    number += 1
+                    key = f"d{number}"
             if not isinstance(key, str) or not _KEY.fullmatch(key) or key in keys:
                 raise AiclError("validation_failed", "Deliverable identifiers must be unique short names.")
             keys.add(key)
@@ -126,6 +132,8 @@ class MockWorkflowService(AdWorkflowMixin):
             purchase = spec.get("purchase_required", False)
             if type(purchase) is not bool:
                 raise AiclError("validation_failed", "Purchase dependency must be true or false.")
+            if scenario_id == "general" and (purchase or scenario != "pass"):
+                raise AiclError("validation_failed", "General agents use model assessment and do not require demo purchases.")
             normalized.append({"key": key, "name": self._text(spec.get("name"), "Deliverable name", 120),
                 "description": self._text(spec.get("description", ""), "Expected content", 2000, optional=True),
                 "criteria": [self._text(c, "Completion criterion", 500) for c in criteria],
@@ -136,6 +144,18 @@ class MockWorkflowService(AdWorkflowMixin):
             if any(spec["purchase_required"] for spec in normalized):
                 raise AiclError("validation_failed", "PocketPlan outputs exist independently of campaign purchase approval.")
         result = {"scenario": scenario_id, "goal": goal, "inputs": inputs, "deliverables": normalized, "cadence": cadence, "timezone": timezone}
+        if scenario_id == "general":
+            from aicl.workflow.agent_tools import normalize_tools
+            from aicl.workflow.openai_inference import validate_general_context, InferenceNoChargeError
+            if data.get("research_sources"):
+                raise AiclError("validation_failed", "Legacy feed selections are no longer supported. Review and choose the agent’s permitted tools.")
+            result["tools"] = normalize_tools(data.get("tools", []))
+            try:
+                validate_general_context(result)
+            except InferenceNoChargeError as error:
+                if error.reason == "input_limit_exceeded":
+                    raise AiclError("validation_failed", "Shorten the goal, inputs, deliverable descriptions or criteria to leave room for revision feedback and owner answers.") from None
+                raise AiclError("validation_failed", "The saved brief cannot be used for model generation. Remove sensitive information and check its fields.") from None
         if scenario_id == BROWSER_SCENARIO:
             if keys != {"purchase_proposal"} or any(spec["purchase_required"] for spec in normalized):
                 raise AiclError("validation_failed", "Browser work needs one purchase proposal deliverable, with no dependency on completing a purchase.")
@@ -155,8 +175,8 @@ class MockWorkflowService(AdWorkflowMixin):
 
     def save_config(self, auth, instance_id, data, expected_version):
         normalized = self._normalize(data)
-        if self.execution_mode == "render" and normalized["scenario"] not in (SCENARIO, BROWSER_SCENARIO):
-            raise AiclError("validation_failed", "Choose the reviewed app marketing example or browser purchase workflow before saving.")
+        if self.execution_mode == "render" and normalized["scenario"] not in ("general", SCENARIO, BROWSER_SCENARIO):
+            raise AiclError("validation_failed", "Choose a general agent or a supported example before saving.")
         if type(expected_version) is not int or expected_version < 1:
             raise AiclError("validation_failed", "A configuration version is required.")
         with self.db.transaction() as conn:
@@ -192,8 +212,10 @@ class MockWorkflowService(AdWorkflowMixin):
                 return config
             if enabled:
                 self._require_demo_active(conn, auth)
-                if self.execution_mode == "render" and (config.get("scenario") not in (SCENARIO, BROWSER_SCENARIO) or self.inference is None):
-                    raise AiclError("validation_failed", "Render scheduling requires a reviewed app marketing or browser purchase workflow and enabled model inference.")
+                if config.get("scenario") == "general" and self.inference is None:
+                    raise AiclError("validation_failed", "General agents require configured model inference before their schedule can run.")
+                if self.execution_mode == "render" and (config.get("scenario") not in ("general", SCENARIO, BROWSER_SCENARIO) or self.inference is None):
+                    raise AiclError("validation_failed", "Render scheduling requires a supported workflow and enabled model inference.")
                 inst = self._instance(conn, auth, instance_id)
                 if inst["lifecycle"] in ("draft", "paused"):
                     SqliteInstanceOperations(self.db, self.clock).set_lifecycle(
@@ -298,6 +320,8 @@ class MockWorkflowService(AdWorkflowMixin):
         if version > _MAX_VERSIONS:
             raise AiclError("denied", "This example has reached its five-version limit. Configure a new job to change scope.", reason="revision_limit")
         snapshot, spec = json.loads(job["config_json"]), json.loads(job["spec_json"])
+        if snapshot.get("scenario") == "general" and self.inference is None:
+            raise AiclError("denied", "General agents require configured model inference.", reason="inference_unavailable")
         if snapshot.get("scenario") == "browser_purchase" and (self.execution_mode != "render" or self.inference is None):
             raise AiclError("denied", "Browser work requires the scheduled worker and configured inference.", reason="unsupported_workflow")
         if self.inference and uses_model(snapshot, spec):
@@ -414,6 +438,11 @@ class MockWorkflowService(AdWorkflowMixin):
                 for job in existing_jobs:
                     if job["state"] not in ("waiting_purchase", "waiting_owner", "needs_work", "changes_requested", "inference_blocked", "inference_failed"):
                         continue
+                    if job["state"] == "needs_work" and json.loads(job["config_json"]).get("scenario") == "general":
+                        # A missing result for one reporting period must not
+                        # consume every future cadence revising that same period.
+                        # The owner can explicitly request a revision instead.
+                        continue
                     if job["state"] == "waiting_owner" and conn.execute(
                             "SELECT 1 FROM owner_request WHERE workflow_run_id=? AND status IN ('pending','declined')", (job["id"],)).fetchone():
                         continue
@@ -436,11 +465,18 @@ class MockWorkflowService(AdWorkflowMixin):
                 if config.get("scenario") == SCENARIO:
                     outcomes.extend(self._advance_ads(conn, auth, config, occurrence_id, expected_due))
                 for spec in ([] if config.get("scenario") == SCENARIO else config["deliverables"]):
-                    if config.get("scenario") == "browser_purchase" and conn.execute(
+                    if config.get("scenario") in ("general", "browser_purchase") and conn.execute(
                             "SELECT 1 FROM mock_workflow_run WHERE instance_id=? AND spec_key=? AND state IN ('generating','running','inference_blocked','inference_failed','inference_unknown')", (instance_id, spec["key"])).fetchone():
                         continue
+                    if config.get("scenario") == "general" and conn.execute(
+                            "SELECT 1 FROM mock_workflow_run WHERE instance_id=? AND spec_key=? AND state IN ('context_blocked','permission_blocked') AND config_version=?",
+                            (instance_id, spec["key"], config["version"])).fetchone():
+                        outcomes.append("Review and save the workflow to resume work; this job needs updated context or tool permissions.")
+                        continue
                     pending = conn.execute("SELECT 1 FROM mock_workflow_run WHERE instance_id=? AND spec_key=? "
-                                           "AND state IN ('waiting_purchase','waiting_owner','owner_declined','needs_work','submitted','changes_requested')", (instance_id, spec["key"])).fetchone()
+                                           "AND (state IN ('waiting_purchase','waiting_owner','owner_declined','changes_requested') "
+                                           "OR (state='needs_work' AND json_extract(config_json,'$.scenario') IS NOT 'general') "
+                                           "OR (state='submitted' AND ? != 'general'))", (instance_id, spec["key"], config.get("scenario"))).fetchone()
                     if pending:
                         continue
                     try:
@@ -449,11 +485,15 @@ class MockWorkflowService(AdWorkflowMixin):
                             needs_purchase = spec["purchase_required"] and not reusable
                             brief = {"product_name": spec["name"], "audience": (config["inputs"] or "The agent owner")[:240], "goal": config["goal"][:600]}
                             commerce_run = self.commerce._start_workflow_run(conn, auth, instance_id, f"wf:{occurrence_id}:{spec['key']}", brief, purchase_required=needs_purchase,
-                                                                          charge=config.get("scenario") != "browser_purchase")
+                                                                          charge=config.get("scenario") not in ("general", "browser_purchase"),
+                                                                          action="scheduled_agent" if config.get("scenario") == "general" else "scheduled_fixture")
                             run_id = _id()
                             snapshot = {key: config[key] for key in ("goal", "inputs", "deliverables", "cadence", "timezone", "version", "scenario")}
                             if config.get("scenario") == "browser_purchase":
                                 snapshot["browser_task"] = config["browser_task"]
+                            if config.get("scenario") == "general":
+                                snapshot["tools"] = config.get("tools", [])
+                                snapshot["scheduled_for"] = expected_due
                             conn.execute("INSERT INTO mock_workflow_run (id,instance_id,occurrence_id,commerce_run_id,spec_key,config_version,config_json,spec_json,state,created_at,updated_at) "
                                          "VALUES (?,?,?,?,?,?,?,?,?,?,?)", (run_id, instance_id, occurrence_id, commerce_run["id"], spec["key"], config["version"], _canonical(snapshot), _canonical(spec), "waiting_purchase" if needs_purchase else "running", now, now))
                             job = self._job(conn, auth, run_id)
@@ -510,7 +550,9 @@ class MockWorkflowService(AdWorkflowMixin):
             state = "accepted" if decision == "accept" else "changes_requested"
             if row["state"] == state and row["feedback"] == feedback:
                 return self.deliverable(auth, deliverable_id)
-            if row["state"] != "submitted" or not all(c["passed"] for c in json.loads(row["criteria_json"])):
+            revise_unmet = (decision == "request_changes" and row["state"] == "needs_work"
+                            and json.loads(job["config_json"]).get("scenario") == "general")
+            if not revise_unmet and (row["state"] != "submitted" or not all(c["passed"] for c in json.loads(row["criteria_json"]))):
                 raise AiclError("invalid_transition", "Only a validated, submitted version can be reviewed.")
             if decision == "request_changes" and row["version"] >= _MAX_VERSIONS:
                 raise AiclError("denied", "This example has reached its five-version limit. Configure a new job to change scope.", reason="revision_limit")

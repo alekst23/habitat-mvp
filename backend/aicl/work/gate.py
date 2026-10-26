@@ -140,6 +140,11 @@ def request_digest(request: WorkRequest) -> str:
         "inference_input_tokens": request.estimate.inference_input_tokens,
         "inference_output_tokens": request.estimate.inference_output_tokens,
         "compute_minutes": request.estimate.compute_minutes}
+    if estimate is not None and (type(request.estimate.web_search_calls) is not int
+                                 or request.estimate.web_search_calls != 0):
+        # Preserve historic zero-tool request identities. Invalid zero-like
+        # values still change identity so they cannot bypass validation by replay.
+        estimate["web_search_calls"] = request.estimate.web_search_calls
     canonical = json.dumps({"instance_id": request.instance_id, "capability": request.capability,
                             "payload": request.payload, "estimate": estimate,
                             "destination_url": request.destination_url},
@@ -150,7 +155,8 @@ def request_digest(request: WorkRequest) -> str:
 def _estimate_ok(estimate: object) -> bool:
     if not isinstance(estimate, Estimate):
         return False
-    values = (estimate.inference_input_tokens, estimate.inference_output_tokens, estimate.compute_minutes)
+    values = (estimate.inference_input_tokens, estimate.inference_output_tokens, estimate.compute_minutes,
+              estimate.web_search_calls)
     return all(isinstance(v, int) and not isinstance(v, bool) and 0 <= v <= 10**12 for v in values)
 
 

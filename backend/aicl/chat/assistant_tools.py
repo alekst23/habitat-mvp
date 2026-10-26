@@ -30,19 +30,21 @@ class _Inspect(_Input):
 
 
 class _Deliverable(_Input):
-    key: Literal["campaign_plan", "ad_creative", "performance_report"]
+    key: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
     name: str = Field(min_length=1, max_length=120)
     description: str = Field(max_length=2000)
     criteria: list[str] = Field(min_length=1, max_length=12)
 
 
 class _Create(_Input):
+    scenario: Literal["general", "pocketplan_ads"] = "general"
     name: str = Field(min_length=1, max_length=80)
     goal: str = Field(min_length=1, max_length=2000)
     inputs: str = Field(max_length=4000)
     cadence: Literal["hourly", "daily"]
     timezone: str = Field(min_length=1, max_length=80)
-    deliverables: list[_Deliverable] = Field(min_length=3, max_length=3)
+    deliverables: list[_Deliverable] = Field(min_length=1, max_length=6)
+    tools: list[str] = Field(default_factory=list, max_length=1)
     budget_notes: str = Field(max_length=1000)
 
 
@@ -54,7 +56,7 @@ _TOOLS = {
     "get_supported_capabilities": (_Input, "Read the supported worker, limitations and owner-only controls before interviewing or proposing an agent."),
     "list_agents": (_Input, "List up to 10 of this owner's agents with status and workflow links."),
     "inspect_agent": (_Inspect, "Read an owned agent's saved configuration, limits, credit, recent work, deliverables and purchase requests. This never runs work."),
-    "save_agent_proposal": (_Create, "Prepare or revise a reviewed PocketPlan app-marketing draft for owner review. Use only when the owner wants this supported workflow; do not substitute it for arbitrary work. Requires campaign_plan, ad_creative and performance_report. Budget notes are informational. Does not create or activate an agent."),
+    "save_agent_proposal": (_Create, "Prepare a general agent with 1–6 custom text deliverables and criteria. Infer needed tools from the owner's goal and the available tool catalog; select web_search when public information is needed, or [] for supplied context only. The agent chooses its queries and sources during execution, within the supported tool limits. Budget notes are informational. Owner review creates a draft; this tool never creates or activates work."),
     "validate_agent_proposal": (_Input, "Validate the current proposal and explain the owner confirmation and remaining setup steps; does not commit."),
     "propose_schedule_change": (_Schedule, "Prepare an exact pause/enable schedule change for an owned agent. Only an owner confirmation button applies it; this tool never runs or schedules work."),
 }
@@ -119,18 +121,20 @@ class AssistantTools:
         return getattr(self, "_" + name)(**payload.model_dump())
 
     def _get_supported_capabilities(self):
+        from aicl.workflow.agent_tools import TOOL_CATALOG
         live = self.ctx.settings.inference_mode == "openai"
         return {
-            "worker": {"id": SCENARIO, "name": "Reviewed PocketPlan app-marketing worker",
-                       "purpose": "Plan and evaluate a bounded advertising campaign for the PocketPlan mobile app.",
-                       "deliverable_keys": ["campaign_plan", "ad_creative", "performance_report"],
-                       "model_generation": ["campaign_plan", "performance_report"] if live else [],
-                       "inference_mode": "openai" if live else "fixture",
-                       "limitations": "Ad creative, advertising delivery and metrics remain scenario data. Arbitrary agents, live ads and custom tools are not supported by this worker."},
+            "worker": {"id": "general", "name": "General agent",
+                       "purpose": "Complete owner-defined text deliverables using the saved goal, supplied context and approved tools.",
+                       "deliverables": "1–6 custom named text outputs with explicit completion criteria",
+                       "inference_mode": "openai" if live else "unavailable",
+                       "limitations": "When approved, public web search is limited to one invocation per deliverable. The agent chooses queries and sources; results are not exhaustive or independently verified. No shell or code execution, messaging, publishing, payments or private account access. Checks are model self-assessment; results appear in Habitat. If inference is unavailable, drafts can be saved but work cannot run."},
+            "tools": list(TOOL_CATALOG),
             "schedule": {"cadences": ["hourly", "daily"], "daily_time": "09:00 in the configured timezone"},
-            "creation": "An owner-confirmed proposal creates a draft with inference permission only, zero budgets, no funding and a disabled schedule.",
+            "execution": "Automatic scheduling uses the configured Render worker." if self.ctx.settings.workflow_execution_mode == "render" else "This server uses local execution: an owner must advance the schedule; there is no automatic background delivery.",
+            "creation": "An owner-confirmed proposal authorizes its selected tools and creates a draft with inference permission, zero budgets, no funding and a disabled schedule.",
             "owner_only": ["Funding checkout", "Budget and permission changes", "Purchase approval", "Applying schedule proposals"],
-            "generic_workflows": "Existing generic workflows use fixtures; the assistant does not create or promise a general-purpose autonomous worker.",
+            "examples": "pocketplan_ads remains an opt-in fictional marketing demo requiring campaign_plan, ad_creative and performance_report; advertising and metrics are fixtures.",
         }
 
     def _list_agents(self):
@@ -182,6 +186,7 @@ class AssistantTools:
                     "reserved_or_unknown_micro_usd": held, "purchase_policy": self.workflow.commerce._policy(conn, instance_id),
                     "workflow": {key: config[key] for key in ("scenario", "cadence", "timezone", "version", "saved", "enabled", "next_due")} |
                                 {"goal": _clip(config["goal"], 200), "inputs": _clip(config["inputs"], 200),
+                                 "tools": config.get("tools", []),
                                  "deliverable_count": len(config["deliverables"]),
                                  "deliverables": [{"key": spec["key"], "name": _clip(spec["name"], 80),
                                                    "description": _clip(spec["description"], 80), "criteria_count": len(spec["criteria"]),
@@ -201,8 +206,11 @@ class AssistantTools:
             raise AiclError("validation_failed", "Choose a name without control characters.")
         if any(unicodedata.category(char) == "Cc" and char not in "\n\t" for char in payload["goal"]):
             raise AiclError("validation_failed", "The goal contains unsupported control characters.")
-        config = self.workflow._normalize({"scenario": SCENARIO, **{key: payload[key] for key in ("goal", "inputs", "cadence", "timezone", "deliverables")}})
-        normalized = {"name": name, **{key: config[key] for key in ("goal", "inputs", "cadence", "timezone", "deliverables")},
+        if payload["scenario"] != "general" and payload["tools"]:
+            raise AiclError("validation_failed", "Optional agent tools belong to a general agent, not the marketing demo.")
+        config = self.workflow._normalize({key: payload[key] for key in ("scenario", "goal", "inputs", "cadence", "timezone", "deliverables", "tools")})
+        normalized = {"name": name, **{key: config[key] for key in ("scenario", "goal", "inputs", "cadence", "timezone", "deliverables")},
+                      "tools": config.get("tools", []),
                       "budget_notes": payload["budget_notes"].strip()}
         if len(json.dumps(normalized, ensure_ascii=False).encode("utf-8")) > 4500:
             raise AiclError("validation_failed", "Keep the complete proposal under 4,500 UTF-8 bytes. Summarize inputs and use a few concise, measurable criteria for each deliverable.")
@@ -255,6 +263,8 @@ class AssistantTools:
         summary = {key: proposal[key] for key in ("id", "version", "kind", "state", "instance_id")} | {
             "name": _clip(data["name"], 100), "cadence": data["cadence"], "timezone": data["timezone"]}
         if proposal["kind"] == "create":
+            summary["scenario"] = data.get("scenario", SCENARIO)
+            summary["tools"] = data.get("tools", [])
             summary["deliverables"] = [{"key": spec["key"], "name": _clip(spec["name"], 80),
                                         "criteria_count": len(spec["criteria"])} for spec in data["deliverables"]]
             summary["controls"] = "Draft; inference permission only; budgets $0; unfunded; schedule disabled. Budget notes are not spending authority."
@@ -279,6 +289,8 @@ class AssistantTools:
         if proposal["kind"] == "create":
             # Normalized deliverables contain internal fixture flags; validate the public shape again.
             data = dict(proposal["data"])
+            # Proposals saved before general agents existed were PocketPlan drafts.
+            data.setdefault("scenario", SCENARIO)
             data["deliverables"] = [{key: spec[key] for key in ("key", "name", "description", "criteria")} for spec in data["deliverables"]]
             self._create_data(data)
         else:
@@ -315,6 +327,7 @@ class AssistantTools:
             data = proposal["data"]
             if row["kind"] == "create":
                 public = dict(data)
+                public.setdefault("scenario", SCENARIO)
                 public["deliverables"] = [{key: spec[key] for key in ("key", "name", "description", "criteria")} for spec in data["deliverables"]]
                 data = self._create_data(public)
                 result = creation.create_instance(self.auth, CreateInstanceRequest(
@@ -322,7 +335,7 @@ class AssistantTools:
                     name=data["name"], instructions=data["goal"], enabled_capabilities=frozenset({"inference"})),
                     actor_kind="chat", surface="chat", clock=self.clock)
                 instance_id = result.instance.id
-                self.workflow.save_config(self.auth, instance_id, {"scenario": SCENARIO, **{key: data[key] for key in ("goal", "inputs", "cadence", "timezone", "deliverables")}}, expected_version=1)
+                self.workflow.save_config(self.auth, instance_id, {key: data[key] for key in ("scenario", "goal", "inputs", "cadence", "timezone", "deliverables", "tools")}, expected_version=1)
             elif row["kind"] == "schedule":
                 self._check_schedule(conn, proposal)
                 instance_id = row["instance_id"]

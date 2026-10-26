@@ -15,7 +15,7 @@ def add_inference_arguments(parser) -> None:
     parser.add_argument("--assistant-max-spend-micro-usd", type=int, default=1_000_000,
                         help="separate persistent assistant API allowance (default 1000000 = $1)")
     parser.add_argument("--inference", choices=("mock", "openai"), default="mock",
-                        help="openai calls GPT-6 Sol for campaign plans and reports; default is mock")
+                        help="openai enables general research/writing and supported example workers; default is mock")
     parser.add_argument("--inference-key-file", type=Path,
                         help="read OPENAI_API_KEY from a literal KEY=value file; never executed")
     parser.add_argument("--inference-max-spend-micro-usd", type=int, default=1_000_000,
@@ -70,6 +70,6 @@ def inference_startup_message(settings: Settings) -> str:
                  if settings.chat_model_mode == "openai" else "")
     if settings.inference_mode == "mock":
         return "Workflow inference is simulated." + assistant if assistant else "Inference is simulated; no model API calls."
-    return ("GPT-6 Sol inference enabled for campaign plans and reports. "
+    return ("GPT-6 Sol inference enabled for general research/writing and supported example workers. "
             f"API spending ceiling: ${settings.inference_max_spend_micro_usd / 1_000_000:.2f} per database; "
             "AICL budgets and service credit also apply. Advertising remains simulated." + assistant)

@@ -33,7 +33,7 @@ class FormCsrfShim:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] != "http" or scope["method"] != "POST":
+        if scope["type"] != "http" or scope["method"] != "POST" or scope.get("path") == "/waitlist":
             return await self.app(scope, receive, send)
         headers = dict(scope["headers"])
         if b"x-csrf-token" in headers or not headers.get(b"content-type", b"").startswith(
@@ -75,9 +75,12 @@ def web_router(ctx) -> APIRouter:
         return ctx.auth_provider.resolve(dict(request.cookies))
 
     def access_required():
-        response = _page("access_required", 403, title="Private access link required")
+        response = _page("access_required", 403, title="Private access link required",
+                         waitlist_enabled=ctx.settings.waitlist_enabled)
         response.headers["Cache-Control"] = "no-store"
-        response.headers["Referrer-Policy"] = "no-referrer"
+        # Keep the Origin on waitlist form POSTs; default private entry still
+        # strips referrers, including when this optional integration is disabled.
+        response.headers["Referrer-Policy"] = "same-origin" if ctx.settings.waitlist_enabled else "no-referrer"
         return response
 
     def judge_entry(request: Request, status: int = 200, error: str | None = None):

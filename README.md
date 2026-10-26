@@ -1,4 +1,4 @@
-# Habitat owner-control MVP
+# Habitat — owner-controlled AI agents
 
 Habitat's Configurable AI Control Layer lets an owner create and manage a Default
 agent instance through a wizard or built-in chat. The owner controls capabilities,
@@ -9,6 +9,30 @@ The original E11 implementation used scripted chat and simulated provider/work
 adapters. Optional extensions below add a real interviewing assistant, model
 inference, PayPal Sandbox and hosted scheduling. Gmail/Reddit actions and ad
 delivery remain simulated.
+
+## Current submission build
+
+The application at `c0839a4` was deployed to
+[Habitat on Render](https://habitat-aicl.onrender.com) on October 23, 2026.
+The web app, scheduled dispatcher and registered `habitat_agent` Workflow are
+deployed; health checks and existing-session access passed. The hosted app needs
+a privately supplied access link. A complete hosted scheduled paid-work journey
+has not yet been recorded, and the optional cloud-browser runtime is not enabled
+on that deployment.
+
+| Capability | Implemented behavior and demonstration boundary |
+| --- | --- |
+| Owner controls | Persisted capabilities, daily/monthly inference and compute limits, reservations, pause/resume and audit history |
+| AI assistant and worker | Optional OpenAI Agents SDK assistant and GPT-6 Sol inference; a real model call and its usage settlement were verified locally |
+| PayPal | Real Sandbox Orders API, hosted buyer consent and server-verified capture; separate $5 service funding and $30 seller purchase were verified with test money |
+| Scheduling | Durable jobs and Render Workflows integration; deployment is verified separately from end-to-end hosted work execution |
+| Owner Requests | Questions, scoped permissions, sign-in handoffs and exact purchase decisions; work waits durably for the owner |
+| Audit | AG Grid history plus an AG Studio Agent Operations dashboard with linked costs/jobs, current owner requests, saved layouts and an optional bounded analyst; see [AG Studio setup](docs/ag-studio.md) |
+| Advertising | Fixed merchant offers, creative, ad delivery and campaign metrics remain scenario fixtures; no real ads are placed |
+
+The local demo below runs without provider credentials. To reproduce external
+integrations, use your own OpenAI and PayPal Sandbox accounts with the linked
+setup guides. Never use real payment credentials with this prototype.
 
 The local [mock PayPal MVP](docs/mock-paypal-mvp.md) extends that baseline with a
 funding → inference → exact purchase approval → buyer checkout → task-resume
@@ -33,8 +57,8 @@ workspace with a paused PocketPlan sample agent. No email is sent, verified or
 stored, and the address cannot recover another browser session's workspace.
 Shared operator-controlled inference and compute ceilings still apply. Configure
 `AICL_ACCESS_LINK_TOKEN` and share the resulting access link privately as described
-in the deployment guide. Local test helpers remain unavailable. A live Render
-deployment and its scheduled execution proof are still required.
+in the deployment guide. Local test helpers remain unavailable. The deployment
+is live; its complete scheduled-work proof remains a separate verification step.
 
 ## Run locally
 
@@ -57,8 +81,27 @@ Open <http://127.0.0.1:4173>, request a sign-in link for `demo@example.test`, th
 open <http://127.0.0.1:4173/__test__/last-magic-link?email=demo%40example.test>
 and follow the captured link. Confirm sign-in to reach the workspace. This local
 demo needs no SMTP account and keeps its database in `.ctx/mock-commerce/demo.db`
-across restarts. Use `--port 4174` if 4173 is occupied. The isolated automated-test
+across restarts. The mock payment process uses port 4174; use `--port 4175` if
+4173 is occupied, or choose distinct `--port` and `--payment-port` values.
+The isolated automated-test
 server remains available as `python -m aicl.test_server`.
+
+For a short offline walkthrough:
+
+1. Create an agent with **Inference** enabled. Open **Goals & schedule** and
+   choose **Use app marketing example** before saving a custom workflow.
+2. Set positive daily/monthly inference and compute limits, enable purchases
+   with a $30 allowance, and add $5 service credit through mock checkout.
+3. Enable the schedule, expand **Demo controls**, and advance one scheduled run.
+   Review its campaign plan and the exact purchase request in **Requests**.
+4. Approve that request and complete mock buyer checkout. Review the receipt,
+   continuation and linked job in **Audit**. Pause the schedule to stop new work.
+
+All payments, model output and advertising in this default walkthrough are
+fixtures. The persisted authorization, accounting and task-state transitions are
+real application behavior. For PayPal-hosted Sandbox checkout, follow
+[the Sandbox guide](docs/paypal-sandbox.md); add the inference flags below for
+real model output.
 
 The [application guide](docs/aicl-mvp.md) covers the full demo, persistent local
 configuration, routes, checks and operational limits.
@@ -148,6 +191,16 @@ for deterministic tests and offline demonstrations.
 
 ## Implementation and acceptance
 
+The current release adds the optional integrations and owner workflow described
+above to the original E11 baseline. Its release candidate passed all eleven
+mandatory jobs in
+[pipeline 2983288088](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2983288088)
+and was merged through
+[MR !79](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/merge_requests/79).
+The records below describe their named historical candidates, not every later
+feature or the current deployment. GitLab evidence links may require access;
+the source and local setup instructions are sufficient to run the offline demo.
+
 E11-1 through E11-5 are integrated and verified at
 `ca4e172241a484c174ce37e4a8642aabd511945a`. All eleven mandatory jobs passed in
 [pipeline 2959718088](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2959718088),
@@ -187,9 +240,9 @@ usage and controls; uncertain results ask you to review activity before retrying
 - [Development and evidence workflow](docs/development/ctx-contract.md)
 - [Historical marketing-agent proposal](docs/habitat-mvp.md)
 
-This repository is the Transcend Hackathon Showcase workspace. The earlier E2
-PayPal/marketing proposal remains for traceability; it is not the implemented
-E11 scope.
+This application was developed in the Transcend Hackathon Showcase workspace.
+Earlier E2 plans and E11 acceptance records remain for traceability. Read this
+README and the integration guides for current capabilities and limitations.
 
 Cloud sign-in requests now support an owner-controlled private browser handoff,
 encrypted access for the same agent's scheduled jobs, and a restricted worker

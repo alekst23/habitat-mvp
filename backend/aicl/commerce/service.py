@@ -998,7 +998,8 @@ class MockCommerceService:
             self._event(conn, auth, instance_id, "commerce.run_started", run_id=run_id, purchase_id=purchase_id, amount_minor=quote["amount_minor"])
             return self._run_projection(conn, self._owned_resource(conn, auth, "mock_commerce_run", run_id))
 
-    def _start_workflow_run(self, conn, auth, instance_id, request_id, brief, *, purchase_required=False, charge=True, offer_id=None):
+    def _start_workflow_run(self, conn, auth, instance_id, request_id, brief, *, purchase_required=False, charge=True, offer_id=None,
+                            action="scheduled_fixture"):
         """Internal scheduled-fixture primitive, inside the workflow's transaction.
 
         Distinct configured jobs may wait independently. The workflow owns occurrence
@@ -1038,7 +1039,7 @@ class MockCommerceService:
             conn.execute("INSERT INTO mock_commerce_purchase (id,run_id,instance_id,tenant_id,owner_id,quote_json,quote_digest,amount_minor,state,quota_state,"
                          "expires_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,'awaiting_approval','held',?,?,?)",
                          (purchase_id, run_id, instance_id, auth.tenant_id, auth.owner_id, _canonical(quote), digest, quote["amount_minor"], expires, now, now))
-        self._event(conn, auth, instance_id, "commerce.run_started", run_id=run_id, purchase_id=purchase_id, action="scheduled_fixture")
+        self._event(conn, auth, instance_id, "commerce.run_started", run_id=run_id, purchase_id=purchase_id, action=action)
         return self._run_projection(conn, self._owned_resource(conn, auth, "mock_commerce_run", run_id))
 
     @_mutation

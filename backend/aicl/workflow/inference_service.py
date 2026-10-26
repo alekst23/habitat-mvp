@@ -1,4 +1,4 @@
-"""Durable, bounded model calls for the explicitly advanced PocketPlan demo.
+"""Durable, bounded model calls for configured agents and optional examples.
 
 Preparing/claiming, provider I/O, and settlement are separate phases. A process
 interruption after claiming is an unresolved charge, never permission to resend.
@@ -18,9 +18,18 @@ PRICE_VERSION = "gpt-6-sol-2026-10-22"
 MAX_INPUT_TOKENS = 16000
 MAX_OUTPUT_TOKENS = 2000
 MAX_COST = 52000
+WEB_PRICE_VERSION = "gpt-6-sol-web-2026-10-25"
+
+
+def reservation(snapshot):
+    from aicl.workflow.openai_inference import inference_limits
+    inp, out, calls = inference_limits(snapshot)
+    return Estimate(inp, out, 0, web_search_calls=calls), (WEB_PRICE_VERSION if calls else PRICE_VERSION), inp * 2 + out * 10 + calls * 10000
 
 
 def uses_model(snapshot, spec):
+    if snapshot.get("scenario") == "general":
+        return True
     if snapshot.get("scenario") == "browser_purchase":
         return spec["key"] == "purchase_proposal"
     return snapshot.get("scenario") == "pocketplan_ads" and spec.get("ad_kind", spec["key"]) in (
@@ -73,6 +82,9 @@ class WorkflowInference:
                 with self.db.transaction():
                     self.workflow._require_demo_active(conn, auth)
                     config = self.workflow._config(conn, auth, job["instance_id"])
+                    snapshot = json.loads(job["config_json"])
+                    estimate, price_version, max_cost = reservation(snapshot)
+                    self._check_tools(snapshot, config)
                     if not config["enabled"]:
                         raise AiclError("denied", "Enable the schedule before generating work.", reason="schedule_paused")
                     self.commerce._controls(conn, auth, job["instance_id"])
@@ -86,28 +98,29 @@ class WorkflowInference:
                     outstanding = conn.execute("SELECT COALESCE(SUM(CASE WHEN state='settled' THEN cost_micro_usd "
                                                "WHEN state IN ('inflight','unknown') THEN max_cost_micro_usd ELSE 0 END),0) "
                                                "FROM workflow_inference_attempt").fetchone()[0]
-                    if outstanding + MAX_COST > self.cap:
+                    if outstanding + max_cost > self.cap:
                         raise AiclError("denied", "The server's real inference spend ceiling is reached. Demo funding cannot increase it.", reason="inference_spend_ceiling")
                     if conn.execute("SELECT 1 FROM workflow_inference_attempt WHERE validation_error='usage_exceeded_bound'").fetchone():
                         raise AiclError("denied", "A previous provider response exceeded its reserved bound; review usage before any further dispatch.", reason="reconciliation_pending")
-                    if self.commerce._balance(conn, job["instance_id"]) < MAX_COST:
+                    if self.commerce._balance(conn, job["instance_id"]) < max_cost:
                         raise AiclError("denied", "Service credit must cover the full bounded inference estimate.", reason="credit_insufficient")
                     hold = self.commerce.budget.reserve(conn, job["instance_id"], "workflow-inference:" + attempt_id,
-                        Estimate(MAX_INPUT_TOKENS, MAX_OUTPUT_TOKENS, 0), price_table_version=PRICE_VERSION)
+                        estimate, price_table_version=price_version)
                     now = to_iso(self.clock.now())
-                    conn.execute("UPDATE workflow_inference_attempt SET state='inflight',hold_id=?,updated_at=? WHERE id=?",
-                                 (hold.id, now, attempt_id))
+                    conn.execute("UPDATE workflow_inference_attempt SET state='inflight',hold_id=?,max_cost_micro_usd=?,updated_at=? WHERE id=?",
+                                 (hold.id, max_cost, now, attempt_id))
                     self.commerce._event(conn, auth, job["instance_id"], "budget.reserved", mode="openai", provider="openai",
-                                         run_id=job["id"], hold_id=hold.id, micro_usd=MAX_COST, price_table_version=PRICE_VERSION)
+                                         run_id=job["id"], hold_id=hold.id, micro_usd=max_cost, price_table_version=price_version)
             except AiclError as error:
                 conn.execute("UPDATE workflow_inference_attempt SET state='blocked',validation_error=?,updated_at=? WHERE id=?",
                              (error.extra.get("reason", error.error), to_iso(self.clock.now()), attempt_id))
-                conn.execute("UPDATE mock_workflow_run SET state='inference_blocked' WHERE id=?", (job["id"],))
+                state = "permission_blocked" if error.extra.get("reason") == "tool_permission_changed" else "inference_blocked"
+                conn.execute("UPDATE mock_workflow_run SET state=? WHERE id=?", (state, job["id"]))
                 self.workflow._record_block(conn, auth, job, error)
                 return None
             return dict(attempt) | {"hold_id": hold.id}, dict(job)
 
-    def input_snapshot(self, job):
+    def input_snapshot(self, job, attempt_id=None):
         from aicl.owner_requests.service import OwnerRequestService
         with self.db.reader() as conn:
             answers = OwnerRequestService(self.workflow).answers_for_job(conn, job["id"])
@@ -118,6 +131,34 @@ class WorkflowInference:
                     snapshot["browser_evidence"] = json.loads(evidence[0])
         return snapshot
 
+    @staticmethod
+    def _check_tools(snapshot, current):
+        from aicl.workflow.agent_tools import normalize_tools
+        if snapshot.get("scenario") == "general":
+            if snapshot.get("research_sources"):
+                raise AiclError("denied", "Review this legacy workflow and select its permitted tools.", reason="tool_permission_changed")
+            if not set(normalize_tools(snapshot.get("tools", []))).issubset(normalize_tools(current.get("tools", []))):
+                raise AiclError("denied", "A tool used by this saved job is no longer permitted. Save a revised workflow for future work.", reason="tool_permission_changed")
+
+    def generate(self, auth, attempt, job):
+        """Dispatch a goal with owner-approved tools after rechecking controls."""
+        from aicl.workflow.openai_inference import InferenceNoChargeError, fit_general_context
+        snapshot = self.input_snapshot(job, attempt["id"])
+        spec = json.loads(job["spec_json"])
+        if snapshot.get("scenario") == "general":
+            snapshot = fit_general_context(snapshot, spec, attempt["feedback"])
+            try:
+                with self.db.transaction() as conn:
+                    self.workflow._require_demo_active(conn, auth)
+                    current = self.workflow._config(conn, auth, job["instance_id"])
+                    if not current["enabled"]:
+                        raise AiclError("denied", "The schedule is paused.")
+                    self._check_tools(snapshot, current)
+                    self.commerce._controls(conn, auth, job["instance_id"])
+            except AiclError as error:
+                raise InferenceNoChargeError(error.extra.get("reason", "work_controls_changed")) from None
+        return self.adapter.generate(snapshot, spec, attempt["feedback"])
+
     def _failure(self, auth, attempt, job, *, no_charge, reason):
         with self.db.transaction() as conn:
             current = conn.execute("SELECT state FROM workflow_inference_attempt WHERE id=?", (attempt["id"],)).fetchone()
@@ -126,14 +167,26 @@ class WorkflowInference:
             if no_charge:
                 self.commerce.budget.release(conn, attempt["hold_id"])
                 state, message = "released", "The model request was not accepted. No inference charge was recorded."
+                if reason == "tool_permission_changed":
+                    message = "This saved job requires a tool that is no longer permitted. Future work uses the revised configuration; no model request was sent."
+                elif reason == "work_controls_changed":
+                    message = "Agent controls or permitted tools changed before dispatch. No model request was sent."
+                elif reason == "context_limit":
+                    message = "This job's saved brief, feedback or owner answers exceed the bounded model context. Shorten the workflow and save it for future runs. This job is parked; no model request or inference charge occurred."
             else:
                 self.commerce.budget.mark_unknown(conn, attempt["hold_id"])
                 state, message = "unknown", "The inference outcome is unresolved. Its budget and credit remain reserved; the request will not be sent again."
             now = to_iso(self.clock.now())
             conn.execute("UPDATE workflow_inference_attempt SET state=?,validation_error=?,updated_at=? WHERE id=?",
                          (state, reason, now, attempt["id"]))
+            job_state = ("context_blocked" if no_charge and reason == "context_limit"
+                         else "permission_blocked" if no_charge and reason == "tool_permission_changed"
+                         else "inference_failed" if no_charge else "inference_unknown")
             conn.execute("UPDATE mock_workflow_run SET state=?,blocked_reason=?,updated_at=? WHERE id=?",
-                         ("inference_failed" if no_charge else "inference_unknown", message, now, job["id"]))
+                         (job_state, message, now, job["id"]))
+            if job_state == "context_blocked":
+                conn.execute("UPDATE mock_workflow_config SET last_outcome=? WHERE instance_id=? AND version=?",
+                             (message, job["instance_id"], job["config_version"]))
             self.commerce._event(conn, auth, job["instance_id"], "commerce.denied", "denied", mode="openai", provider="openai",
                                  reason=reason, run_id=job["id"], hold_id=attempt["hold_id"], action="inference_failed")
 
@@ -166,6 +219,9 @@ class WorkflowInference:
             content += "\n\nObserved website: " + evidence["url"] + "\nObserved at: " + evidence["observed_at"]
             content += "\n\nAccount access and recommendation are model assessments of the observed page. Proposed spend is not a verified merchant quote. No checkout, payment or ad publication has occurred."
             return content, criteria, "submitted" if all(c["passed"] for c in criteria) else "needs_work", None
+        if snapshot.get("scenario") == "general":
+            content += "\n\nCompletion checks are model self-assessments; the owner reviews quality and factual accuracy."
+            return content, criteria, "submitted" if all(c["passed"] for c in criteria) else "needs_work", None
         report = spec.get("ad_report")
         if report:
             # These facts/calculations come from the stored campaign ledger, not
@@ -187,10 +243,11 @@ class WorkflowInference:
 
     def _settle(self, auth, attempt, job, result, *, proposal_authorize=None):
         values = (result.input_tokens, result.output_tokens)
-        if any(type(v) is not int or v < 0 for v in values) or result.model != MODEL or not isinstance(result.response_id, str) or not result.response_id:
+        calls = getattr(result, "web_search_calls", 0)
+        if any(type(v) is not int or v < 0 for v in (*values, calls)) or result.model != MODEL or not isinstance(result.response_id, str) or not result.response_id:
             self._failure(auth, attempt, job, no_charge=False, reason="invalid_provider_usage")
             return
-        snapshot, spec = self.input_snapshot(job), json.loads(job["spec_json"])
+        snapshot, spec = self.input_snapshot(job, attempt["id"]), json.loads(job["spec_json"])
         from aicl.workflow.openai_inference import valid_clarification
         request = getattr(result, "owner_request", None)
         valid_request = request is not None and valid_clarification(request) and not result.validation_error
@@ -201,21 +258,25 @@ class WorkflowInference:
         browser_response = snapshot.get("scenario") == "browser_purchase" and not error and browser_review["access_status"] != "authenticated"
         if browser_response:
             error = "owner_request"
-        if values[0] > MAX_INPUT_TOKENS or values[1] > MAX_OUTPUT_TOKENS:
+        estimate, price_version, _ = reservation(snapshot)
+        if values[0] > estimate.inference_input_tokens or values[1] > estimate.inference_output_tokens or calls > estimate.web_search_calls:
             error, output_state = "usage_exceeded_bound", "needs_work"
+        if calls and not estimate.web_search_calls:
+            self._failure(auth, attempt, job, no_charge=False, reason="unpriced_tool_usage")
+            return
         with self.db.transaction() as conn:
             current = conn.execute("SELECT state FROM workflow_inference_attempt WHERE id=?", (attempt["id"],)).fetchone()
             if current[0] != "inflight":
                 return
             # Always settle observed usage, even after pause/revocation or invalid
             # output. A real provider charge cannot be undone by a local rollback.
-            usage = self.commerce.budget.settle(conn, attempt["hold_id"], MeasuredUsage(*values, 0))
+            usage = self.commerce.budget.settle(conn, attempt["hold_id"], MeasuredUsage(*values, 0, web_search_calls=calls))
             cost, now = usage.inference_micro_usd, to_iso(self.clock.now())
             conn.execute("INSERT INTO mock_commerce_ledger (id,instance_id,kind,delta_micro_usd,reference,hold_id,created_at) "
                          "VALUES (?,?,'inference_usage',?,?,?,?)", (str(uuid.uuid4()), job["instance_id"], -cost, "inference:" + job["id"] + ":" + attempt["id"], attempt["hold_id"], now))
-            conn.execute("UPDATE workflow_inference_attempt SET state='settled',cost_micro_usd=?,input_tokens=?,output_tokens=?,response_id=?,validation_error=?,updated_at=? WHERE id=?",
-                         (cost, *values, result.response_id, error, now, attempt["id"]))
-            self.commerce._event(conn, auth, job["instance_id"], "budget.settled", mode="openai", provider="openai", run_id=job["id"], hold_id=attempt["hold_id"], micro_usd=cost, price_table_version=PRICE_VERSION)
+            conn.execute("UPDATE workflow_inference_attempt SET state='settled',cost_micro_usd=?,input_tokens=?,output_tokens=?,response_id=?,validation_error=?,web_search_calls=?,tool_trace_json=?,updated_at=? WHERE id=?",
+                         (cost, *values, result.response_id, error, calls, json.dumps(getattr(result, "tool_trace", None) or []), now, attempt["id"]))
+            self.commerce._event(conn, auth, job["instance_id"], "budget.settled", mode="openai", provider="openai", run_id=job["id"], hold_id=attempt["hold_id"], micro_usd=cost, price_table_version=price_version)
             if browser_response and error == "owner_request":
                 from aicl.browser.workflow import request_signin
                 from aicl.owner_requests.service import OwnerRequestService
@@ -297,7 +358,7 @@ class WorkflowInference:
             attempt, job = claimed
             dispatched += 1
             try:
-                result = self.adapter.generate(self.input_snapshot(job), json.loads(job["spec_json"]), attempt["feedback"])
+                result = self.generate(auth, attempt, job)
             except InferenceNoChargeError as error:
                 self._failure(auth, attempt, job, no_charge=True, reason=getattr(error, "reason", "provider_rejected"))
             except Exception:
@@ -313,4 +374,8 @@ def provenance(conn, run_id, version):
     row = conn.execute("SELECT * FROM workflow_inference_attempt WHERE workflow_run_id=? AND version=? AND state='settled'", (run_id, version)).fetchone()
     if not row:
         return None
-    return {"provider": "openai", **{key: row[key] for key in ("model", "response_id", "input_tokens", "output_tokens", "cost_micro_usd", "validation_method", "validation_error")}}
+    result = {"provider": "openai", **{key: row[key] for key in ("model", "response_id", "input_tokens", "output_tokens", "cost_micro_usd", "validation_method", "validation_error")}}
+    job = conn.execute("SELECT config_json FROM mock_workflow_run WHERE id=?", (run_id,)).fetchone()
+    if job and json.loads(job[0]).get("scenario") == "general":
+        result.update(web_search_calls=row["web_search_calls"], tool_trace=json.loads(row["tool_trace_json"] or "[]"))
+    return result

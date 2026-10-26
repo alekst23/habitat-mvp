@@ -1,5 +1,13 @@
 # Habitat on Render
 
+**Release status — October 23, 2026:** application `c0839a4` is deployed at
+[habitat-aicl.onrender.com](https://habitat-aicl.onrender.com), with the web service
+and cron live and the `habitat_agent` Workflow registered. Health checks, preserved
+data and existing-session access were verified. The optional browser service is
+unconfigured. A complete hosted scheduled paid-work journey has not been recorded;
+the **First hosted proof** checklist below remains outstanding. The October 22
+verification notes at the end are historical and predate this deployment.
+
 This deployment makes Render responsible for scheduled agent execution. AICL
 remains the authority for owner identity, configuration, budgets, inference,
 PayPal approval and durable results. It uses one reviewed PocketPlan marketing
@@ -37,8 +45,9 @@ The packaged application disables Uvicorn access logging to keep bearer tokens
 out of application request logs. Hosting-layer request logs have separate controls.
 
 The repository includes the deployment configuration and worker. A passing local
-test or Blueprint schema check is not evidence of a running Render deployment.
-Capture the hosted proof below after deploying a complete reviewed revision.
+test or Blueprint schema check alone is not evidence of a running Render deployment.
+The release status above records deployment separately from the hosted-work proof
+below.
 
 ## Services and boundaries
 
