@@ -148,7 +148,7 @@
     }, layout: {minWidth: 280, columns: 24, rowHeight: 16, pagePadding: 10, widgetPadding: 10,
       backgroundColor: '#f7f9f5', widgetBackgroundColor: '#ffffff', widgetBorderEnabled: true, widgetBorderRadius: 9,
       widgetBorderColor: '#dce5df', widgetBorderWidth: 1}}], selectedPageId: 'operations',
-      panels: {edit: {collapsed: true}, data: {collapsed: true}, filters: {collapsed: true}, ai: {collapsed: true}}};
+      panels: {edit: {collapsed: true}, data: {collapsed: true}, filters: {collapsed: true}}};
     return state;
   }
 
@@ -258,8 +258,6 @@
     if (!window.agStudio?.createStudio) throw new Error('The dashboard library could not load. Use Audit history below, or refresh the page.');
     const studio = window.agStudio;
     if (root.dataset.licenseKey) studio.AgStudioLicenseManager.setLicenseKey(root.dataset.licenseKey);
-    const aiEnabled = root.dataset.aiEnabled === 'true' && !!window.HabitatStudioRuntime?.createHabitatAdapter;
-    if (aiEnabled) studio.AgStudioModuleRegistry.registerModules([studio.AgStudioAiModule]);
     desktopState = initialState || starterState();
     const props = {
       studioId: 'habitat-owner-operations', mode: 'view', data: sourceData(), initialState: responsiveState(desktopState),
@@ -270,15 +268,13 @@
         gridHeaderBackgroundColor: '#edf3ec', gridRowHeight: 37, chartPaletteFills1Color: '#356249',
         chartPaletteFills2Color: '#9cba83', chartPaletteFills3Color: '#d7b27c', chartPaletteStrokes1Color: '#356249',
         chartPaletteStrokes2Color: '#9cba83', chartPaletteStrokes3Color: '#d7b27c'}),
-      panels: {edit: {left: ['edit', 'data'], right: aiEnabled ? ['filters', 'ai'] : ['filters']}, view: {right: aiEnabled ? ['filters', 'ai'] : ['filters']}},
+      panels: {edit: {left: ['edit', 'data'], right: ['filters']}, view: {right: ['filters']}},
       widgets: defaults => studio.createWidgets({
         additionalTypes: [{id: 'habitat-attention', label: 'Needs owner attention', comp: AttentionWidget,
           dataMapping: {items: {type: 'fieldset', supportedRoles: ['category', 'temporal', 'numeric'], required: true}},
           formatShape: defaults.widgets.find(widget => widget.id === 'grid').formatShape,
           form: params => params.createDefaults({dataMappingItems: [{key: 'items', label: 'Request fields'}]}),
-          defaultSize: {width: 350, height: 300}, minSize: {width: 200, height: 160},
-          ai: {description: 'Owner request cards with safe links to the existing request or deliverable review. This widget cannot approve or spend.',
-            configuration: 'Use fields from attention: id, agent_name, kind, title, status, evidence_url.'}}],
+          defaultSize: {width: 350, height: 300}, minSize: {width: 200, height: 160}}],
         overrides: [{id: 'grid', options: {createCellRenderer: field => field.context?.evidenceLink ? params => evidenceLink(params.value) : undefined}}],
         menu: [{label: 'Habitat', widgetIds: ['habitat-attention']}, ...defaults.menu],
       }),
@@ -290,13 +286,6 @@
         if (!saving) el('operations-layout-status').textContent = 'View changed. Save to keep it for your next visit.';
       },
     };
-    if (aiEnabled) props.ai = ({api: studioApi}) => studio.createAiHarness(studioApi, {
-      adapter: window.HabitatStudioRuntime.createHabitatAdapter({endpoint: '/audit/studio/ai', csrfToken: csrf}),
-      promptStarters: [
-        {label: 'Explain this spending', prompt: 'Explain spending and its provenance for the selected data. Separate service funding, reservations, actual inference, compute estimates and merchant payments. Cite the source URLs.'},
-        {label: 'Find work needing attention', prompt: 'Which agents have costs but no accepted output in this selected period? Show a useful dashboard view and link to the jobs and pending owner requests. Do not claim fixture or Sandbox activity is live spending.'},
-      ],
-    });
     el('operations-studio').replaceChildren();
     api = studio.createStudio(el('operations-studio'), props);
     setEditing(false);
@@ -440,12 +429,6 @@
     api.setProperty('data', sourceData());
     clearChartSelection();
     el('operations-layout-status').textContent = preset ? 'Preset applied to dashboard widgets: costs with no accepted output. Summary cards still show all selected agents. This is a predefined rule, not an AI answer.' : 'Preset cleared. Dashboard widgets show all selected agents.';
-  });
-  el('operations-open-ai')?.addEventListener('click', () => {
-    if (!api) return;
-    const state = api.getState();
-    api.setState({...state, panels: {...state.panels, ai: {...state.panels?.ai, collapsed: false}}});
-    el('operations-studio').scrollIntoView({behavior: 'smooth', block: 'start'});
   });
   el('operations-studio').addEventListener('pointerdown', () => { ownerInteraction = true; }, {passive: true});
   el('operations-studio').addEventListener('keydown', () => { ownerInteraction = true; });

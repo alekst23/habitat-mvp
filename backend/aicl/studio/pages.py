@@ -11,7 +11,7 @@ PAGE = """{% extends 'base' %}{% set page_key='audit' %}
 {% block header_actions %}<a class="button secondary" href="/audit">Full audit history</a>{% endblock %}
 {% block body %}
 <link rel="stylesheet" href="/static/studio.css">
-<div id="operations" data-csrf="{{ csrf }}" data-ai-enabled="{{ 'true' if ai_enabled else 'false' }}" data-license-key="{{ studio_license_key|default('') }}">
+<div id="operations" data-csrf="{{ csrf }}" data-license-key="{{ studio_license_key|default('') }}">
   <form id="operations-filters" class="operations-filters" aria-label="Dashboard filters">
     <div class="field operations-agent"><label for="operations-agent">Agent</label><select id="operations-agent" name="instance_id"><option value="">All agents</option></select></div>
     <div class="field"><label for="operations-from">From</label><input id="operations-from" name="date_from" type="date"></div>
@@ -51,13 +51,9 @@ PAGE = """{% extends 'base' %}{% set page_key='audit' %}
     <div id="operations-fallback" class="operations-fallback" hidden><h3>Open the source records</h3><p>The dashboard could not load. Your work and controls are available in the existing owner pages.</p><div class="button-row"><a class="button secondary" href="/requests">Review requests</a><a class="button secondary" href="/audit">Open audit history</a><a class="button secondary" href="/workspace">View agents</a></div></div>
   </section>
 
-  <section class="operations-assistant" aria-labelledby="operations-assistant-heading"><div><p class="kicker">ASK ABOUT THIS VIEW</p><h2 id="operations-assistant-heading">Explore the evidence with your assistant</h2><p>{% if ai_enabled %}Ask Studio to explore the selected data or arrange your dashboard. Owner decisions stay in Requests and the agent controls.{% else %}AI dashboard assistance is unavailable in this environment. The preset above is a predefined rule, and all filters and source links work without AI.{% endif %}</p></div>
-    {% if ai_enabled %}<button class="secondary" type="button" id="operations-open-ai">Open Studio assistant</button>{% endif %}
-  </section>
   <p class="operations-footnote">Each record identifies its source: real model usage, estimated compute, Sandbox payments or scenario data. Funding, merchant payments and consumed advertising funds represent different accounting views; do not add them together.</p>
 </div>
 <script src="/static/vendor/ag-studio.min.js" defer></script>
-<script src="/static/vendor/ag-studio-runtime.js" defer></script>
 <script src="/static/studio.js" defer></script>
 {% endblock %}
 """
@@ -65,5 +61,5 @@ PAGE = """{% extends 'base' %}{% set page_key='audit' %}
 ENV = Environment(loader=DictLoader({**BASE_TEMPLATES, "studio/operations": PAGE}), autoescape=True)
 
 
-def render_studio(*, title="Agent operations", ai_enabled=False, **context):
-    return ENV.get_template("studio/operations").render(title=title, ai_enabled=ai_enabled, **context)
+def render_studio(*, title="Agent operations", **context):
+    return ENV.get_template("studio/operations").render(title=title, **context)

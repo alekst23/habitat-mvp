@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rm } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -15,5 +15,6 @@ const vendor = resolve(root, "backend/aicl/web/static/vendor");
 await mkdir(vendor, { recursive: true });
 await copyFile(resolve(studioPackage, "dist/umd/ag-studio.min.js"), resolve(vendor, "ag-studio.min.js"));
 await copyFile(resolve(studioPackage, "LICENSE.html"), resolve(vendor, "ag-studio.LICENSE.html"));
-await copyFile(resolve(root, "frontend/studio-runtime.js"), resolve(vendor, "ag-studio-runtime.js"));
-console.log("Copied official AG Studio 3.0.0 browser bundle, licence, and Habitat adapter.");
+// Remove the retired transport if rebuilding a checkout that previously enabled it.
+await rm(resolve(vendor, "ag-studio-runtime.js"), { force: true });
+console.log("Copied official AG Studio 3.0.0 browser bundle and licence. Studio AI is hard disabled.");
