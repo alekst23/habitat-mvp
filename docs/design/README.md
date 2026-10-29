@@ -1,14 +1,26 @@
 # Design index
 
+## AICL development standard
+
+- [Brief project ethos](../../AGENTS.md#aicl-ethos): required context for application development.
+- [Public research within AICL](aicl-public-research.md): local public-research boundary, web-access levels, disclosure separation, and remaining production limitations.
+
 ## Durable general-agent execution
 
-- [Durable execution plan](durable-agent-execution.md): proposed run/plan/step
-  model, saved evidence, owner conversations, worker recovery, tool and budget
-  boundaries, and an incremental implementation plan. Current runtime limitations
-  remain documented in [General agents](../general-agents.md).
+- [Durable execution plan](durable-agent-execution.md): runtime core and opt-in
+  local chat integration implemented October 26, 2026, with run/plan/step state,
+  saved evidence, owner conversations, worker recovery and shared accounting.
+  Includes live structured decisions, approved-domain page reads, the scripted
+  proof, local testing instructions and remaining tool/worker integration.
+  Current application behavior remains in [General agents](../general-agents.md).
 - [Agent data and trust](agent-data-trust.md): proposed confidentiality, access,
   processing/disclosure, encrypted content, worker identity and retention contracts,
   including confirmed gaps in the current implementation.
+- [Encrypted agent storage implementation plan](../plan/encrypted-agent-storage.md):
+  deferred to the production release; four packages covering the content store,
+  active data paths and a fresh protected database. The initial durable-session
+  proof uses a replaceable nonproduction adapter; current data is disposable. See the
+  [reset/recreate procedure](../development/encrypted-content-reset.md).
 
 ## Owner workflow implementation plan
 

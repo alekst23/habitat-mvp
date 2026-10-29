@@ -241,8 +241,8 @@ test('scheduled work, independent purchases, versioned deliverables and AG Grid 
   await page.screenshot({ path: '.ctx/scheduled-workflow/deliverable-desktop.png', fullPage: true });
 
   await page.goto(audit + '&view=costs');
-  await expect(page.locator('.ag-root-wrapper')).toBeVisible();
-  await expect(page.getByRole('columnheader', { name: /Amount/ })).toBeVisible();
+  await expect(page.locator('#audit-cost-grid .ag-root-wrapper')).toBeVisible();
+  await expect(page.locator('#audit-cost-grid').getByRole('columnheader', { name: /Amount/ })).toBeVisible();
   await page.screenshot({ path: '.ctx/scheduled-workflow/audit-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   for (const path of [workflowPath, approvedRequestUrl!, audit + '&view=purchases', audit + '&view=deliverables', audit + '&view=costs']) {
@@ -256,12 +256,13 @@ test('scheduled work, independent purchases, versioned deliverables and AG Grid 
       expect(applyBounds!.width, `${path} filter action width`).toBeGreaterThanOrEqual(95);
     }
     if (path.endsWith('&view=costs')) {
-      const pager = page.locator('#audit-cost-grid .ag-paging-page-summary-panel');
-      await expect(pager).toBeVisible();
-      const pagerBounds = await pager.boundingBox();
+      const widget = page.locator('#audit-cost-grid .ag-studio-layout-widget');
+      await expect(widget).toBeVisible();
+      await expect(widget.locator('.ag-root-wrapper')).toBeVisible();
+      const widgetBounds = await widget.boundingBox();
       const gridBounds = await page.locator('#audit-cost-grid').boundingBox();
-      expect(pagerBounds!.x, 'Mobile grid paging controls start inside the grid').toBeGreaterThanOrEqual(gridBounds!.x);
-      expect(pagerBounds!.x + pagerBounds!.width, 'Mobile grid paging controls fit inside the grid').toBeLessThanOrEqual(gridBounds!.x + gridBounds!.width);
+      expect(widgetBounds!.x, 'Mobile Studio table starts inside its container').toBeGreaterThanOrEqual(gridBounds!.x);
+      expect(widgetBounds!.x + widgetBounds!.width, 'Mobile Studio table fits inside its container').toBeLessThanOrEqual(gridBounds!.x + gridBounds!.width);
     }
   }
   await page.screenshot({ path: '.ctx/scheduled-workflow/audit-mobile.png', fullPage: true });

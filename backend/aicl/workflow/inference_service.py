@@ -71,6 +71,7 @@ class WorkflowInference:
                          (now, job["id"]))
 
     def _claim(self, auth, attempt_id):
+        from aicl.agent_runtime.accounting import platform_spend, runtime_reconciliation_pending
         with self.db.transaction() as conn:
             attempt = conn.execute("SELECT * FROM workflow_inference_attempt WHERE id=?", (attempt_id,)).fetchone()
             if attempt is None or attempt["state"] != "pending":
@@ -81,6 +82,7 @@ class WorkflowInference:
             try:
                 with self.db.transaction():
                     self.workflow._require_demo_active(conn, auth)
+                    self.workflow._require_no_runtime(conn, job["instance_id"])
                     config = self.workflow._config(conn, auth, job["instance_id"])
                     snapshot = json.loads(job["config_json"])
                     estimate, price_version, max_cost = reservation(snapshot)
@@ -93,11 +95,9 @@ class WorkflowInference:
                         from aicl.render.service import RenderExecution
                         if not BrowserPreparation(RenderExecution(self.workflow)).ready(conn, auth, job, attempt_id):
                             raise AiclError("denied", "Current browser evidence is required before inference.", reason="connection_unavailable")
-                    if conn.execute("SELECT 1 FROM workflow_inference_attempt WHERE state IN ('inflight','unknown')").fetchone():
+                    if runtime_reconciliation_pending(conn) or conn.execute("SELECT 1 FROM workflow_inference_attempt WHERE state IN ('inflight','unknown')").fetchone():
                         raise AiclError("denied", "Another real inference request is in progress or unresolved. Its outcome must be known before further dispatch.", reason="reconciliation_pending")
-                    outstanding = conn.execute("SELECT COALESCE(SUM(CASE WHEN state='settled' THEN cost_micro_usd "
-                                               "WHEN state IN ('inflight','unknown') THEN max_cost_micro_usd ELSE 0 END),0) "
-                                               "FROM workflow_inference_attempt").fetchone()[0]
+                    outstanding = platform_spend(conn, "inference")
                     if outstanding + max_cost > self.cap:
                         raise AiclError("denied", "The server's real inference spend ceiling is reached. Demo funding cannot increase it.", reason="inference_spend_ceiling")
                     if conn.execute("SELECT 1 FROM workflow_inference_attempt WHERE validation_error='usage_exceeded_bound'").fetchone():

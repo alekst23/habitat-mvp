@@ -64,6 +64,7 @@ class Settings(BaseModel):
     test_mode: bool = False
     hosted_workflow: bool = False
     judge_demo_mode: bool = False
+    local_private_entry: bool = False
     access_link_token: SecretStr = SecretStr("")
     workflow_execution_mode: str = "local"
     render_max_spend_micro_usd: int = 1_000_000
@@ -92,7 +93,12 @@ class Settings(BaseModel):
     assistant_max_spend_micro_usd: int = 1_000_000
     studio_license_key: SecretStr = SecretStr("")
     inference_mode: str = "mock"
+    agent_runtime_mode: str = "off"
     openai_api_key: SecretStr = SecretStr("")
+    brave_search_api_key: SecretStr = SecretStr("")
+    research_worker_image: str = ""
+    research_provider_account: str = ""
+    research_credential_binding: str = ""
     inference_max_spend_micro_usd: int = 1_000_000
     payment_api_url: str = ""
     payment_token: SecretStr = SecretStr("")
@@ -108,6 +114,11 @@ class Settings(BaseModel):
     smtp_username: str = ""
     smtp_password: str = ""
     smtp_from: str = ""
+
+    @property
+    def private_entry_enabled(self) -> bool:
+        """Share private-link authentication without enabling hosted services locally."""
+        return self.judge_demo_mode or self.local_private_entry
 
     @property
     def workflow_enabled(self) -> bool:
@@ -139,6 +150,13 @@ class Settings(BaseModel):
             raise SettingsError("AICL_ENVIRONMENT", "must be development, test or production")
         if self.test_mode and self.environment != "test":
             raise SettingsError("AICL_TEST_MODE", "1 is valid only with AICL_ENVIRONMENT=test")
+        if self.local_private_entry:
+            public = urlparse(self.public_base_url)
+            if (self.environment != "test" or not self.test_mode or self.hosted_workflow
+                    or self.judge_demo_mode or self.workflow_execution_mode != "local"
+                    or self.payment_mode != "mock" or public.scheme != "http"
+                    or public.hostname != "127.0.0.1"):
+                raise SettingsError("AICL_LOCAL_PRIVATE_ENTRY", "requires loopback HTTP test mode with local execution and mock payments")
         if self.hosted_workflow and self.environment != "production":
             raise SettingsError("AICL_HOSTED_WORKFLOW", "requires production authentication with test mode disabled")
         if self.judge_demo_mode and (not self.hosted_workflow or self.environment != "production" or self.test_mode):
@@ -146,7 +164,7 @@ class Settings(BaseModel):
         if self.judge_demo_mode and self.payment_mode != "paypal_sandbox":
             raise SettingsError("AICL_PAYMENT_MODE", "judge demonstration requires PayPal Sandbox")
         access_token = self.access_link_token.get_secret_value()
-        if self.judge_demo_mode or access_token:
+        if self.private_entry_enabled or access_token:
             if (re.fullmatch(r"[A-Za-z0-9_-]{32,128}", access_token) is None
                     or access_token.startswith(("CHANGE_ME", "YOUR_"))):
                 raise SettingsError("AICL_ACCESS_LINK_TOKEN", "must contain 32–128 non-placeholder URL-safe characters")
@@ -220,6 +238,23 @@ class Settings(BaseModel):
 
     @model_validator(mode="after")
     def validate_inference_configuration(self) -> "Settings":
+        if self.research_worker_image and not re.fullmatch(r"sha256:[0-9a-f]{64}", self.research_worker_image):
+            raise SettingsError("AICL_RESEARCH_WORKER_IMAGE", "must be an immutable local Docker image ID")
+        if self.brave_search_api_key.get_secret_value():
+            key = self.brave_search_api_key.get_secret_value()
+            if not key.isascii() or not 12 <= len(key) <= 1024 or any(ord(c) < 33 or ord(c) == 127 for c in key):
+                raise SettingsError("BRAVE_SEARCH_API_KEY", "must be a bounded ASCII credential without whitespace")
+            for label, value in (("AICL_RESEARCH_PROVIDER_ACCOUNT", self.research_provider_account),
+                                 ("AICL_RESEARCH_CREDENTIAL_BINDING", self.research_credential_binding)):
+                if not re.fullmatch(r"[A-Za-z0-9._-]{1,128}", value):
+                    raise SettingsError(label, "must identify the operator-approved provider account and credential version")
+        if self.agent_runtime_mode not in ("off", "openai"):
+            raise SettingsError("AICL_AGENT_RUNTIME_MODE", "must be off or openai")
+        if self.agent_runtime_mode == "openai":
+            if self.environment not in ("development", "test") or self.workflow_execution_mode != "local":
+                raise SettingsError("AICL_AGENT_RUNTIME_MODE", "requires local development or test; production storage is not enabled")
+            if self.chat_model_mode != "openai":
+                raise SettingsError("AICL_CHAT_MODEL_MODE", "must be openai when the interactive agent runtime is enabled")
         if self.chat_model_mode not in ("fake", "openai"):
             raise SettingsError("AICL_CHAT_MODEL_MODE", "must be fake or openai")
         if not 1 <= self.assistant_max_spend_micro_usd <= 10_000_000:
@@ -315,6 +350,9 @@ class Settings(BaseModel):
         judge_flag = env.get("AICL_JUDGE_DEMO_MODE", "0") or "0"
         if judge_flag not in ("0", "1"):
             raise SettingsError("AICL_JUDGE_DEMO_MODE", "must be 0 or 1")
+        local_entry_flag = env.get("AICL_LOCAL_PRIVATE_ENTRY", "0") or "0"
+        if local_entry_flag not in ("0", "1"):
+            raise SettingsError("AICL_LOCAL_PRIVATE_ENTRY", "must be 0 or 1")
         # Studio is a reporting surface. Legacy enablement must fail closed;
         # an environment change cannot introduce a model path outside AICL.
         if (env.get("AICL_STUDIO_AI_ENABLED") or "0") != "0":
@@ -369,6 +407,7 @@ class Settings(BaseModel):
             environment=environment, test_mode=flag == "1", public_base_url=base_url, database_url=database_url,
             hosted_workflow=hosted_flag == "1",
             judge_demo_mode=judge_flag == "1",
+            local_private_entry=local_entry_flag == "1",
             access_link_token=SecretStr(env.get("AICL_ACCESS_LINK_TOKEN") or ""),
             workflow_execution_mode=env.get("AICL_WORKFLOW_EXECUTION_MODE") or "local",
             render_max_spend_micro_usd=integer("AICL_RENDER_MAX_SPEND_MICRO_USD", 1_000_000, 1, 10_000_000),
@@ -387,10 +426,15 @@ class Settings(BaseModel):
             reconcile_interval_seconds=reconcile, hold_stale_seconds=hold_stale,
             executor_timeout_seconds=executor_timeout,
             inference_mode=env.get("AICL_INFERENCE_MODE") or "mock",
+            agent_runtime_mode=env.get("AICL_AGENT_RUNTIME_MODE") or "off",
             chat_model_mode=env.get("AICL_CHAT_MODEL_MODE") or "fake",
             assistant_max_spend_micro_usd=integer("AICL_ASSISTANT_MAX_SPEND_MICRO_USD", 1_000_000, 1, 10_000_000),
             studio_license_key=SecretStr(env.get("AICL_STUDIO_LICENSE_KEY") or ""),
             openai_api_key=SecretStr(env.get("OPENAI_API_KEY") or ""),
+            brave_search_api_key=SecretStr(env.get("BRAVE_SEARCH_API_KEY") or ""),
+            research_worker_image=env.get("AICL_RESEARCH_WORKER_IMAGE") or "",
+            research_provider_account=env.get("AICL_RESEARCH_PROVIDER_ACCOUNT") or "",
+            research_credential_binding=env.get("AICL_RESEARCH_CREDENTIAL_BINDING") or "",
             inference_max_spend_micro_usd=integer("AICL_INFERENCE_MAX_SPEND_MICRO_USD", 1_000_000, 1, 10_000_000),
             payment_api_url=payment_api_url, payment_token=SecretStr(payment_token),
             payment_mode=env.get("AICL_PAYMENT_MODE") or "mock",

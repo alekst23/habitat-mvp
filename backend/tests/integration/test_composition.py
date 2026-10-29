@@ -96,14 +96,16 @@ def test_build_ports_requires_exactly_the_clock_and_ignores_later_ticket_ports(b
 
 @pytest.mark.ac("E11-1.AC1", code="backend/aicl/app.py:create_app")
 def test_create_app_migrates_imports_prices_starts_with_empty_extension_points_and_gates_test_routes(base_env, tmp_path):
-    # Machine routes are registered as an extension but enabled only by the explicit Render profile.
-    assert len(routes.ROUTE_FACTORIES) == 11 and len(hooks.STARTUP_HOOKS) == 3
-    assert {"commerce_router", "workflow_router", "render_router", "waitlist_router", "studio_router"} <= {factory.__name__ for factory in routes.ROUTE_FACTORIES}
+    # Machine and workspace factories register centrally; their routes require
+    # the Render and durable-runtime profiles respectively.
+    assert len(routes.ROUTE_FACTORIES) == 13 and len(hooks.STARTUP_HOOKS) == 3
+    assert {"commerce_router", "workflow_router", "render_router", "waitlist_router", "studio_router", "workspace_router", "work_review_router"} <= {factory.__name__ for factory in routes.ROUTE_FACTORIES}
 
     dev = create_app(Settings.from_env(base_env))
     with TestClient(dev) as client:
         assert [r.path for r in dev.routes if r.path.startswith("/__test__")] == []
         assert not any(r.path.startswith("/internal/render") for r in dev.routes)
+        assert not any(r.path.startswith(("/agent-workspaces", "/api/agent-workspaces")) for r in dev.routes)
         assert client.get("/__test__/last-magic-link", params={"email": "a@b.co"}).status_code == 404
         assert client.post("/__test__/seed-session", json={"fixture": "owner-a"}).status_code == 404
         assert client.get("/__test__/clock").status_code == 404
@@ -112,13 +114,14 @@ def test_create_app_migrates_imports_prices_starts_with_empty_extension_points_a
         assert conn.execute("SELECT count(*) FROM schema_migration").fetchone()[0] >= 1
         assert conn.execute("SELECT version FROM price_table_version WHERE explicit_only=0").fetchall() == [("2026-10-01",)]
         assert conn.execute("SELECT version FROM price_table_version WHERE explicit_only=1 ORDER BY version").fetchall() == [
-            ("gpt-6-sol-2026-10-22",), ("gpt-6-sol-web-2026-10-25",), ("render-flex-bound-2026-10-22",)]
+            ("brave-search-2026-10-27",), ("gpt-6-sol-2026-10-22",), ("gpt-6-sol-web-2026-10-25",), ("render-flex-bound-2026-10-22",)]
 
     test_env = {**base_env, **TEST_FLAGS, "AICL_DATABASE_URL": f"sqlite:///{tmp_path / 'test.db'}"}
     test_app = create_app(Settings.from_env(test_env))
     with TestClient(test_app) as client:
         paths = {r.path for r in test_app.routes}
         assert not any(path.startswith("/internal/render") for path in paths)
+        assert not any(path.startswith(("/agent-workspaces", "/api/agent-workspaces")) for path in paths)
         assert "/__test__/seed-session" in paths and "/__test__/clock" in paths
         seeded = client.post("/__test__/seed-session", json={"fixture": "owner-a"})
         assert seeded.status_code == 200 and "aicl_session" in seeded.cookies

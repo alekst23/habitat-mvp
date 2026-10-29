@@ -4,6 +4,7 @@ shared `require_csrf` dependency; they never accept a tenant or owner from the c
 from __future__ import annotations
 
 import uuid
+import json
 from urllib.parse import parse_qs, urlsplit
 
 from fastapi import APIRouter, Depends, Request
@@ -71,12 +72,15 @@ def web_router(ctx) -> APIRouter:
     secure = not ctx.settings.test_mode
     commerce_enabled = ctx.settings.workflow_enabled
 
+    def owner_home():
+        return "/work" if getattr(ctx, "agent_runtime", None) is not None else "/workspace"
+
     def signed_in(request: Request):
         return ctx.auth_provider.resolve(dict(request.cookies))
 
     def access_required():
         response = _page("access_required", 403, title="Private access link required",
-                         waitlist_enabled=ctx.settings.waitlist_enabled)
+                         waitlist_enabled=ctx.settings.waitlist_enabled, local_private_entry=ctx.settings.local_private_entry)
         response.headers["Cache-Control"] = "no-store"
         # Keep the Origin on waitlist form POSTs; default private entry still
         # strips referrers, including when this optional integration is disabled.
@@ -85,12 +89,12 @@ def web_router(ctx) -> APIRouter:
 
     def judge_entry(request: Request, status: int = 200, error: str | None = None):
         if signed_in(request) is not None:
-            return RedirectResponse("/workspace", status_code=303,
+            return RedirectResponse(owner_home(), status_code=303,
                                     headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
         token = request.cookies.get(ENTRY_COOKIE)
         if not valid_entry_token(ctx, token):
             return access_required()
-        response = _page("judge_entry", status, title="Sign in", csrf=token, error=error)
+        response = _page("judge_entry", status, title="Sign in", csrf=token, error=error, local_private_entry=ctx.settings.local_private_entry)
         response.headers["Cache-Control"] = "no-store"
         # HTML form POSTs need their same-origin Origin header for entry CSRF checks.
         response.headers["Referrer-Policy"] = "same-origin"
@@ -98,17 +102,17 @@ def web_router(ctx) -> APIRouter:
 
     @router.get("/", response_class=HTMLResponse)
     def landing(request: Request):
-        if ctx.settings.judge_demo_mode:
+        if ctx.settings.private_entry_enabled:
             return judge_entry(request)
         return _page("landing", title="Habitat")
 
     @router.get("/auth/sign-in", response_class=HTMLResponse)
     def sign_in_page(request: Request):
-        if ctx.settings.judge_demo_mode:
+        if ctx.settings.private_entry_enabled:
             return judge_entry(request)
         return _page("sign_in", title="Sign in")
 
-    if ctx.settings.judge_demo_mode:
+    if ctx.settings.private_entry_enabled:
         @router.get("/auth/access")
         def access_link(token: str = ""):
             proof = accept_access_link(ctx, token)
@@ -120,7 +124,7 @@ def web_router(ctx) -> APIRouter:
             # Lax carries the proof through a top-level redirect from another site;
             # the form POST still requires a signed nonce and the exact Origin.
             response.set_cookie(ENTRY_COOKIE, proof, max_age=ENTRY_TTL_SECONDS, path="/",
-                                httponly=True, samesite="lax", secure=True)
+                                httponly=True, samesite="lax", secure=secure)
             return response
 
         @router.post("/judge/start")
@@ -134,15 +138,15 @@ def web_router(ctx) -> APIRouter:
                 return judge_entry(request, 422, "Enter an email using 254 characters or fewer.")
             # Keep only a display username; the full address never becomes an identity key.
             result = start_workspace(ctx, token, request.cookies.get(SESSION_COOKIE), email.split("@", 1)[0])
-            response = RedirectResponse("/workspace", status_code=303,
+            response = RedirectResponse(owner_home(), status_code=303,
                                         headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
             response.set_cookie(SESSION_COOKIE, result.cookie_value, max_age=result.max_age_seconds, path="/",
-                                httponly=True, samesite="lax", secure=True)
+                                httponly=True, samesite="lax", secure=secure)
             return response
 
     @router.post("/auth/magic-link", response_class=HTMLResponse)
     async def request_link(request: Request):
-        if ctx.settings.judge_demo_mode:
+        if ctx.settings.private_entry_enabled:
             raise AiclError("not_found", "Page not found.")
         form = await request.form()
         client_ip = request.client.host if request.client else "unknown"
@@ -151,13 +155,13 @@ def web_router(ctx) -> APIRouter:
 
     @router.get("/auth/verify", response_class=HTMLResponse)
     def verify_page(token: str = ""):
-        if ctx.settings.judge_demo_mode:
+        if ctx.settings.private_entry_enabled:
             raise AiclError("not_found", "Page not found.")
         return _page("verify", title="Confirm sign-in", token=token)
 
     @router.post("/auth/verify")
     async def verify(request: Request):
-        if ctx.settings.judge_demo_mode:
+        if ctx.settings.private_entry_enabled:
             raise AiclError("not_found", "Page not found.")
         public = urlsplit(ctx.settings.public_base_url)
         expected_origin = f"{public.scheme}://{public.netloc}"
@@ -170,7 +174,7 @@ def web_router(ctx) -> APIRouter:
         result = service.verify(str(form.get("token", "")), request.cookies.get(SESSION_COOKIE))
         if result is None:
             return _page("invalid", 400, title="Link invalid")
-        response = RedirectResponse("/workspace", status_code=303)
+        response = RedirectResponse(owner_home(), status_code=303)
         response.set_cookie(SESSION_COOKIE, result.cookie_value, max_age=result.max_age_seconds, path="/",
                             httponly=True, samesite="lax", secure=secure)
         return response
@@ -190,11 +194,30 @@ def web_router(ctx) -> APIRouter:
             return RedirectResponse("/", status_code=303)
         view = SqliteProjectionService(ctx.db, ctx.clock, ctx.settings.hold_stale_seconds).workspace(auth)
         workflow = workflow_service(ctx).overview(auth) if commerce_enabled else None
+        workspace_drafts = []
+        if getattr(ctx, "agent_runtime", None) is not None:
+            with ctx.db.reader() as conn:
+                rows = conn.execute("SELECT w.id,w.instance_id,w.draft_json,s.enabled,s.next_due,s.last_outcome "
+                                    "FROM agent_workspace w LEFT JOIN agent_workspace_schedule s ON s.workspace_id=w.id "
+                                    "WHERE w.tenant_id=? AND w.owner_id=? ORDER BY w.updated_at DESC",
+                                    (auth.tenant_id, auth.owner_id)).fetchall()
+            by_instance = {}
+            for row in rows:
+                draft = json.loads(row["draft_json"])
+                if not row["instance_id"]:
+                    workspace_drafts.append({"id": row["id"], "name": draft["name"] or "Untitled agent",
+                                             "goal": draft["goal"] or "Continue shaping your agent with the assistant or form."})
+                else:
+                    by_instance[row["instance_id"]] = {"cadence": draft["cadence"], "enabled": bool(row["enabled"]),
+                        "next_due": row["next_due"], "last_outcome": row["last_outcome"], "goal": draft["goal"]}
+            if workflow:
+                workflow = {**workflow, "agents": [{**agent, **by_instance.get(agent["id"], {})} for agent in workflow["agents"]]}
         pending_requests = []
         if commerce_enabled:
             from aicl.owner_requests.factory import owner_request_service
             pending_requests = owner_request_service(ctx).list(auth)
-        return _page("workspace", title="Your workspace", instances=view.instances,
+        return _page("workspace", title="Your agents" if getattr(ctx, "agent_runtime", None) is not None else "Your workspace", instances=view.instances,
+                     workspace_drafts=workspace_drafts,
                      judge_demo_mode=ctx.settings.judge_demo_mode,
                      commerce_enabled=commerce_enabled, workflow=workflow,
                      pending_count=len(pending_requests), pending_requests=pending_requests[:3],
@@ -214,6 +237,10 @@ def web_router(ctx) -> APIRouter:
         auth = signed_in(request)
         if auth is None:
             return RedirectResponse("/", status_code=303)
+        if getattr(ctx, "agent_runtime", None) is not None:
+            from aicl.agent_workspace.service import WorkspaceService
+            state = WorkspaceService(ctx).open(auth)
+            return RedirectResponse("/agent-workspaces/" + state["id"], 303)
         return wizard_form(auth)
 
     @router.post("/agents/new", response_class=HTMLResponse)
@@ -238,6 +265,10 @@ def web_router(ctx) -> APIRouter:
                 raise
             return wizard_form(auth, 422, name=name, instructions=instructions, selected=selected,
                                errors=exc.extra["field_errors"])
+        if getattr(ctx, "agent_runtime", None) is not None:
+            from aicl.agent_workspace.service import WorkspaceService
+            state = WorkspaceService(ctx).open(auth, instance_id=result.instance.id)
+            return RedirectResponse("/agent-workspaces/" + state["id"], 303)
         return _page("created", title="Agent created", instance=result.instance, commerce_enabled=commerce_enabled,
                      **sidebar_context(ctx, auth))
 

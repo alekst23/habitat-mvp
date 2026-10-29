@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from urllib.parse import urlencode
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -60,6 +61,38 @@ def commerce_router(ctx) -> APIRouter:
         reason = str(exc.extra.get("reason") or exc.error)
         return back(instance_id, failure=reason if reason in FAILURES else "action_failed", section=section)
 
+    def chat_return_url(auth, order):
+        """Recover a local destination from an owned saved top-up, never a URL input."""
+        if order["purpose"] != "service_topup":
+            return ""
+        with ctx.db.reader() as conn:
+            saved = conn.execute("SELECT request_id,instance_id FROM mock_commerce_order "
+                                 "WHERE id=? AND tenant_id=? AND owner_id=? AND purpose='service_topup'",
+                                 (order["id"], auth.tenant_id, auth.owner_id)).fetchone()
+            parts = saved["request_id"].split(":") if saved else []
+            if len(parts) != 3 or parts[0] not in {"chat", "workspace"}:
+                return ""
+            try:
+                if any(str(UUID(value)) != value for value in parts[1:]):
+                    return ""
+            except ValueError:
+                return ""
+            if parts[0] == "workspace":
+                workspace = conn.execute("SELECT id FROM agent_workspace WHERE id=? AND tenant_id=? AND owner_id=? AND instance_id=?",
+                                         (parts[1], auth.tenant_id, auth.owner_id, saved["instance_id"])).fetchone()
+                return f"/agent-workspaces/{workspace['id']}?payment=return" if workspace else ""
+            session_id = parts[1]
+            if not conn.execute("SELECT 1 FROM assistant_session WHERE id=? AND tenant_id=? AND owner_id=?",
+                                (session_id, auth.tenant_id, auth.owner_id)).fetchone():
+                return ""
+            linked = conn.execute("SELECT r.instance_id,r.tenant_id,r.owner_id FROM agent_chat_run c "
+                                  "JOIN agent_run r ON r.id=c.run_id WHERE c.session_id=?", (session_id,)).fetchone()
+            # Before admission the owner may select any owned general agent.
+            # Once linked, this conversation belongs to its existing run.
+            if linked and tuple(linked) != (saved["instance_id"], auth.tenant_id, auth.owner_id):
+                return ""
+        return "/chat?" + urlencode({"session": session_id, "instance": saved["instance_id"]})
+
     def payment_destination(auth, order):
         if order["state"] == "completed":
             if order.get("purchase_id"):
@@ -67,6 +100,9 @@ def commerce_router(ctx) -> APIRouter:
                 return RedirectResponse(
                     "/requests?" + urlencode({"selected": "purchase:" + order["purchase_id"],
                                               "notice": "payment_completed"}), 303)
+            destination = chat_return_url(auth, order)
+            if destination:
+                return RedirectResponse(destination + "&notice=funded", 303)
             return back(order["instance_id"], notice="funding_completed", section="setup")
         return RedirectResponse(f"/commerce/orders/{order['id']}", 303)
 
@@ -127,6 +163,7 @@ def commerce_router(ctx) -> APIRouter:
             "checkout", title="Checkout", order=order, purchase=purchase,
             run=service.run(auth, purchase["run_id"]) if purchase else None,
             workflow_job=workflow_job,
+            chat_return_url=chat_return_url(auth, order),
             request_url=("/requests?" + urlencode({"selected": "purchase:" + purchase["id"]})) if purchase else "",
             buyer_choices=DEMO_BUYERS,
             paypal_return=paypal_return,

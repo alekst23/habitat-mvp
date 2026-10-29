@@ -516,15 +516,29 @@ def test_close_lease_migration_preserves_existing_parent_child_and_encrypted_sta
         if path.name < "0025":
             shutil.copyfile(path, old_migrations / path.name)
     from aicl.workflow.service import MockWorkflowService
+    from aicl.commerce.service import MockCommerceService
     # Historical setup needs only the old job projection. Current UI projections
     # intentionally query the new proposal table after all migrations have run.
     def historical_overview(self, auth, instance_id):
         with self.db.reader() as conn:
             return {"runs": [dict(row) for row in conn.execute(
                 "SELECT * FROM mock_workflow_run WHERE instance_id=?", (instance_id,))]}
+    # Use the historical balance query only while constructing old-schema rows;
+    # current service code correctly requires the new runtime ownership table.
+    def historical_balance(self, conn, instance_id):
+        balance = conn.execute("SELECT COALESCE(SUM(delta_micro_usd),0) FROM mock_commerce_ledger WHERE instance_id=?", (instance_id,)).fetchone()[0]
+        reserved = conn.execute("SELECT COALESCE(SUM(h.inference_micro_usd+h.compute_micro_usd),0) "
+                                "FROM budget_hold h JOIN workflow_inference_attempt a ON a.hold_id=h.id "
+                                "WHERE h.instance_id=? AND h.state IN ('held','unknown')", (instance_id,)).fetchone()[0]
+        compute = conn.execute("SELECT COALESCE(SUM(cost_micro_usd),0) FROM render_compute_usage WHERE instance_id=?", (instance_id,)).fetchone()[0]
+        compute_held = conn.execute("SELECT COALESCE(SUM(h.compute_micro_usd),0) FROM render_dispatch d JOIN budget_hold h ON h.id=d.hold_id "
+                                    "WHERE d.instance_id=? AND h.state IN ('held','unknown')", (instance_id,)).fetchone()[0]
+        return balance - reserved - compute - compute_held
     with monkeypatch.context() as historical:
         historical.setattr(db_module, "MIGRATIONS_DIR", old_migrations)
         historical.setattr(MockWorkflowService, "overview", historical_overview)
+        historical.setattr(MockWorkflowService, "_require_no_runtime", lambda *_args: None)
+        historical.setattr(MockCommerceService, "_balance", historical_balance)
         with historical_budget_fixture(build_env) as historical_build:
             env, _, auth, inst, job, _, login, store, _, _ = prepared_browser(historical_build, base_env)
     secret_ref = store.put(auth.owner_id, "old-owner", "browser_storage_state", COOKIE.encode())

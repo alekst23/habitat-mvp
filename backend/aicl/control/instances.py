@@ -19,7 +19,7 @@ GatedReason = Literal[
     "connection_revoked", "connection_reauthorization_required", "network_denied",
 ]
 CATALOG_CAPABILITIES: tuple[str, ...] = (
-    "inference", "gmail.read", "gmail.send", "reddit.read", "reddit.post", "network.fetch",
+    "inference", "gmail.read", "gmail.send", "reddit.read", "reddit.post", "network.fetch", "network.search",
 )
 MAX_LIMIT_MICRO_USD = 1_000_000_000_000
 

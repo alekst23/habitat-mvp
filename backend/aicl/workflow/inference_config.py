@@ -10,8 +10,14 @@ from aicl.settings import Settings, SettingsError
 
 
 def add_inference_arguments(parser) -> None:
+    parser.add_argument("--research-worker-image", default="", help="immutable sha256 ID of the local isolated Python worker image")
+    parser.add_argument("--search-key-file", type=Path, help="private literal BRAVE_SEARCH_API_KEY=value file; never executed")
+    parser.add_argument("--search-account", default="", help="operator label identifying the approved Brave account")
+    parser.add_argument("--search-credential-binding", default="", help="operator credential version; rotate to require new disclosures")
     parser.add_argument("--chat", choices=("fake", "openai"), default="fake",
                         help="openai enables the interviewing and monitoring assistant")
+    parser.add_argument("--agent-runtime", choices=("off", "openai"), default="off",
+                        help="openai enables durable agent sessions; requires --chat openai (default off)")
     parser.add_argument("--assistant-max-spend-micro-usd", type=int, default=1_000_000,
                         help="separate persistent assistant API allowance (default 1000000 = $1)")
     parser.add_argument("--inference", choices=("mock", "openai"), default="mock",
@@ -53,14 +59,38 @@ def read_openai_key_file(path: Path) -> str:
 
 def with_inference_settings(settings: Settings, args) -> Settings:
     chat_mode = getattr(args, "chat", "fake")
-    if args.inference == "mock" and chat_mode == "fake" and args.inference_key_file:
+    runtime_mode = getattr(args, "agent_runtime", "off")
+    if args.inference == "mock" and chat_mode == "fake" and runtime_mode == "off" and args.inference_key_file:
         raise SettingsError("--inference", "choose openai when supplying an inference key file")
     key = ""
-    if args.inference == "openai" or chat_mode == "openai":
+    if args.inference == "openai" or chat_mode == "openai" or runtime_mode == "openai":
         key = (read_openai_key_file(args.inference_key_file) if args.inference_key_file
                else os.environ.get("OPENAI_API_KEY", ""))
+    search_key = settings.brave_search_api_key
+    search_path = getattr(args, "search_key_file", None)
+    if search_path:
+        try:
+            if search_path.stat().st_mode & 0o077:
+                raise SettingsError("--search-key-file", "must be readable only by its owner (chmod 600)")
+            with search_path.open("rb") as stream:
+                data = stream.read(65537)
+            if len(data) > 65536:
+                raise ValueError
+            matches = [re.fullmatch(r"\s*BRAVE_SEARCH_API_KEY\s*=\s*([^\s]+)\s*", line)
+                       for line in data.decode("utf-8").splitlines() if line.strip() and not line.lstrip().startswith("#")]
+            if len(matches) != 1 or matches[0] is None:
+                raise ValueError
+            search_key = matches[0][1]
+            if any(c in search_key for c in "$`\\\"'"):
+                raise ValueError
+        except (OSError, ValueError, UnicodeError):
+            raise SettingsError("--search-key-file", "requires one literal BRAVE_SEARCH_API_KEY entry") from None
     return Settings.model_validate({**settings.model_dump(), "inference_mode": args.inference,
-        "chat_model_mode": chat_mode,
+        "brave_search_api_key": search_key,
+        "research_worker_image": getattr(args, "research_worker_image", "") or settings.research_worker_image,
+        "research_provider_account": getattr(args, "search_account", "") or settings.research_provider_account,
+        "research_credential_binding": getattr(args, "search_credential_binding", "") or settings.research_credential_binding,
+        "chat_model_mode": chat_mode, "agent_runtime_mode": runtime_mode,
         "assistant_max_spend_micro_usd": getattr(args, "assistant_max_spend_micro_usd", 1_000_000),
         "openai_api_key": key, "inference_max_spend_micro_usd": args.inference_max_spend_micro_usd})
 
@@ -69,7 +99,12 @@ def inference_startup_message(settings: Settings) -> str:
     assistant = (f" GPT-6 Sol owner assistant enabled; separate allowance ${settings.assistant_max_spend_micro_usd / 1_000_000:.2f}."
                  if settings.chat_model_mode == "openai" else "")
     if settings.inference_mode == "mock":
+        if settings.agent_runtime_mode == "openai":
+            return ("Workflow inference is simulated. GPT-6 Sol durable agent sessions enabled; "
+                    f"worker API spending ceiling: ${settings.inference_max_spend_micro_usd / 1_000_000:.2f} per database. "
+                    "AICL budgets and service credit also apply." + assistant)
         return "Workflow inference is simulated." + assistant if assistant else "Inference is simulated; no model API calls."
     return ("GPT-6 Sol inference enabled for general research/writing and supported example workers. "
             f"API spending ceiling: ${settings.inference_max_spend_micro_usd / 1_000_000:.2f} per database; "
-            "AICL budgets and service credit also apply. Advertising remains simulated." + assistant)
+            "AICL budgets and service credit also apply. Advertising remains simulated."
+            + (" Durable agent sessions enabled." if settings.agent_runtime_mode == "openai" else "") + assistant)

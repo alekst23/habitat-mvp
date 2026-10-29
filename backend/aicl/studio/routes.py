@@ -10,6 +10,7 @@ from aicl.control.csrf import require_csrf
 from aicl.control.errors import AiclError
 from aicl.studio.state import MAX_STATE_BYTES, StudioState, validate_json
 from aicl.web.account import sidebar_context
+from aicl.web.audit_navigation import saved_statuses
 
 
 async def _body(request, limit):
@@ -48,11 +49,12 @@ def studio_router(ctx):
         return JSONResponse(value, headers={"Cache-Control": "no-store"})
 
     @router.get("/audit/studio", response_class=HTMLResponse)
-    def page(request: Request):
+    def page(request: Request, instance_id: str = "", date_from: str = "", date_to: str = ""):
         auth = ctx.auth_provider.resolve(dict(request.cookies))
         if auth is None:
             return RedirectResponse("/", 303)
-        return HTMLResponse(render_studio(studio_license_key=ctx.settings.studio_license_key.get_secret_value(),
+        scope = data.snapshot(auth, instance_id=instance_id, date_from=date_from, date_to=date_to)
+        return HTMLResponse(render_studio(saved_statuses=saved_statuses(request.query_params), instance_id=instance_id, date_from=date_from, date_to=date_to, agents=scope["agents"], studio_license_key=ctx.settings.studio_license_key.get_secret_value(),
                              **sidebar_context(ctx, auth)), headers={"Cache-Control": "no-store"})
 
     @router.get("/audit/studio/data")

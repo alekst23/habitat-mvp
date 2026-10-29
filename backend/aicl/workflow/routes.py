@@ -8,13 +8,14 @@ from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from starlette.concurrency import run_in_threadpool
 
 from aicl.commerce.factory import commerce_service
 from aicl.control.csrf import require_csrf
 from aicl.web.account import sidebar_context
-from aicl.control.errors import AiclError
+from aicl.web.audit_navigation import saved_statuses
+from aicl.control.errors import AiclError, ERROR_HTTP_STATUS
 from aicl.workflow.factory import workflow_service
 from aicl.workflow.pages import render
 from aicl.browser.task_config import BROWSER_SCENARIO, browser_purchase_preset
@@ -42,12 +43,13 @@ STATUS_OPTIONS = {
                   ("declined", "Declined"), ("cancelled", "Cancelled"), ("expired", "Expired")],
     "deliverables": [("", "All outputs"), ("submitted", "Submitted for review"), ("accepted", "Accepted"),
                      ("needs_work", "Needs work"), ("changes_requested", "Changes requested"),
-                     ("completed", "Earlier completed tasks")],
+                     ("completed", "Completed outputs"), ("draft", "Saved drafts")],
 }
 
 
 def _audit_filter(data: dict, view: str, status: str, date_from: str, date_to: str):
-    """Filter visible read projections only; summary balances remain current/all-time."""
+    """Scope recorded flows and work to dates; available balances remain current."""
+    from aicl.workflow.cost_projection import project_costs
     choices = STATUS_OPTIONS.get(view, [])
     status = status if status in {key for key, _ in choices} else ""
     dates, error = [], ""
@@ -75,8 +77,25 @@ def _audit_filter(data: dict, view: str, status: str, date_from: str, date_to: s
             return False
 
     result = {**data}
-    for key in ("cost_rows", "events", "purchases", "deliverables", "campaigns"):
+    for key in ("cost_rows", "events", "purchases", "deliverables", "campaigns", "runs"):
         result[key] = [row for row in data.get(key, []) if in_range(row)]
+    # A job may start outside the selected period and incur a charge inside it.
+    # Keep its name/link while rolling up only the filtered charge lines.
+    result.update(project_costs(result["cost_rows"], data.get("runs", [])))
+    if "totals" in data and not error:
+        from decimal import Decimal
+        def micro(categories):
+            return sum(row.get("amount_micro_usd", int(Decimal(str(row["amount_usd"])) * 1_000_000))
+                       for row in result["cost_rows"] if row["category"] in categories)
+        result["totals"] = {**data["totals"],
+            "inference_cost_micro_usd": micro({"Inference usage", "Setup inference"}),
+            "compute_estimate_micro_usd": micro({"Compute usage", "Render compute estimate"}),
+            "funding_micro_usd": micro({"Service funding"}),
+            "purchase_spent_minor": micro({"Merchant purchase", "Ad funding"}) // 10_000,
+            "run_count": len(result["runs"]),
+            **{state + "_count": sum(item.get("latest", True) and item["state"] == state
+                                    for item in result["deliverables"])
+               for state in ("submitted", "accepted", "needs_work")}}
     if status and view == "purchases":
         def matches(row):
             state = "expired" if row.get("expired") else row["state"]
@@ -170,6 +189,10 @@ def workflow_router(ctx) -> APIRouter:
         auth = authenticated(request)
         if auth is None:
             return RedirectResponse("/", 303)
+        from aicl.agent_workspace.routes import instance_workspace_url
+        destination = instance_workspace_url(ctx, auth, instance_id)
+        if destination:
+            return RedirectResponse(destination, 303)
         return workflow_page(auth, instance_id, notice=notice, error=error[:400])
 
     @router.post("/instances/{instance_id}/workflow/config")
@@ -244,32 +267,57 @@ def workflow_router(ctx) -> APIRouter:
         view = view if view in ("costs", "actions", "purchases", "deliverables", "campaigns") else "costs"
         data = {**service.overview(auth, instance_id or None), "inference_mode": ctx.settings.inference_mode}
         data["has_general_agents"] = any(agent.get("scenario") == "general" for agent in data["agents"])
+        data["has_runtime_runs"] = any(run.get("runtime") for run in data["runs"])
         agents = service.overview(auth)["agents"] if instance_id else data["agents"]
         pending_count = sum(p["state"] in ("awaiting_approval", "awaiting_checkout", "payment_pending") for p in data["purchases"])
+        statuses = saved_statuses(request.query_params)
+        if "status" not in request.query_params:
+            status = statuses.get("status_" + view, "")
         data, status, date_from, date_to, filter_error = _audit_filter(data, view, status, date_from, date_to)
+        if view in STATUS_OPTIONS:
+            statuses["status_" + view] = status
         return HTMLResponse(render("workflow/audit", title="Audit", d=data, agents=agents, view=view,
                                    instance_id=instance_id, notice=NOTICES.get(notice, ""), error=filter_error or error[:400],
                                    status=status, status_options=STATUS_OPTIONS.get(view, []), date_from=date_from,
-                                   date_to=date_to, filters_active=bool(status or date_from or date_to),
-                                   pending_purchase_count=pending_count,
+                                   date_to=date_to, filters_active=bool(instance_id or status or date_from or date_to),
+                                   pending_purchase_count=pending_count, saved_statuses=statuses,
+                                   studio_license_key=ctx.settings.studio_license_key.get_secret_value(),
                                    **sidebar_context(ctx, auth)))
 
+    @router.get("/api/audit/runs/{run_id}/steps/{step_id}")
+    def action_details(run_id: str, step_id: str, request: Request):
+        from aicl.workflow.runtime_projection import RuntimeAuditProjection, audit_reader
+        try:
+            auth = authenticated(request)
+            if auth is None:
+                raise AiclError("unauthenticated", "Sign in to continue.")
+            with audit_reader(ctx.db) as conn:
+                result = RuntimeAuditProjection(ctx.db, ctx.clock).step_details(conn, auth, run_id, step_id)
+            return JSONResponse(result, headers={"Cache-Control": "no-store"})
+        except AiclError as exc:
+            return JSONResponse({"error": exc.error, "message": exc.message, **exc.extra},
+                                status_code=ERROR_HTTP_STATUS[exc.error], headers={"Cache-Control": "no-store"})
+
     @router.get("/audit/jobs/{run_id}", response_class=HTMLResponse)
-    def job_page(run_id: str, request: Request):
+    def job_page(run_id: str, request: Request, instance_id: str = "", date_from: str = "", date_to: str = ""):
         auth = authenticated(request)
         if auth is None:
             return RedirectResponse("/", 303)
         item = service.job(auth, run_id)
-        return HTMLResponse(render("workflow/job", title=item["deliverable_name"], job=item,
+        return HTMLResponse(render("workflow/runtime_job" if item.get("runtime") else "workflow/job", title=item["deliverable_name"], job=item,
+                                   saved_statuses=saved_statuses(request.query_params), view="actions", instance_id=item["instance_id"] if instance_id else "", date_from=date_from, date_to=date_to,
+                                   studio_license_key=ctx.settings.studio_license_key.get_secret_value(),
                                    **sidebar_context(ctx, auth)))
 
     @router.get("/audit/deliverables/{deliverable_id}", response_class=HTMLResponse)
-    def deliverable_page(deliverable_id: str, request: Request, notice: str = "", error: str = ""):
+    def deliverable_page(deliverable_id: str, request: Request, notice: str = "", error: str = "",
+                         instance_id: str = "", date_from: str = "", date_to: str = ""):
         auth = authenticated(request)
         if auth is None:
             return RedirectResponse("/", 303)
         item = service.deliverable(auth, deliverable_id)
-        return HTMLResponse(render("workflow/deliverable", title=item["name"], item=item,
+        return HTMLResponse(render("workflow/runtime_deliverable" if item.get("runtime") else "workflow/deliverable", title=item["name"], item=item,
+                                   saved_statuses=saved_statuses(request.query_params), view="deliverables", instance_id=item["instance_id"] if instance_id else "", date_from=date_from, date_to=date_to,
                                    notice=NOTICES.get(notice, ""), error=error[:400],
                                    **sidebar_context(ctx, auth)))
 

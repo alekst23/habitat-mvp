@@ -6,7 +6,7 @@
   "scripts": {
     "start:test": "PYTHONPATH=backend python -m aicl.test_server",
     "build:studio": "node scripts/build-studio.mjs",
-    "test:studio-runtime": "node --test tests/studio-runtime.test.cjs"
+    "test:studio-runtime": "node --test tests/studio-runtime.test.cjs tests/studio-grid.test.cjs tests/audit-studio.test.cjs"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0"

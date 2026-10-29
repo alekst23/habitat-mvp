@@ -1,10 +1,15 @@
 """Real inference is an explicit, bounded, secret-safe local-demo choice."""
 
+import argparse
+import os
+import subprocess
+import sys
+
 import pytest
 from types import SimpleNamespace
 
 from aicl.settings import Settings, SettingsError
-from aicl.workflow.inference_config import read_openai_key_file, with_inference_settings, inference_startup_message
+from aicl.workflow.inference_config import add_inference_arguments, read_openai_key_file, with_inference_settings, inference_startup_message
 from aicl.workflow.factory import workflow_service
 
 
@@ -82,3 +87,42 @@ def test_invalid_key_files_never_echo_contents(tmp_path, text):
     with pytest.raises(SettingsError) as caught:
         read_openai_key_file(path)
     assert text not in str(caught.value)
+
+
+@pytest.mark.parametrize("key_source", ["environment", "file"])
+def test_durable_runtime_launcher_is_explicit_and_reports_live_calls_with_mock_workflows(base_env, tmp_path, monkeypatch, key_source):
+    parser = argparse.ArgumentParser()
+    add_inference_arguments(parser)
+    defaults = parser.parse_args([])
+    assert defaults.agent_runtime == "off"
+    assert with_inference_settings(Settings.from_env(base_env), defaults).agent_runtime_mode == "off"
+    arguments = ["--chat", "openai", "--agent-runtime", "openai"]
+    key = "test-runtime-private-key"
+    if key_source == "file":
+        path = tmp_path / "runtime-credentials.env"
+        path.write_text("OPENAI_API_KEY=" + key + "\n")
+        arguments += ["--inference-key-file", str(path)]
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    else:
+        monkeypatch.setenv("OPENAI_API_KEY", key)
+    settings = with_inference_settings(Settings.from_env(base_env), parser.parse_args(arguments))
+    assert settings.agent_runtime_mode == settings.chat_model_mode == "openai"
+    assert settings.inference_mode == "mock"
+    assert settings.openai_api_key.get_secret_value() == key
+    message = inference_startup_message(settings)
+    assert "durable agent sessions enabled" in message.lower()
+    assert "workflow inference is simulated" in message.lower()
+    assert "$1.00" in message and "no model API calls" not in message
+    assert key not in message and key not in repr(settings)
+    without_chat = parser.parse_args(["--agent-runtime", "openai"])
+    with pytest.raises(SettingsError) as caught:
+        with_inference_settings(Settings.from_env(base_env), without_chat)
+    assert caught.value.variable == "AICL_CHAT_MODEL_MODE"
+
+
+def test_demo_server_help_exposes_durable_runtime_without_starting_services():
+    result = subprocess.run([sys.executable, "-m", "aicl.demo_server", "--help"],
+                            env={**os.environ, "PYTHONPATH": "backend"}, capture_output=True, text=True, check=True)
+    assert "--agent-runtime {off,openai}" in result.stdout
+    assert "--chat {fake,openai}" in result.stdout
+    assert not result.stderr

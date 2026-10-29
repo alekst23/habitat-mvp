@@ -33,11 +33,59 @@ existing owner flows.
   is not sufficient to determine provenance; the payment/attempt records decide.
 - Operator-funded setup is outside agent cost totals. Studio performs no model work.
 
+Costs & statistics presents **Cost by job** above the **Resource ledger**. Job
+totals are rollups of the selected period's individual entries, not additional
+charges. Open a source job to inspect its resource breakdown and original
+evidence. Setup and shared work without a recorded job attribution remain in
+**Setup / unallocated work** for the agent; the view does not distribute them
+across jobs.
+
+The shared cost projection keeps resource type separate from accounting status:
+
+| Entry | Display and treatment |
+| --- | --- |
+| Recorded usage | Settled resource charges, classified as model, tools/network, compute, storage/data access, or unknown resource. |
+| Estimate | Recorded runtime estimates, shown separately from settled usage. The combined total is explicitly labelled **Recorded + estimated**. |
+| Reservation | Unresolved maximum holds, shown separately and excluded from usage and estimate totals. |
+| Service funding | Credit added to the account, excluded from work costs. |
+| Merchant payment | A separate merchant expense, excluded from resource-usage totals. |
+| Waived setup | Preserved as an entry and excluded from work costs. |
+| Model + tools | One bundled charge when a receipt includes tokens and search calls without separate recorded prices. It is counted once, without an invented price split. |
+| Not metered | No separately recorded charge. Storage, data access and other tools are not assumed free. |
+
+The projection preserves canonical amounts and source references. It does not
+reprice historical work, manufacture missing usage, or change admission budgets.
+Operations uses the same recorded/estimated distinction in its job table and
+spending chart. Existing provenance labels still distinguish fixtures, provider
+records and runtime estimates.
+
 The read API is `/audit/studio/data`, with `instance_id`, `date_from`, `date_to`
 and `timezone`. It derives tenant and owner identity from authentication and
 reads one SQLite snapshot. It exposes no provider credentials or output bodies.
 Layout reads/saves use `/audit/studio/state`; saves require CSRF and the current
 version, so another tab's saved layout is not silently overwritten.
+
+## Tables and column controls
+
+Operations, Costs & statistics, Actions, source-job resource entries, and Campaigns
+use AG Studio's built-in grid widget. Actions is a table of date, agent, action,
+outcome, details, and source/purchase links; it includes recorded agent activity
+as well as owner decisions. Output previews remain reading views. Source links
+retain the selected agent, dates and tab statuses. Audit tables have readable
+server-rendered fallbacks if Studio cannot load.
+
+Click a column header to sort using the underlying typed value, and drag its edge
+to resize. AG Grid supports these controls, but AG Studio 3.0.0's built-in grid
+disables resizing and exposes no resize option. `static/studio-grid.js` uses
+Studio's supported `createCellRenderer` hook to obtain the public AG Grid API and
+enable resizing while retaining native sorting, filtering and formatting. The
+official vendor bundle is unchanged; the helper does not replace Studio's grid.
+
+Dragged widths survive data and layout updates during that grid's lifetime. They
+are not persisted across a page reload or navigation, and **Save layout** does
+not save them. Width state stays in memory for each grid, with no browser storage
+shared across owners. The helper initializes when the first data cells render;
+an empty table has no active resize enhancement until it receives rows.
 
 ## Assets and licensing
 
@@ -49,8 +97,7 @@ npm run build:studio
 The build copies the pinned official UMD bundle and its licence from `ag-studio`
 into `backend/aicl/web/static/vendor/` and removes the retired model adapter asset.
 The checked-in assets let the Python container serve the page without Node at
-runtime or a CDN connection. Existing AG Grid Community Audit pages remain
-available. Rebuild vendor assets after changing the dependency.
+runtime or a CDN connection. Rebuild vendor assets after changing the dependency.
 
 AG Studio is commercial software; the existing Community Grid licence does not
 cover it. Set `AICL_STUDIO_LICENSE_KEY` to the vendor-issued trial/commercial key.
@@ -80,7 +127,7 @@ Agent execution and owner decisions stay in their existing AICL-controlled flows
 
 ```sh
 PYTHONPATH=backend:backend/tests .venv/bin/python -m pytest backend/tests/integration/test_studio*.py -q
-node --test tests/studio-runtime.test.cjs
+npm run test:studio-runtime
 PATH="$PWD/.venv/bin:$PATH" npx playwright test tests/browser/studio.spec.ts tests/browser/studio-ai.spec.ts --config .gitlab/ctx/playwright.config.ts --reporter=list
 ```
 
@@ -88,7 +135,11 @@ The negative AI browser check injects legacy enable attributes and an old runtim
 global, then verifies there is no assistant UI, adapter use or AI request in view
 or edit mode. No provider calls are made. Runtime checks compare the served vendor
 bundle and licence byte-for-byte with the pinned package and confirm the model
-adapter files are absent.
+adapter files are absent. Shared-grid tests cover deferred API updates, formatted
+values, safe evidence rendering, and dragged widths surviving Studio updates
+without affecting other grids or accessing a destroyed grid. Audit-table tests
+cover currency/date formatting, source navigation and readable failure states;
+`test_cost_breakdown.py` covers the accounting projection.
 
 For the demo: select an agent/date range, inspect a cost's source job or receipt,
 open the next owner request, review an output, return and refresh, rearrange a

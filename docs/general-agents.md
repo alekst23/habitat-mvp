@@ -1,8 +1,95 @@
 # General agents
 
-This page describes current behavior. The proposed
-[durable execution plan](design/durable-agent-execution.md) covers multi-step
-planning, saved research, owner-message resume and work across worker restarts.
+## Unified local workspace
+
+Start the local demo with `--chat openai --agent-runtime openai` and an
+`OPENAI_API_KEY`, or the existing `--inference-key-file` option. **Create an agent**,
+`/chat`, and existing general-agent setup links all open `/agent-workspaces/{id}`.
+The editable form and collapsible assistant share one versioned saved draft.
+The assistant can read and update it throughout execution. **Guide this run** is
+a separate message control for the worker; ordinary conversation remains about
+managing the agent. Unfinished drafts are listed on the workspace home.
+
+Review **Apply settings**, then use the visible **Funding and readiness** panel.
+Checkout returns to the same workspace. **Start work** remains unavailable until
+permissions, budgets, provider limits and service credit pass preflight. Funding
+does not start or resume a run. Pending checkout links remain available for recovery.
+
+On-demand, hourly and daily work use the same approved definition, tool registry,
+readiness checks and durable runtime. Daily work uses the saved local time and
+IANA timezone. Enable its schedule explicitly after applying settings and funding.
+The local worker runs due work independently of the browser while the server runs;
+unfunded occurrences remain due, unfinished work prevents overlap, and missed
+occurrences coalesce into one run. Saved plans, evidence and drafts survive restarts.
+
+This runtime supports writing/analysis from supplied context and a separate public
+research phase before private analysis. In **Web access**, choose one level:
+
+- **Off:** no web search or page requests.
+- **Only selected sites:** research uses the listed domains and their subdomains.
+- **All except selected sites:** research excludes the listed domains and their subdomains.
+- **All public sites:** research may use any public HTTPS site.
+
+The agent chooses its searches and pages from the visible goal; there are no
+query lists, source URL lists, or separate web-tool switches to configure. The
+owner explicitly approves the goal for public research when applying access.
+Context and inputs, files, conversation history and internal identifiers are
+excluded from that research context. Goal, access or provider changes require
+fresh approval. Private analysis can consume public evidence but cannot steer
+new public requests. Old exact-query approvals retain their original scope until
+the owner selects and applies a new level; they are never widened on migration.
+Manual and scheduled runs share these controls. Existing runs require a restart
+to use updated settings.
+
+Public workers require a verified Docker container with an immutable local image,
+no network, credentials or host mounts, and a read-only filesystem. The AICL
+broker checks the exact request before DNS and HTTP, pins public addresses, and
+suppresses redirects, cookies, uploads, scripts, subresources and tracking headers.
+Private analysis receives public evidence but has no public web tools. Its
+separate inference adapter is not claimed to have the public worker's isolation.
+Missing containment or provider configuration makes the capability unavailable;
+there is no direct-network fallback.
+
+Configure the local worker with `--research-worker-image sha256:<local-image-id>`.
+Search additionally needs `--search-key-file`, `--search-account` and
+`--search-credential-binding`. The new agent-directed mode also requires the
+configured inference connection. Legacy exact-page releases remain supported.
+See [public research configuration and boundaries](design/aicl-public-research.md).
+Rendered browsing remains unavailable. Runtime enablement is restricted to local
+development/test while production storage remains deferred. Existing blocked
+runs, conversations and charges are imported without dispatch or payment.
+Legacy tool selections do not confer disclosure approval.
+
+For an existing waiting, paused or blocked run, **Restart with updated settings**
+replaces the old run only after saved settings and funding pass preflight. The
+old run and all charges remain in history. Dispatched operations with unresolved
+outcomes or unapplied receipts must be resolved before restart. Planned actions
+that never reserved credit can be abandoned; retrying a restart cannot create a
+second run.
+
+Raw search has a pinned fee of **$0.005 per request**. Public research uses at
+most two planning calls, two searches and five page reads per run. A complete
+upper bound for planning tokens and search fees is reserved before the first
+call; the displayed reservation is not the final charge. Actual measured usage
+settles once. Unknown or partial outcomes keep the reservation and prevent
+automatic replay. Private analysis is metered separately against the same agent
+balance. Source text remains untrusted evidence and cannot change permissions.
+The provider contract uses [Brave's raw search endpoint](https://api-dashboard.search.brave.com/api-reference/web/search/get)
+and [published search pricing](https://api-dashboard.search.brave.com/documentation/pricing).
+
+The optional WebMCP adapter exposes only workspace reading, draft editing and
+section navigation; the embedded assistant calls the shared application services
+directly and does not depend on browser WebMCP support.
+
+See [shared workspace architecture](design/unified-agent-workspace.md).
+
+## Legacy hosted and runtime-disabled flows
+
+The remaining sections describe the separate legacy workflow engine used when
+the local durable runtime is disabled, including existing hosted deployments.
+They do not describe the unified local workspace's capability catalog or scheduler.
+Its live hosted search path is withdrawn: existing search configurations fail
+closed, and historical outputs, charges and unresolved reservations are retained.
 
 An agent is a saved goal, supporting context, expected outputs, completion
 criteria, permitted tools and schedule. These are configuration, not new code
@@ -34,20 +121,17 @@ self-assessments plus structural validation, not independent fact verification.
 
 ## Tools
 
-`agent_tools.py` declares available capabilities. Currently:
+`agent_tools.py` still recognizes these legacy configuration values:
 
 - `tools: []`: analysis, planning and writing from the supplied context.
-- `tools: ["web_search"]`: model-directed public web research using the Responses
-  API's hosted search tool. The model chooses queries and sources from the goal.
-  There are no topic classifiers, feed presets or source-specific parsers.
+- `tools: ["web_search"]`: retained for historical configuration compatibility.
+  Live dispatch is denied with `hosted_search_withdrawn`, including already saved
+  jobs. This setting cannot activate the new AICL research phase.
 
-The first web capability allows one hosted tool invocation per deliverable.
-This supports bounded research; it does not provide exhaustive investigation or
-an unrestricted browser. The model must expose evidence gaps and unfinished
-criteria. Provider source links and tool actions are retained with the output.
-Retrieved material is evidence, not authority to change instructions or tool
-permissions. Removing a tool from the current configuration prevents pending
-jobs from using the old grant.
+To use public research, review a release in the unified workspace and start or
+explicitly restart a run with those applied settings. Removing a tool does not
+erase prior usage or permit retrying an uncertain operation. Historical source
+links and tool traces remain evidence, never instructions or authority.
 
 New tools require a server implementation, explicit permission semantics,
 usage pricing and bounds, output validation, and durable execution records.
@@ -57,23 +141,17 @@ are not offered by this general worker.
 
 ## Cost and recovery
 
-Each attempt reserves both tokens and permitted tool fees before dispatch.
 Plain writing retains its 16,000-input / 2,000-output token estimate ($0.052).
-Web-enabled work reserves 168,000 input tokens, 6,000 output tokens and one
-search fee ($0.406 at the pinned rates). Actual measured tokens and search calls
-are settled once, including unusable or interrupted outputs with known usage.
-Unused reservation is released on settlement. Unknown outcomes retain the hold
-and are never blindly resent. Hosted worker replay reuses the stored result.
+Measured tokens are settled once, including unusable or interrupted outputs with
+known usage; unused reservation is released on settlement. Unknown outcomes
+retain the hold and are never blindly resent. Hosted worker replay reuses the
+stored result. Instance budgets, service credit and the persistent server spend
+ceiling still apply.
 
-The web input allowance is a conservative estimate based on the documented
-128k search context plus the bounded request, repeated context and output. It
-is not a provider-enforced dollar cap. If reported usage exceeds the estimate,
-Habitat records the measured charge and stops further dispatch for review.
-Unpriced usage (including a different context pricing tier) remains unresolved
-with its reservation retained instead of being settled at an incorrect rate.
-Instance budgets, service credit and the persistent server spend ceiling all
-apply to the full reservation. See the [web search guide](https://developers.openai.com/api/docs/guides/tools-web-search)
-and [tool pricing](https://developers.openai.com/api/docs/pricing).
+The former hosted-search token estimates do not authorize new searches. Preserve
+their historical receipts and unresolved holds; do not reset or reinterpret them
+as the new fixed-price Brave requests. The replacement research phase uses its
+own approved provider contract and whole-batch reservation described above.
 
 Owner text is never silently truncated. Oversized configurations are rejected
 before saving; accumulated context that cannot fit parks the job until the
@@ -85,7 +163,7 @@ its 180-second task timeout; substantial work may need separate agents.
 The legacy `generic` fixture, `pocketplan_ads` and `browser_purchase` keep their
 existing execution paths. Old assistant proposals without a scenario remain
 PocketPlan proposals. A legacy feed selection does not silently grant broader
-web access; it must be reviewed and replaced with a tool selection.
+web access; public research requires a reviewed release in the unified workspace.
 
 Tests cover unrelated goals through the same adapter, tool permissions,
 reservation and settlement, malformed output, owner questions, recurring work,

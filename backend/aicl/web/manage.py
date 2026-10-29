@@ -156,6 +156,10 @@ def manage_router(ctx) -> APIRouter:
         auth = signed_in(request)
         if auth is None:
             return RedirectResponse("/", status_code=303)
+        from aicl.agent_workspace.routes import instance_workspace_url
+        destination = instance_workspace_url(ctx, auth, instance_id)
+        if destination:
+            return RedirectResponse(destination + ("?notice=funded" if commerce_notice == "funding_completed" else ""), 303)
         feedback = {"notice": COMMERCE_NOTICES.get(commerce_notice, ""),
                     "failure": COMMERCE_FAILURES.get(commerce_failure, ""),
                     "section": commerce_section if commerce_section in ("budgets", "funding", "task") else "funding"}

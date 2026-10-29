@@ -47,7 +47,7 @@ def entry_token(ctx) -> str:
 def accept_access_link(ctx, token: str) -> str | None:
     """Exchange the configured reusable private link for a short-lived form proof."""
     configured = ctx.settings.access_link_token.get_secret_value()
-    if (not ctx.settings.judge_demo_mode or not configured
+    if (not ctx.settings.private_entry_enabled or not configured
             or re.fullmatch(r"[A-Za-z0-9_-]{32,128}", token) is None
             or not hmac.compare_digest(token, configured)):
         return None
@@ -55,7 +55,7 @@ def accept_access_link(ctx, token: str) -> str | None:
 
 
 def valid_entry_token(ctx, token: str | None) -> bool:
-    if not ctx.settings.judge_demo_mode or not ctx.settings.access_link_token.get_secret_value():
+    if not ctx.settings.private_entry_enabled or not ctx.settings.access_link_token.get_secret_value():
         return False
     if not token or not _TOKEN.fullmatch(token):
         return False
@@ -96,7 +96,7 @@ def start_workspace(ctx, token: str, previous_cookie: str | None, display_name: 
     The origin/cookie/form proof is verified by the route first. The nonce hash
     is durable so two concurrent anonymous POSTs cannot create two workspaces.
     """
-    if not ctx.settings.judge_demo_mode:
+    if not ctx.settings.private_entry_enabled:
         raise AiclError("not_found", "Page not found.")
     if not valid_entry_token(ctx, token):
         raise AiclError("denied", "Open your private access link and try again.", reason="csrf_failed")

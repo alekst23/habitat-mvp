@@ -139,6 +139,7 @@ class MockCommerceService:
         conn.execute("INSERT OR IGNORE INTO mock_commerce_account (instance_id) VALUES (?)", (instance_id,))
 
     def _balance(self, conn, instance_id):
+        from aicl.agent_workspace.setup_accounting import balance_cost
         balance = conn.execute("SELECT COALESCE(SUM(delta_micro_usd),0) FROM mock_commerce_ledger "
                                "WHERE instance_id = ?", (instance_id,)).fetchone()[0]
         # Live calls retain service credit while outside the SQLite transaction.
@@ -148,7 +149,17 @@ class MockCommerceService:
                                 "WHERE h.instance_id=? AND h.state IN ('held','unknown')", (instance_id,)).fetchone()[0]
         compute = conn.execute("SELECT COALESCE(SUM(cost_micro_usd),0) FROM render_compute_usage WHERE instance_id=?", (instance_id,)).fetchone()[0]
         compute_held = conn.execute("SELECT COALESCE(SUM(h.compute_micro_usd),0) FROM render_dispatch d JOIN budget_hold h ON h.id=d.hold_id WHERE d.instance_id=? AND h.state IN ('held','unknown')", (instance_id,)).fetchone()[0]
-        return balance - reserved - compute - compute_held
+        # Runtime ownership is exclusive. Its settled usage has no commerce or
+        # Render debit projection; count the canonical charge exactly once.
+        runtime = conn.execute(
+            "SELECT COALESCE(SUM(CASE WHEN h.state IN ('held','unknown') "
+            "THEN h.inference_micro_usd+h.compute_micro_usd ELSE 0 END),0) "
+            "+ COALESCE(SUM(u.inference_micro_usd+u.compute_micro_usd),0) "
+            "FROM agent_runtime_hold r JOIN budget_hold h ON h.id=r.hold_id "
+            "LEFT JOIN budget_usage u ON u.hold_id=h.id WHERE r.instance_id=?", (instance_id,)).fetchone()[0]
+        # Known setup costs and unfinished setup reservations remain unavailable
+        # to every execution adapter, before and after activation records them.
+        return balance - reserved - compute - compute_held - runtime - balance_cost(conn, instance_id)
 
     def _policy(self, conn, instance_id):
         row = conn.execute("SELECT * FROM mock_commerce_account WHERE instance_id = ?", (instance_id,)).fetchone()
@@ -161,8 +172,16 @@ class MockCommerceService:
                 "held_minor": amounts[0], "spent_minor": amounts[1],
                 "available_minor": max(0, limit - sum(amounts)), "version": row["version"] if row else 1}
 
-    def _controls(self, conn, auth, instance_id):
+    def _controls(self, conn, auth, instance_id, *, allow_setup_busy=False):
         inst = self._owned_instance(conn, auth, instance_id)
+        from aicl.agent_workspace.setup_accounting import usage
+        workspace = conn.execute("SELECT id FROM agent_workspace WHERE instance_id=?", (instance_id,)).fetchone()
+        if workspace:
+            setup = usage(conn, workspace["id"])
+            if setup["unknown"]:
+                self._reject(instance_id, "setup_unresolved", "Resolve the pending setup usage before continuing work.")
+            if setup["busy"] and not allow_setup_busy:
+                self._reject(instance_id, "setup_in_progress", "Wait for the setup assistant to finish before continuing work.")
         if inst["lifecycle"] != "active":
             self._reject(instance_id, "instance_not_active", "Activate or resume the agent before continuing.")
         enabled = conn.execute("SELECT enabled FROM capability_grant WHERE instance_id = ? AND capability = 'inference'",

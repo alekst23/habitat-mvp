@@ -60,10 +60,10 @@ def components_for(settings: Settings) -> Components:
 def magic_link_sender(settings: Settings):
     """Capture fake only in the test composition (both flags); else the SMTP sender, which needs AICL_SMTP_HOST
     (startup fails when it is unset)."""
+    if settings.private_entry_enabled:
+        return DisabledMagicLinkSender()
     if settings.test_mode and settings.environment == "test":
         return CaptureMagicLinkSender()
-    if settings.judge_demo_mode:
-        return DisabledMagicLinkSender()
     if not settings.smtp_host:
         raise SettingsError("AICL_SMTP_HOST", "is required outside the test composition")
     return SmtpMagicLinkSender(SmtpConfig(settings.smtp_host, settings.smtp_port, settings.smtp_username,

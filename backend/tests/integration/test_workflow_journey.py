@@ -7,6 +7,7 @@ import pytest
 
 from aicl.control.errors import AiclError
 from aicl.control.instances import GateContext, Limits
+from support import historical_budget_fixture
 from test_mock_commerce import commerce, ready
 
 
@@ -146,7 +147,8 @@ def test_forward_migration_preserves_funding_and_surfaces_older_active_task(buil
             shutil.copyfile(path, legacy / path.name)
     with monkeypatch.context() as patch:
         patch.setattr(database, "MIGRATIONS_DIR", legacy)
-        env, service, auth, inst, _ = ready(build_env, funded=False)
+        with historical_budget_fixture(build_env) as historical_build:
+            env, service, auth, inst, _ = ready(historical_build, funded=False)
     with env.db.transaction() as conn:
         # Seed the historical schema directly: the current service requires its
         # current migrations and must not operate against a pre-upgrade database.

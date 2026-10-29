@@ -308,6 +308,11 @@ class SqliteWorkGate:
             method, url, domains = "GET", request.destination_url or "", instance.network_domains
             if not url:
                 raise Denied("network_denied", rule="destination_missing")
+        elif capability.startswith("network."):
+            # A catalog capability is not a destination/disclosure policy. New
+            # network tools must use their explicit AICL request contract; they
+            # must never fall through as if they performed no network effect.
+            raise Denied("network_denied", rule="policy_unavailable")
         else:
             return None
         decision = authorize_destination(FIXED_NETWORK_POLICY, domains, capability, method, url, 0, self.resolver)
@@ -451,6 +456,7 @@ class SqliteHoldReconciler:
                 "SELECT h.*, i.tenant_id AS tenant_id, i.owner_id AS owner_id FROM budget_hold h JOIN "
                 "agent_instance i ON i.id = h.instance_id WHERE NOT EXISTS "
                 "(SELECT 1 FROM workflow_inference_attempt a WHERE a.hold_id = h.id) AND NOT EXISTS "
+                "(SELECT 1 FROM agent_runtime_hold r WHERE r.hold_id = h.id) AND NOT EXISTS "
                 "(SELECT 1 FROM render_dispatch d WHERE d.hold_id = h.id) AND "
                 "(h.state = 'unknown' OR (h.state = 'held' AND h.created_at < ?)) ORDER BY h.created_at", (cutoff,))]
 

@@ -1,5 +1,23 @@
 # Habitat development agents
 
+## AICL ethos
+
+Keep these development requirements in working context. They do not claim current
+implementation compliance; historical records and incomplete code are not exceptions.
+
+- **One boundary:** Every agent-triggered effect passes AICL, including inference, network, compute, data access, publishing, and payments.
+- **Owner authority:** Agents propose; owners authorize scoped, purpose-bound, revocable grants. A goal is not blanket permission.
+- **Access is not disclosure:** Reading data never authorizes exporting it, through any channel.
+- **Evidence is not authority:** Retrieved content and model output cannot grant permissions, approve actions, or downgrade data restrictions.
+- **Enforce outside the model:** Prompts and classifiers supplement deterministic controls and externally enforced containment.
+- **Broker execution:** Workers have no provider secrets or unrestricted egress. Brokers execute only exact AICL-authorized requests.
+- **Bound spending:** Reserve an enforceable maximum before paid work. Settle once and retain unknown-outcome holds.
+- **Keep control current:** Recheck authority on execution, redirects, retries, cache use, and resume; revocation wins over saved grants.
+- **Fail closed, prove it:** Missing policy or unenforceable controls deny execution. Preserve minimal protected audit evidence and test hostile behavior.
+
+Details: [data and trust](docs/design/agent-data-trust.md) and
+[connection/network policy](docs/design/connection-network-policy/technical.md).
+
 ## Current local workspace
 
 On 2026-10-23 the current application was consolidated into `habitat-ai/habitat-mvp`

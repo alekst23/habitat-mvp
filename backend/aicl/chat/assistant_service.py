@@ -22,6 +22,9 @@ ACTIVITIES = {
     "save_agent_proposal": "Updated the agent proposal",
     "validate_agent_proposal": "Checked the proposal",
     "propose_schedule_change": "Prepared a schedule change for review",
+    "read_workspace": "Read the current workspace",
+    "update_draft": "Updated the shared draft",
+    "show_section": "Opened the relevant controls",
 }
 
 
@@ -33,9 +36,35 @@ def identifier(value):
 
 
 class AssistantService:
+    route_messages_to_run = True
+
     def __init__(self, ctx, model=None):
         self.ctx, self.db, self.clock = ctx, ctx.db, ctx.clock
         self.model = model
+
+    def _tools(self, auth, session_id):
+        return AssistantTools(self.ctx, auth, session_id)
+
+    def _model(self):
+        from aicl.chat.sdk_agent import SDKInterviewModel
+        return SDKInterviewModel(self.ctx.settings.openai_api_key.get_secret_value())
+
+    def _record_failure(self, conn, auth, session_id, turn_id, state, message, reason):
+        """Surfaces can add an honest status receipt in the failure transaction."""
+
+    @staticmethod
+    def _failure_reason(exc):
+        reason = getattr(exc, "reason", "")
+        known = {"turn_limit", "tool_limit", "context_too_large", "input_too_large", "provider_rejected",
+                 "provider_unknown", "unrecognized_usage", "usage_exceeded_bound", "provider_output_unusable",
+                 "tool_result_too_large", "invalid_tool_arguments", "invalid_tool_result", "tool_failed",
+                 "credential_in_context", "credential_unavailable", "provider_boundary", "invalid_history",
+                 "invalid_tools", "invalid_request", "reply_budget_required", "final_reply_required"}
+        if reason in known:
+            return reason
+        if isinstance(exc, AiclError):
+            return exc.error
+        return "reply_timeout" if isinstance(exc, TimeoutError) else "reply_interrupted"
 
     def _session(self, conn, auth, session_id):
         if auth.expires_at <= self.clock.now():
@@ -53,12 +82,15 @@ class AssistantService:
         return session_id
 
     def view(self, auth, session_id):
+        from aicl.agent_runtime.chat_service import RuntimeChatService
         with self.db.reader() as conn:
             self._session(conn, auth, session_id)
             rows = conn.execute("SELECT role,text,metadata_json FROM assistant_message WHERE session_id=? ORDER BY id DESC LIMIT 60",
                                 (session_id,)).fetchall()
         messages = [{"role": r["role"], "text": r["text"], **json.loads(r["metadata_json"])} for r in reversed(rows)]
-        return {"messages": messages, "session_id": session_id,
+        runtime_view = RuntimeChatService(self.ctx).view(auth, session_id)
+        messages.extend(runtime_view.pop("runtime_messages"))
+        return {"messages": messages, "session_id": session_id, **runtime_view,
                 "proposal": AssistantTools(self.ctx, auth, session_id).proposal(include_committed=True),
                 "usage": allowance(self.db, self.ctx.settings.assistant_max_spend_micro_usd)}
 
@@ -121,11 +153,17 @@ class AssistantService:
             history.insert(0, {"role": "assistant", "content": note})
         return history
 
-    async def message(self, auth, session_id, request_id, text):
+    async def message(self, auth, session_id, request_id, text, *, run_id=None, question_id=None):
         session_id, request_id = identifier(session_id), identifier(request_id)
         if not isinstance(text, str) or not text.strip() or len(text.encode("utf-8")) > 4000:
             raise AiclError("validation_failed", "Enter a message of up to 4,000 UTF-8 bytes.")
         text = text.strip()
+        from aicl.agent_runtime.chat_service import RuntimeChatService
+        sessions = RuntimeChatService(self.ctx)
+        with self.db.reader() as conn:
+            linked = sessions.linked(conn, auth, session_id)
+        if self.route_messages_to_run and (linked or run_id):
+            return sessions.message(auth, session_id, request_id, text, run_id=run_id, question_id=question_id)
         turn_id, replay = self._claim(auth, session_id, request_id, text)
         if replay is not None:
             return {"chat_session_id": session_id, "text": replay, "replayed": True}
@@ -142,13 +180,17 @@ class AssistantService:
                     if running is None or running["state"] != "running":
                         raise AiclError("conflict", "This assistant turn is no longer running.")
                     result = assistant_tools.invoke(name, arguments)
+                    encoded = json.dumps(result, ensure_ascii=False, default=str)
+                    conn.execute("INSERT INTO assistant_tool_event(session_id,turn_id,name,state,result_json,created_at) VALUES (?,?,?,?,?,?)",
+                                 (session_id, turn_id, name[:80], state, encoded[:12000], to_iso(self.clock.now())))
             except AiclError as exc:
                 state = "denied"
                 result = {"error": exc.error, "message": exc.message or "This tool request was not allowed."}
-            encoded = json.dumps(result, ensure_ascii=False, default=str)
-            with self.db.transaction() as conn:
-                conn.execute("INSERT INTO assistant_tool_event(session_id,turn_id,name,state,result_json,created_at) VALUES (?,?,?,?,?,?)",
-                             (session_id, turn_id, name[:80], state, encoded[:12000], to_iso(self.clock.now())))
+            if state == "denied":
+                encoded = json.dumps(result, ensure_ascii=False, default=str)
+                with self.db.transaction() as conn:
+                    conn.execute("INSERT INTO assistant_tool_event(session_id,turn_id,name,state,result_json,created_at) VALUES (?,?,?,?,?,?)",
+                                 (session_id, turn_id, name[:80], state, encoded[:12000], to_iso(self.clock.now())))
             if state == "completed" and name in ACTIVITIES:
                 if ACTIVITIES[name] not in activities:
                     activities.append(ACTIVITIES[name])
@@ -158,11 +200,8 @@ class AssistantService:
             return result
 
         try:
-            assistant_tools = AssistantTools(self.ctx, auth, session_id)
-            model = self.model
-            if model is None:
-                from aicl.chat.sdk_agent import SDKInterviewModel
-                model = SDKInterviewModel(self.ctx.settings.openai_api_key.get_secret_value())
+            assistant_tools = self._tools(auth, session_id)
+            model = self.model or self._model()
             reply = await asyncio.wait_for(model.run(self._history(auth, session_id), tools=assistant_tools.schemas(),
                                                      invoke=invoke, meter=meter), timeout=180)
             if not isinstance(reply, str) or not reply.strip() or len(reply) > 16000:
@@ -184,8 +223,11 @@ class AssistantService:
             }.get(getattr(exc, "reason", ""), "The assistant could not finish this reply. Any saved proposal still needs your review; no change was approved.")
             with self.db.transaction() as conn:
                 unknown = conn.execute("SELECT 1 FROM assistant_inference_attempt WHERE turn_id=? AND state='unknown'", (turn_id,)).fetchone()
-                conn.execute("UPDATE assistant_turn SET state=?,error=?,updated_at=? WHERE id=? AND state='running'",
-                             ("unknown" if unknown else "failed", safe, to_iso(self.clock.now()), turn_id))
+                state = "unknown" if unknown else "failed"
+                changed = conn.execute("UPDATE assistant_turn SET state=?,error=?,updated_at=? WHERE id=? AND state='running'",
+                                       (state, safe, to_iso(self.clock.now()), turn_id)).rowcount
+                if changed:
+                    self._record_failure(conn, auth, session_id, turn_id, state, safe, self._failure_reason(exc))
             if isinstance(exc, (KeyboardInterrupt, SystemExit, asyncio.CancelledError)):
                 raise
             raise AiclError("unavailable", safe) from None

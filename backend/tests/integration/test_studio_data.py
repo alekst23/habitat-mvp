@@ -179,6 +179,12 @@ def test_shared_dispatch_compute_is_counted_once_without_fabricated_job_allocati
     assert data["totals"]["compute_estimate_usd"] == .006667
     assert data["agent_summary"][0]["compute_estimate_usd"] == .006667
     assert sum(row["compute_estimate_usd"] for row in data["jobs"]) == 0
+    audit = wf.overview(auth, inst.id)
+    audit_compute, = [row for row in audit["cost_rows"] if row["component"] == "compute"]
+    assert audit_compute["job_id"] is None
+    unallocated, = [row for row in audit["cost_jobs"] if row["job_id"] is None]
+    assert unallocated["estimated_usd"] == .006667
+    assert sum(job["cost_summary"]["estimated_micro_usd"] for job in audit["runs"]) == 0
     assert data["current"]["service_credit_usd"] == commerce.dashboard(auth, inst.id)["balance_micro_usd"] / 1_000_000
     budget = env.budget.read_budget(inst.id)
     assert data["current"]["budget_remaining_usd"] == sum(
@@ -219,3 +225,105 @@ def test_submitted_output_requires_attention_across_period_filters_and_clears_af
     accepted = studio(env).snapshot(auth)
     assert accepted["attention"] == [] and accepted["totals"]["pending_count"] == 0
     assert accepted["agent_summary"][0]["pending_count"] == 0
+
+
+def test_durable_work_and_usage_are_visible_once_with_real_balance_and_no_implied_acceptance(build_env):
+    from aicl.agent_runtime.adapters import AdapterResult, ScriptedModel, ToolRegistry
+    from aicl.agent_runtime.contracts import RunDefinition
+    from aicl.agent_runtime.coordinator import AgentRuntime
+    from aicl.workflow.openai_inference import InferenceUnknownOutcomeError
+    from test_mock_commerce import ready
+
+    env, commerce, auth, inst, _ = ready(build_env)
+    # A deterministic trusted adapter receipt exercises the actual durable run
+    # and shared accounting path without making a paid provider call.
+    class MeteredModel(ScriptedModel):
+        scripted = False
+        version = "provider-test-v1"
+        estimate = Estimate(100, 50, 1)
+
+        def decide(self, context, invocation_id):
+            if not self.responses:
+                raise InferenceUnknownOutcomeError("timeout")
+            return AdapterResult(self.responses.pop(0), MeasuredUsage(100, 50, 1),
+                                 response_id="resp_test", model="test-model")
+
+    complete = {"schema_version": 1,
+                "output": {"artifacts": [{"local_ref": "digest", "content": "private saved digest"},
+                                         {"local_ref": "notes", "content": "private unfinished notes"}]},
+                "control": {"next": "complete", "artifact_refs": ["digest"], "criterion_assessments": [
+                    {"requirement_id": "digest", "status": "met", "explanation": "Written"}]}}
+    runtime = AgentRuntime(env.db, env.clock, MeteredModel([complete]), ToolRegistry(), allow_live=True)
+    definition = RunDefinition(objective="Prepare a news digest", requirements=[{"id": "digest", "text": "Write a digest"}])
+    run = runtime.create_run(auth, inst.id, "studio-runtime", definition)
+    assert runtime.advance_slice(auth, run["id"])["status"] == "completed"
+    data = studio(env).snapshot(auth)
+    assert data["totals"]["job_count"] == 1
+    job, = data["jobs"]
+    assert job["id"] == "runtime:" + run["id"]
+    assert job["review_status"] == "completed" and data["totals"]["accepted_count"] == 0
+    assert job["evidence_url"] == "/audit/jobs/runtime%3A" + run["id"]
+    output, = [item for item in data["outputs"] if item["status"] == "completed"]
+    draft, = [item for item in data["outputs"] if item["status"] == "draft"]
+    assert draft["output_name"] == "notes" and draft["job_id"] == job["id"]
+    assert output["job_id"] == job["id"] and output["status"] == "completed"
+    assert output["output_name"] == "digest" and output["content_available"] is True
+    assert output["evidence_url"].startswith("/audit/deliverables/runtime%3A" + run["id"] + "%3A")
+    assert job["output_count"] == 2 and job["output_url"] in {item["evidence_url"] for item in data["outputs"]}
+    inference, = [row for row in data["costs"] if row["category"] == "inference"]
+    compute, = [row for row in data["costs"] if row["category"] == "compute_estimate"]
+    assert (inference["input_tokens"], inference["output_tokens"], inference["model"]) == (100, 50, "test-model")
+    assert inference["provenance"] == "provider_reported" and inference["job_id"] == job["id"]
+    assert data["totals"]["inference_usd"] == job["inference_usd"] == inference["amount_usd"] > 0
+    assert data["totals"]["compute_estimate_usd"] == job["compute_estimate_usd"] == compute["amount_usd"] > 0
+    assert data["current"]["service_credit_usd"] == commerce.dashboard(auth, inst.id)["balance_micro_usd"] / 1_000_000
+    assert "private saved digest" not in json.dumps(data)
+    assert "private unfinished notes" not in json.dumps(data)
+    historical = studio(env).snapshot(auth, date_to="2025-01-01")
+    assert historical["jobs"] == historical["costs"] == historical["outputs"] == []
+    assert historical["current"] == data["current"]
+    other_auth, _ = env.new_instance()
+    assert run["id"] not in json.dumps(studio(env).snapshot(other_auth))
+
+    waiting = runtime.create_run(auth, inst.id, "studio-runtime-unknown", definition)
+    assert runtime.advance_slice(auth, waiting["id"])["reason"] == "unknown_outcome"
+    unknown = studio(env).snapshot(auth)
+    assert unknown["totals"]["inference_usd"] == data["totals"]["inference_usd"]
+    assert unknown["current"]["held_usd"] > 0
+    assert unknown["current"]["service_credit_usd"] == commerce.dashboard(auth, inst.id)["balance_micro_usd"] / 1_000_000
+    holds = [row for row in unknown["costs"] if row["status"] == "unknown"]
+    assert holds and {row["job_id"] for row in holds} == {"runtime:" + waiting["id"]}
+    # Read-only refreshes neither create usage nor consume/release holds.
+    assert studio(env).snapshot(auth) == unknown
+
+
+def test_setup_usage_explains_current_credit_without_counting_waivers_or_reservations_as_spend(build_env, base_env):
+    from aicl.agent_workspace.setup_accounting import WorkspaceSetupAccounting
+    from test_workspace_execution import setup
+    from test_workspace_setup_accounting import attempt
+
+    env, ctx, auth, inst, workspace_id, _, _ = setup(build_env, base_env)
+    accounting = WorkspaceSetupAccounting(ctx)
+    attempt(ctx, auth, workspace_id)
+    accounting.waive(auth, workspace_id, "reset", "owner_requested_reset")
+    attempt(ctx, auth, workspace_id, input_tokens=200, output_tokens=60)
+    pending = studio(env).snapshot(auth)
+    assert pending["totals"]["inference_usd"] == .001
+    assert pending["current"]["service_credit_usd"] == 4.999
+    cost, = [row for row in pending["costs"] if row["category"] == "setup_inference"]
+    assert cost["status"] == "pending_attribution" and cost["provenance"] == "provider_reported"
+    assert cost["input_tokens"] == 200 and cost["output_tokens"] == 60
+    assert cost["evidence_url"] == "/agent-workspaces/" + workspace_id
+    waived, = [row for row in pending["costs"] if row["category"] == "setup_waived"]
+    assert waived["amount_usd"] == .0006
+    accounting.charge(auth, workspace_id)
+    charged = studio(env).snapshot(auth)
+    assert charged["totals"] == pending["totals"] and charged["current"] == pending["current"]
+    assert next(row for row in charged["costs"] if row["id"] == cost["id"])["status"] == "charged"
+    attempt(ctx, auth, workspace_id, outcome="unknown")
+    unknown = studio(env).snapshot(auth)
+    assert unknown["totals"]["inference_usd"] == .001
+    assert unknown["current"]["held_usd"] > 0
+    assert unknown["current"]["service_credit_usd"] == ctx.agent_runtime.accounting.commerce.dashboard(auth, inst.id)["balance_micro_usd"] / 1_000_000
+    hold, = [row for row in unknown["costs"] if row["category"] == "setup_reservation"]
+    assert hold["status"] == "unknown" and hold["amount_usd"] == unknown["current"]["held_usd"]

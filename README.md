@@ -10,7 +10,12 @@ adapters. Optional extensions below add a real interviewing assistant, model
 inference, PayPal Sandbox and hosted scheduling. Gmail/Reddit actions and ad
 delivery remain simulated.
 
-## Current submission build
+**Source release [v0.1.0](docs/releases/v0.1.0.md)** adds the unified agent
+workspace, durable runtime, AICL-mediated public research, Review inbox and
+request/result inspection. It is a source snapshot; the hosted submission build
+below is an earlier revision. See the release notes for validation and limits.
+
+## Hosted submission build
 
 The application at `c0839a4` was deployed to
 [Habitat on Render](https://habitat-aicl.onrender.com) on October 23, 2026.
@@ -77,14 +82,20 @@ python -m pip install --require-hashes -r backend/requirements.lock
 PYTHONPATH=backend python -m aicl.demo_server
 ```
 
-Open <http://127.0.0.1:4173>, request a sign-in link for `demo@example.test`, then
-open <http://127.0.0.1:4173/__test__/last-magic-link?email=demo%40example.test>
-and follow the captured link. Confirm sign-in to reach the workspace. This local
-demo needs no SMTP account and keeps its database in `.ctx/mock-commerce/demo.db`
-across restarts. The mock payment process uses port 4174; use `--port 4175` if
-4173 is occupied, or choose distinct `--port` and `--payment-port` values.
-The isolated automated-test
-server remains available as `python -m aicl.test_server`.
+The home page at <http://127.0.0.1:4173> is locked by default. Open the private URL
+saved in `.ctx/mock-commerce/demo.db.private-access-url`, then enter an email on
+the sign-in form to reach an isolated workspace. No email is sent, verified or
+stored, and no SMTP account is needed. The launcher prints the link file's path,
+never its secret URL. Its companion token and URL files have mode `0600`; the
+same token and database are reused across restarts. With `--database`, these files
+are saved beside that database instead.
+
+The mock payment process uses port 4174; use `--port 4175` if 4173 is occupied, or
+choose distinct `--port` and `--payment-port` values. For the previous captured
+email flow, explicitly pass `--entry email`, request a sign-in link, and open
+`/__test__/last-magic-link?email=demo%40example.test` for the address used. Those test
+sign-in endpoints are disabled in the default private-link mode. The isolated
+automated-test server remains available as `python -m aicl.test_server`.
 
 For a short offline walkthrough:
 
@@ -149,7 +160,49 @@ Model and pricing reference: [GPT-6 Sol](https://developers.openai.com/api/docs/
 The request uses explicit prompt caching with no cache breakpoints to avoid
 cache writes; see [OpenAI prompt caching](https://developers.openai.com/api/docs/guides/prompt-caching).
 
-### Interviewing and monitoring assistant
+### Unified agent workspace
+
+For the local shared form and assistant, start with:
+
+```sh
+PYTHONPATH=backend python -m aicl.demo_server \
+  --chat openai --agent-runtime openai \
+  --inference-key-file /absolute/path/to/private-openai.env
+```
+
+**Create an agent**, existing general-agent links and `/chat` open one workspace.
+Edit its settings directly or ask the collapsible assistant to update the same
+draft. Review **Apply settings**, add service credit in **Funding and readiness**,
+then start work or enable its schedule. Checkout returns to that workspace;
+unfunded work cannot start. Manual and scheduled runs share the same runtime and
+tool catalog. The assistant remains available while the worker runs. Existing
+blocked runs, conversations and payment history are preserved.
+
+In **Permissions**, choose separate access levels for **Web search (Brave Search)**
+and **Web access (page reads)**: Off, Only selected sites, All except selected
+sites, or All public sites. Site lists include subdomains. Review and approve
+sharing the visible **Goal** and site rules when applying enabled access; context,
+files and conversation stay out of public research. The research planner chooses
+queries and pages within those permissions before private analysis. The private
+agent has no web tools. AICL checks each exact request and reserves bounded costs;
+the broker dispatches requests, while isolated workers parse public responses.
+Finding a search result does not authorize opening it. Legacy hosted search is
+disabled. Historical exact-query approvals keep their scope until the owner
+approves replacement settings.
+Page access requires a verified local worker image; search additionally requires
+a separately configured raw-results provider (the initial adapter is Brave).
+See [research configuration and boundaries](docs/design/aicl-public-research.md#operator-configuration).
+An existing waiting, paused or blocked
+run retains its original settings: use **Restart with updated settings** to start
+its replacement while preserving the earlier run and its accounting history.
+
+WebMCP is an optional browser adapter for reading state, editing drafts and opening
+sections. The embedded assistant uses the shared services directly. See
+[general agents](docs/general-agents.md) and the
+[workspace design](docs/design/unified-agent-workspace.md) for capabilities and
+execution boundaries. The local app must remain running for scheduled work.
+
+### Legacy assistant with the durable runtime disabled
 
 The owner assistant uses the OpenAI Agents SDK for Python and GPT-6 Sol. It asks
 about outcomes, audience, inputs and completion criteria, then prepares a visible
@@ -175,10 +228,14 @@ to the exact proposal version; schedule changes also recheck configuration and
 policy versions. The model cannot confirm changes, approve purchases, fund work,
 increase budgets or obtain credentials. Reads never dispatch scheduled work.
 
-Assistant inference has a separate persistent **$1 operator-funded allowance per
+Assistant inference has a persistent **$1 operator underwriting limit per
 database**, configurable with `--assistant-max-spend-micro-usd` or
-`AICL_ASSISTANT_MAX_SPEND_MICRO_USD`. It does not spend a not-yet-created agent's
-credit. Every request reserves $0.12 before dispatch, has a 2,000-token
+`AICL_ASSISTANT_MAX_SPEND_MICRO_USD`. In the unified workspace, the owner sees only
+the current agent's setup cost. Setup is initially fronted by this operator limit,
+then deducted from that agent's service credit at activation or work admission.
+The funding panel shows setup costs and the credit remaining for work. Explicit
+setup waivers preserve provider history and do not replenish the operator limit.
+Every request reserves $0.12 before dispatch, has a 2,000-token
 output limit, and a chat turn is bounded to five model requests. The tool loop
 uses escaped text, strict function schemas and bounded context. Requests have
 durable replay keys; SDK/provider retries and exported tracing are disabled.
@@ -191,8 +248,8 @@ for deterministic tests and offline demonstrations.
 
 ## Implementation and acceptance
 
-The current release adds the optional integrations and owner workflow described
-above to the original E11 baseline. Its release candidate passed all eleven
+The earlier hosted submission candidate added optional integrations and owner
+workflow to the original E11 baseline. That candidate passed all eleven
 mandatory jobs in
 [pipeline 2983288088](https://gitlab.com/gitlab-ai-hackathon/transcend-october-2026/43066631/showcase/-/pipelines/2983288088)
 and was merged through

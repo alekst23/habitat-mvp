@@ -204,8 +204,14 @@ def test_oversized_tool_output_does_not_start_second_request():
 
 def test_sdk_loop_is_limited_to_five_calls():
     meter = Meter()
-    with pytest.raises(SDKInterviewError, match="turn_limit"):
-        run(lambda request: httpx2.Response(200, json=response([function_call()])), meter=meter)
+    invoked = []
+    def handler(request):
+        index = sum(event[0] == "reserve" for event in meter.events)
+        return httpx2.Response(200, json=response([function_call(id=f"fc_{index}", call_id=f"call_{index}")]))
+    with pytest.raises(SDKInterviewError, match="final_reply_required"):
+        run(handler, meter=meter,
+            invoke=lambda name, args: invoked.append(name) or {"ok": True})
+    assert len(invoked) == 4
     assert sum(event[0] == "reserve" for event in meter.events) == 5
     assert sum(event[0] == "settle" for event in meter.events) == 5
 
