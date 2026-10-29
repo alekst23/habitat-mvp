@@ -78,6 +78,7 @@ class RenderExecution:
                 key += ":" + str(uuid.uuid4())
             else:
                 return prior
+        self.workflow._require_no_runtime(conn, config["instance_id"])
         if config.get("scenario") not in ("general", SCENARIO, "browser_purchase") or self.workflow.inference is None:
             raise AiclError("denied", "Render requires a supported workflow and configured inference.", reason="unsupported_workflow")
         self.workflow._require_demo_active(conn, auth)
@@ -89,10 +90,10 @@ class RenderExecution:
         # increase the server's lifetime allowances. Replays above cost nothing.
         if conn.execute("SELECT COUNT(*) FROM render_dispatch").fetchone()[0] >= self.workflow.render_max_dispatches:
             raise AiclError("denied", "The server's Render dispatch limit is reached.", reason="render_dispatch_limit")
-        realized = conn.execute("SELECT COALESCE(SUM(cost_micro_usd),0) FROM render_compute_usage").fetchone()[0]
-        reserved = conn.execute("SELECT COALESCE(SUM(h.compute_micro_usd),0) FROM render_dispatch d "
-                                "JOIN budget_hold h ON h.id=d.hold_id WHERE h.state IN ('held','unknown')").fetchone()[0]
-        if realized + reserved + MAX_COMPUTE_COST > self.workflow.render_max_spend_micro_usd:
+        from aicl.agent_runtime.accounting import platform_spend, runtime_reconciliation_pending
+        if runtime_reconciliation_pending(conn):
+            raise AiclError("denied", "An earlier paid operation needs reconciliation.", reason="reconciliation_pending")
+        if platform_spend(conn, "compute") + MAX_COMPUTE_COST > self.workflow.render_max_spend_micro_usd:
             raise AiclError("denied", "The server's Render compute spend ceiling is reached. Demo funding cannot increase it.", reason="render_spend_ceiling")
         if self.commerce._balance(conn, config["instance_id"]) < MAX_COMPUTE_COST:
             raise AiclError("denied", "Service credit must cover the bounded Render runtime.", reason="credit_insufficient")

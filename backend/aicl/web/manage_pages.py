@@ -17,6 +17,7 @@ CAPABILITY_COPY = {
     "reddit.read": "Read through an attached Reddit connection.",
     "reddit.post": "Post through an attached Reddit connection. Each action needs your confirmation.",
     "network.fetch": "Fetch from permitted HTTPS domains in the network allow-list.",
+    "network.search": "Discover public sources through hosted web search within the agent's inference limits.",
 }
 
 TEMPLATES = {

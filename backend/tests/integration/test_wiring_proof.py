@@ -28,17 +28,19 @@ def test_test_composition_registers_every_port_route_and_hook(base_env, tmp_path
     report = inspect_composition(app)
     assert report.port_names == FINAL_REQUIRED_PORTS == ports.REQUIRED_PORTS
     assert report.route_factory_names == tuple(f.__name__ for f in routes.ROUTE_FACTORIES)
-    assert {"manage_router", "commerce_router", "workflow_router", "render_router", "waitlist_router", "studio_router"} <= set(report.route_factory_names)
-    assert len(report.route_factory_names) == 11
+    assert {"manage_router", "commerce_router", "workflow_router", "render_router", "waitlist_router", "studio_router", "workspace_router", "work_review_router"} <= set(report.route_factory_names)
+    assert len(report.route_factory_names) == 13
     assert "owner_requests_router" in report.route_factory_names
     assert {"/requests", "/requests/{request_id}/respond"} <= report.route_paths
     assert not any(path.startswith("/internal/render") for path in report.route_paths)
+    assert not any(path.startswith(("/agent-workspaces", "/api/agent-workspaces")) for path in report.route_paths)
     assert report.hook_names == FINAL_STARTUP_HOOKS == tuple(h.__name__ for h in hooks.STARTUP_HOOKS)
     assert {"/instances/{instance_id}", "/connections", "/instances/{instance_id}/resolve-gate", "/workspace",
             "/chat", "/agents/new", "/auth/verify", "/instances/{instance_id}/work-requests",
             "/pending-actions/{pending_action_id}/confirm", "/connections/oauth/begin",
             "/audit", "/instances/{instance_id}/workflow", "/audit/deliverables/{deliverable_id}",
-            "/audit/studio", "/audit/studio/data", "/audit/studio/state", "/audit/studio/ai"} <= report.route_paths
+            "/audit/studio", "/audit/studio/data", "/audit/studio/state", "/audit/studio/ai",
+            "/work", "/api/work-review", "/api/work-review/{run_id}", "/api/work-review/{run_id}/marks"} <= report.route_paths
     assert report.test_only_paths and all(p.startswith("/__test__/") for p in report.test_only_paths)
     plain = create_app(Settings.from_env({**base_env, "AICL_DATABASE_URL": f"sqlite:///{tmp_path / 'q.db'}"}))
     assert inspect_composition(plain).test_only_paths == frozenset()

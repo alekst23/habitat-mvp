@@ -1,0 +1,10 @@
+.audit-tabs{display:flex;overflow-x:auto;gap:4px;margin:0 0 14px;padding:0 0 8px;border-bottom:1px solid #dce5df;flex-wrap:nowrap;max-width:100%}
+.audit-tabs a{flex:0 0 auto;padding:8px 12px;border-radius:8px;line-height:1.35;white-space:nowrap;font-size:13px;font-weight:600;text-decoration:none;color:#66756d}
+.audit-tabs a[aria-current=page]{background:#e5efe7;color:#23553e}
+.audit-tabs a:hover{background:#edf3ec;color:#23553e}
+.audit-tabs a:focus-visible{outline:2px solid #23553e;outline-offset:-2px}
+.audit-run-step{border-bottom:1px solid #dce5df;padding:14px 0;scroll-margin-top:20px}
+.audit-run-step:last-child{border-bottom:0}
+.audit-run-step summary{cursor:pointer;font-weight:600}
+.audit-run-step pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}
+@media(max-width:540px){.audit-tabs a{padding:8px 10px}}

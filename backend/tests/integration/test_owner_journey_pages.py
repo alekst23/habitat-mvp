@@ -228,7 +228,8 @@ def test_declined_request_remains_in_audit_and_dashboard_reads_never_trigger_wor
         if view == "purchases":
             assert "Declined" in page.text
         if view == "costs":
-            assert "ag-grid" in page.text.lower()
+            assert 'src="/static/vendor/ag-studio.min.js"' in page.text
+            assert 'data-kind="costs"' in page.text
     assert workflow.overview(web.auth_a, instance_id) == before
     assert payments.dashboard(web.auth_a, instance_id)["balance_micro_usd"] == balance
     assert payments.dashboard(web.auth_a, instance_id)["policy"]["held_minor"] == 0

@@ -1,0 +1,10 @@
+{
+  "version": "brave-search-2026-10-27",
+  "effective_from": "2026-01-01T00:00:00Z",
+  "rates": [
+    {"meter": "inference.input_tokens", "unit_size": 1000000, "micro_usd": 2000000},
+    {"meter": "inference.output_tokens", "unit_size": 1000000, "micro_usd": 10000000},
+    {"meter": "compute.minutes", "unit_size": 1, "micro_usd": 5000},
+    {"meter": "inference.web_search_calls", "unit_size": 1, "micro_usd": 5000}
+  ]
+}

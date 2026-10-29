@@ -60,6 +60,15 @@ def test_custom_proposal_keeps_owner_goal_tools_and_creates_general_draft(build_
     capabilities = tools.invoke("get_supported_capabilities", {})
     assert capabilities["worker"]["id"] == "general"
     assert capabilities["worker"]["inference_mode"] == "unavailable"
+    assert capabilities["interactive_session"]["available"] is False
+    tools.ctx.agent_runtime = object()
+    interactive = tools.invoke("get_supported_capabilities", {})
+    assert interactive["worker"]["inference_mode"] == "unavailable"
+    assert interactive["interactive_session"]["available"] is True
+    assert interactive["interactive_session"]["tools"] == []
+    assert "withdrawn" in interactive["interactive_session"]["limitations"]
+    assert "Start work" in interactive["interactive_session"]["admission"]
+    assert len(json.dumps(interactive).encode()) < 5000
     assert {s["id"] for s in capabilities["tools"]} >= {"web_search"}
     for invalid in (["shell"], ["web_search", "web_search"]):
         with pytest.raises(AiclError, match="validation_failed"):
@@ -213,3 +222,13 @@ def test_monitoring_links_real_fixture_work_to_outputs_and_pending_purchase_with
     assert len(json.dumps(bounded).encode()) < 5000
     assert bounded["workflow"]["deliverable_count"] == 6
     assert bounded["total_counts"]["purchases"] == 1
+
+
+def test_live_legacy_catalog_does_not_advertise_withdrawn_search_or_page_access(build_env, base_env):
+    tools = setup(build_env(), base_env)
+    tools.ctx.settings = tools.ctx.settings.model_copy(update={"inference_mode": "openai"})
+    tools.ctx.agent_runtime = object()
+    supported = tools.invoke("get_supported_capabilities", {})
+    assert supported["tools"] == supported["interactive_session"]["tools"] == []
+    assert "withdrawn" in supported["worker"]["limitations"]
+    assert "AICL" in supported["worker"]["limitations"]

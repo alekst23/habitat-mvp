@@ -10,7 +10,7 @@
   const money = new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 6});
   const dateTime = new Intl.DateTimeFormat('en-US', {month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: timezone, timeZoneName: 'short'});
   const labels = {
-    service_funding: 'Service funding', inference: 'Inference usage', compute_estimate: 'Compute estimate',
+    service_funding: 'Service funding', inference: 'Model / tool meter', compute_estimate: 'Compute estimate',
     merchant_purchase: 'Merchant payment', purchase_reservation: 'Purchase reservation',
     fixture: 'Scenario data', paypal_sandbox: 'PayPal Sandbox', provider_reported: 'Provider-reported usage',
     runtime_estimate: 'Runtime estimate', application_record: 'Application record', mixed: 'Mixed sources',
@@ -37,7 +37,13 @@
     if (typeof raw !== 'string' || !/^\/(?!\/)/.test(raw)) return null;
     try {
       const url = new URL(raw, location.origin);
-      if (url.origin !== location.origin || !/^\/(audit(?:\/|\?|$)|requests(?:\/|\?|$)|instances\/|commerce\/orders\/|workspace(?:\?|$))/.test(raw)) return null;
+      if (url.origin !== location.origin || !/^\/(audit(?:\/|\?|$)|requests(?:\/|\?|$)|instances\/|agent-workspaces\/|commerce\/orders\/|workspace(?:\?|$))/.test(raw)) return null;
+      if (url.pathname.startsWith('/audit') && snapshot?.filters) {
+        for (const key of ['instance_id', 'date_from', 'date_to', 'status_purchases', 'status_deliverables']) {
+          const value = snapshot.filters[key] || (key.startsWith('status_') ? form.elements[key]?.value : '');
+          if (value) url.searchParams.set(key, value);
+        }
+      }
       return url.pathname + url.search + url.hash;
     } catch (_) { return null; }
   }
@@ -72,13 +78,13 @@
   const evidenceField = () => textField('evidence_url', 'Source', {context: {evidenceLink: true}, description: 'Same-origin URL for the underlying owner record; follow it to review evidence or make an owner decision.'});
   const definitions = [
     {id: 'costs', name: 'Cost ledger', description: 'Recorded monetary entries in the selected period. Funding is not spending. Reservations are not settled expenses. Provenance identifies scenario, Sandbox, measured and estimated entries.',
-      fields: [textField('id', 'Entry ID', {hide: true}), dateField('occurred_at', 'Recorded'), textField('agent_id', 'Agent ID', {hide: true}), textField('agent_name', 'Agent'), textField('job_id', 'Source job ID', {hide: true}), textField('category', 'Category'), numericField('amount_usd', 'Amount (USD)'), textField('status', 'Status'), textField('provenance', 'Source type'), textField('model', 'Model'), numericField('input_tokens', 'Input tokens', false), numericField('output_tokens', 'Output tokens', false), evidenceField()]},
+      fields: [textField('id', 'Entry ID', {hide: true}), dateField('occurred_at', 'Recorded'), textField('agent_id', 'Agent ID', {hide: true}), textField('agent_name', 'Agent'), textField('job_id', 'Source job ID', {hide: true}), textField('category', 'Category'), textField('component_label', 'Resource'), textField('charge_kind', 'Accounting'), textField('coverage_note', 'Cost coverage'), numericField('amount_usd', 'Amount (USD)'), textField('status', 'Status'), textField('provenance', 'Source type'), textField('model', 'Model'), numericField('input_tokens', 'Input tokens', false), numericField('output_tokens', 'Output tokens', false), evidenceField()]},
     {id: 'jobs', name: 'Jobs and outcomes', description: 'Work scheduled in the selected period, its current status, review state, recorded usage and source evidence. An accepted output is an owner review decision, not proof of factual correctness.',
-      fields: [textField('id', 'Job ID', {hide: true}), textField('agent_id', 'Agent ID', {hide: true}), textField('agent_name', 'Agent'), dateField('scheduled_at', 'Scheduled'), textField('status', 'Status'), textField('blocked_reason', 'Waiting reason'), textField('output_name', 'Expected output'), textField('review_status', 'Owner review'), numericField('inference_usd', 'Inference (USD)'), numericField('compute_estimate_usd', 'Compute estimate (USD)'), textField('provenance', 'Source type'), evidenceField()]},
+      fields: [textField('id', 'Job ID', {hide: true}), textField('agent_id', 'Agent ID', {hide: true}), textField('agent_name', 'Agent'), dateField('scheduled_at', 'Scheduled'), textField('status', 'Status'), textField('blocked_reason', 'Waiting reason'), textField('output_name', 'Expected output'), textField('review_status', 'Owner review'), numericField('settled_usd', 'Recorded usage (USD)'), numericField('estimated_usd', 'Estimated (USD)'), numericField('total_cost_usd', 'Recorded + estimated (USD)'), textField('components', 'Resources'), textField('coverage', 'Cost coverage'), numericField('inference_usd', 'Model + tool meter (USD)'), numericField('compute_estimate_usd', 'Compute estimate (USD)'), textField('provenance', 'Source type'), evidenceField()]},
     {id: 'attention', name: 'Needs owner attention', description: 'Current pending owner requests and output reviews for selected agents, regardless of the period filter. These are links to existing owner workflows, not approvals.',
       fields: [textField('id', 'Request ID', {hide: true}), textField('agent_id', 'Agent ID', {hide: true}), textField('agent_name', 'Agent'), textField('kind', 'Request kind'), textField('title', 'Request'), textField('status', 'Status'), dateField('created_at', 'Created'), evidenceField()]},
-    {id: 'agents', name: 'Agent outcomes', description: 'One row per selected agent with period costs and outcomes. Inference, estimated compute and merchant payments are separate categories. Funding and reservations are excluded from these amounts.',
-      fields: [textField('agent_id', 'Agent ID', {hide: true}), textField('agent_name', 'Agent'), numericField('inference_usd', 'Inference (USD)'), numericField('compute_estimate_usd', 'Compute estimate (USD)'), numericField('purchase_usd', 'Merchant payments (USD)'), numericField('job_count', 'Jobs', false), numericField('accepted_count', 'Accepted outputs', false), numericField('pending_count', 'Awaiting owner', false), evidenceField()]},
+    {id: 'agents', name: 'Agent outcomes', description: 'One row per selected agent with period costs and outcomes. Recorded resource usage, estimates and merchant payments are separate categories. Funding and reservations are excluded from these amounts.',
+      fields: [textField('agent_id', 'Agent ID', {hide: true}), textField('agent_name', 'Agent'), numericField('settled_usd', 'Recorded usage (USD)'), numericField('estimated_usd', 'Estimated (USD)'), numericField('inference_usd', 'Model + tool meter (USD)'), numericField('compute_estimate_usd', 'Compute estimate (USD)'), numericField('purchase_usd', 'Merchant payments (USD)'), numericField('job_count', 'Jobs', false), numericField('accepted_count', 'Accepted outputs', false), numericField('pending_count', 'Awaiting owner', false), evidenceField()]},
   ];
 
   function agentDisplayNames(agents) {
@@ -122,7 +128,7 @@
         ...('category' in row ? {category: label(row.category)} : {}),
         ...('provenance' in row ? {provenance: label(row.provenance)} : {}),
         ...('status' in row ? {status: label(row.status)} : {}),
-        ...('review_status' in row ? {review_status: label(row.review_status)} : {})}))}))};
+        ...('review_status' in row ? {review_status: ['completed', 'draft'].includes(row.review_status) ? `${label(row.review_status)} · not reviewed` : label(row.review_status)} : {})}))}))};
   }
 
   const fields = (source, ids) => ids.map(id => ({id: `${source}.${id}`}));
@@ -135,11 +141,11 @@
         dataMapping: {items: fields('attention', ['id', 'agent_name', 'kind', 'title', 'status', 'evidence_url'])}},
       spending: {type: 'column-chart-grouped', format: {title: {text: 'Spending by agent', enabled: true}, subtitle: {text: 'Select an agent bar to filter the connected records', enabled: true}, crossFilter: 'filter',
         style: {theme: {common: {legend: {enabled: true, position: 'bottom'}}}, custom: {valueAxis: {title: {enabled: true, text: 'USD'}}}}},
-        dataMapping: {categoryKey: fields('agents', ['agent_name']), valueKey: ['inference_usd', 'compute_estimate_usd', 'purchase_usd'].map(id => ({id: `agents.${id}`, aggregation: 'sum'}))}},
+        dataMapping: {categoryKey: fields('agents', ['agent_name']), valueKey: ['settled_usd', 'estimated_usd', 'purchase_usd'].map(id => ({id: `agents.${id}`, aggregation: 'sum'}))}},
       jobs: {type: 'grid', format: format('Jobs & outcomes', 'Open the source job to see its controls, evidence and output'),
-        dataMapping: {cols: fields('jobs', ['agent_name', 'output_name', 'status', 'review_status', 'inference_usd', 'provenance', 'evidence_url'])}},
+        dataMapping: {cols: fields('jobs', ['agent_name', 'output_name', 'status', 'review_status', 'settled_usd', 'estimated_usd', 'components', 'evidence_url'])}},
       ledger: {type: 'grid', format: format('Follow every resource entry', 'Funding and reservations are shown separately from expenses'),
-        dataMapping: {cols: fields('costs', ['occurred_at', 'agent_name', 'category', 'amount_usd', 'status', 'provenance', 'evidence_url'])}},
+        dataMapping: {cols: fields('costs', ['occurred_at', 'agent_name', 'component_label', 'amount_usd', 'charge_kind', 'status', 'evidence_url'])}},
     }, widgetLayout: {
       attention: {xTrack: 0, yTrack: 0, xSpan: 8, ySpan: 19},
       spending: {xTrack: 8, yTrack: 0, xSpan: 16, ySpan: 19},
@@ -275,7 +281,7 @@
           formatShape: defaults.widgets.find(widget => widget.id === 'grid').formatShape,
           form: params => params.createDefaults({dataMappingItems: [{key: 'items', label: 'Request fields'}]}),
           defaultSize: {width: 350, height: 300}, minSize: {width: 200, height: 160}}],
-        overrides: [{id: 'grid', options: {createCellRenderer: field => field.context?.evidenceLink ? params => evidenceLink(params.value) : undefined}}],
+        overrides: [{id: 'grid', options: {createCellRenderer: window.HabitatStudioGrid.createCellRenderer(field => field.context?.evidenceLink ? params => evidenceLink(params.value) : undefined)}}],
         menu: [{label: 'Habitat', widgetIds: ['habitat-attention']}, ...defaults.menu],
       }),
       onStateUpdated: () => {
@@ -300,10 +306,27 @@
     el('metric-credit').textContent = usd(current.service_credit_usd);
     el('metric-held').textContent = usd(current.held_usd);
     el('metric-budget').textContent = usd(current.budget_remaining_usd);
-    el('metric-inference').textContent = usd(totals.inference_usd);
-    el('metric-compute').textContent = usd(totals.compute_estimate_usd);
+    el('metric-inference').textContent = usd(snapshot.cost_summary ? snapshot.cost_summary.settled_micro_usd / 1000000 : totals.inference_usd);
+    el('metric-compute').textContent = usd(snapshot.cost_summary ? snapshot.cost_summary.estimated_micro_usd / 1000000 : totals.compute_estimate_usd);
     el('metric-purchases').textContent = usd(totals.purchase_usd);
     el('metric-work').textContent = `${totals.job_count} / ${totals.accepted_count}`;
+    const outputs = el('operations-outputs');
+    outputs.replaceChildren();
+    for (const output of (snapshot.outputs || []).slice(0, 4)) {
+      const article = document.createElement('article');
+      const title = evidenceLink(output.evidence_url, label(output.output_name));
+      const context = document.createElement('p');
+      context.className = 'field-hint';
+      context.textContent = `${agentNames.get(output.agent_id) || output.agent_name} · ${label(output.status)} · ${dateTime.format(new Date(output.created_at))}`;
+      article.append(title, context);
+      outputs.append(article);
+    }
+    if (!outputs.children.length) {
+      const empty = document.createElement('p');
+      empty.className = 'muted';
+      empty.textContent = 'No saved outputs in this period. Check Actions for progress or choose a wider date range.';
+      outputs.append(empty);
+    }
     const selected = el('operations-agent').value;
     const options = [new Option('All agents', '')];
     for (const agent of snapshot.agents) options.push(new Option(agentNames.get(agent.id), agent.id));
@@ -349,6 +372,20 @@
       agentNames = agentDisplayNames(snapshot.agents);
       renderSummary();
       el('operations-error').hidden = true;
+      appliedFilterQuery = params.toString();
+      const url = new URL(location.href);
+      url.search = params.toString();
+      history.replaceState(null, '', url);
+      for (const link of document.querySelectorAll('[data-audit-view]')) {
+        const view = link.dataset.auditView;
+        const target = new URL(view === 'operations' ? '/audit/studio' : '/audit', location.origin);
+        for (const key of ['instance_id', 'date_from', 'date_to', 'status_purchases', 'status_deliverables']) {
+          if (params.get(key)) target.searchParams.set(key, params.get(key));
+        }
+        if (view !== 'operations') target.searchParams.set('view', view);
+        if (params.get(`status_${view}`)) target.searchParams.set('status', params.get(`status_${view}`));
+        link.href = target.pathname + target.search;
+      }
       if (!api) {
         try { mountStudio(); }
         catch (error) {
@@ -360,10 +397,7 @@
         api.setProperty('data', sourceData());
         if (filtersChanged) clearChartSelection();
       }
-      appliedFilterQuery = params.toString();
-      const url = new URL(location.href);
-      url.search = params.toString();
-      history.replaceState(null, '', url);
+
     } catch (error) {
       el('operations-error').textContent = error.message;
       el('operations-error').hidden = false;
@@ -407,13 +441,17 @@
   const query = new URLSearchParams(location.search);
   for (const name of ['date_from', 'date_to']) form.elements[name].value = query.get(name) || '';
   if (query.get('instance_id')) {
-    el('operations-agent').add(new Option('Selected agent', query.get('instance_id')));
+    if (![...el('operations-agent').options].some(option => option.value === query.get('instance_id')))
+      el('operations-agent').add(new Option('Selected agent', query.get('instance_id')));
     el('operations-agent').value = query.get('instance_id');
   }
   form.addEventListener('submit', event => { event.preventDefault(); refresh(); });
   el('operations-refresh').addEventListener('click', refresh);
   el('operations-clear').addEventListener('click', () => {
     form.reset();
+    for (const key of ['status_purchases', 'status_deliverables']) {
+      if (form.elements[key]) form.elements[key].value = '';
+    }
     el('operations-agent').value = '';
     el('operations-from').value = '';
     el('operations-to').value = '';

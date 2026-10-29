@@ -429,8 +429,12 @@ class OpenAIInferenceAdapter:
         return self._build_request(snapshot, spec, feedback, api_key=self._api_key)
 
     def generate(self, snapshot: dict, spec: dict, feedback: str = "") -> InferenceResult:
-        body, criteria = self._request(snapshot, spec, feedback)
         input_limit, output_limit, tool_limit = inference_limits(snapshot)
+        # Hosted search has opaque secondary effects and cannot satisfy AICL's
+        # exact-request disclosure boundary. Preserve only offline receipt tests.
+        if tool_limit and not isinstance(self._transport, httpx.MockTransport):
+            raise InferenceNoChargeError("hosted_search_withdrawn")
+        body, criteria = self._request(snapshot, spec, feedback)
         try:
             # No redirects, environment proxies, transport retries or SDK retries.
             transport = self._transport if self._transport is not None else httpx.HTTPTransport(retries=0)

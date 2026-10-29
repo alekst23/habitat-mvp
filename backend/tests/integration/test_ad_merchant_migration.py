@@ -62,7 +62,11 @@ def test_ad_seller_migration_preserves_paid_pending_rows_and_append_only_receipt
     def assert_preserved():
         after = snapshot(env.db, original_columns)
         for table in ("workflow_inference_attempt", "render_dispatch", "render_dispatch_attempt", "render_compute_usage", "judge_demo_workspace",
-                      "assistant_session", "assistant_turn", "assistant_message", "assistant_proposal", "assistant_tool_event", "assistant_inference_attempt", "owner_request", "browser_session", "browser_attempt_evidence", "browser_purchase_proposal", "waitlist_rate_limit", "studio_layout", "studio_ai_request"):
+                      "assistant_session", "assistant_turn", "assistant_message", "assistant_proposal", "assistant_tool_event", "assistant_inference_attempt", "owner_request", "browser_session", "browser_attempt_evidence", "browser_purchase_proposal", "waitlist_rate_limit", "studio_layout", "studio_ai_request",
+                      "agent_content", "agent_run", "agent_step", "agent_event", "agent_wakeup", "agent_runtime_hold", "agent_chat_run",
+                      "agent_workspace", "agent_workspace_run", "agent_workspace_schedule",
+                      "workspace_setup_reset", "workspace_setup_charge", "workspace_setup_waiver",
+                      "workspace_public_research_release", "public_research_dispatch", "work_review_mark"):
             assert after.pop(table) == []
         model = "gpt-6-sol-2026-10-22"
         render = "render-flex-bound-2026-10-22"
@@ -93,10 +97,22 @@ def test_ad_seller_migration_preserves_paid_pending_rows_and_append_only_receipt
         assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
         assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
         after_triggers = [tuple(row) for row in conn.execute("SELECT name,sql FROM sqlite_master WHERE type='trigger' ORDER BY name")]
-        new_names = {"render_compute_no_update", "render_compute_no_delete", "browser_purchase_proposal_snapshot_immutable"}
+        new_names = {"render_compute_no_update", "render_compute_no_delete", "browser_purchase_proposal_snapshot_immutable",
+                     "agent_content_no_update", "agent_content_no_delete", "agent_event_no_update", "agent_event_no_delete",
+                     "agent_runtime_hold_scope", "agent_runtime_hold_no_update", "agent_runtime_hold_no_delete", "agent_chat_run_scope",
+                     "agent_workspace_scope_insert", "agent_workspace_scope_update", "agent_workspace_run_scope",
+                     "workspace_setup_reset_scope", "workspace_setup_charge_scope", "workspace_setup_waiver_scope",
+                     "workspace_setup_reset_no_update", "workspace_setup_reset_no_delete",
+                     "workspace_setup_charge_no_update", "workspace_setup_charge_no_delete",
+                     "workspace_setup_waiver_no_update", "workspace_setup_waiver_no_delete",
+                     "workspace_public_research_scope", "workspace_public_research_immutable", "workspace_public_research_no_delete",
+                     "public_research_dispatch_no_update", "public_research_dispatch_no_delete",
+                     "work_review_mark_scope_insert", "work_review_mark_scope_update"}
         assert [row for row in after_triggers if row[0] not in new_names] == triggers
         assert {row[0] for row in after_triggers} - {row[0] for row in triggers} == new_names
         assert conn.execute("SELECT 1 FROM schema_migration WHERE version='0015_mock_ad_merchant'").fetchone()
+        assert conn.execute("SELECT 1 FROM schema_migration WHERE version='0035_agent_workspace'").fetchone()
+        assert conn.execute("SELECT 1 FROM schema_migration WHERE version='0036_workspace_setup_accounting'").fetchone()
     with pytest.raises(sqlite3.IntegrityError, match="append-only"):
         with env.db.transaction() as conn:
             conn.execute("UPDATE mock_commerce_receipt SET amount_minor=amount_minor+1")
@@ -124,6 +140,18 @@ def test_hosted_tool_migration_preserves_legacy_usage_with_zero_tool_counts(buil
             (old / source.name).write_text(source.read_text())
     with monkeypatch.context() as patch:
         patch.setattr(db_module, "MIGRATIONS_DIR", old)
+        # Fixture construction uses the pre-runtime balance projection. The real
+        # service requires every current migration before it can serve requests.
+        def historical_balance(self, conn, instance_id):
+            balance = conn.execute("SELECT COALESCE(SUM(delta_micro_usd),0) FROM mock_commerce_ledger WHERE instance_id=?", (instance_id,)).fetchone()[0]
+            reserved = conn.execute("SELECT COALESCE(SUM(h.inference_micro_usd+h.compute_micro_usd),0) "
+                                    "FROM budget_hold h JOIN workflow_inference_attempt a ON a.hold_id=h.id "
+                                    "WHERE h.instance_id=? AND h.state IN ('held','unknown')", (instance_id,)).fetchone()[0]
+            compute = conn.execute("SELECT COALESCE(SUM(cost_micro_usd),0) FROM render_compute_usage WHERE instance_id=?", (instance_id,)).fetchone()[0]
+            compute_held = conn.execute("SELECT COALESCE(SUM(h.compute_micro_usd),0) FROM render_dispatch d JOIN budget_hold h ON h.id=d.hold_id "
+                                        "WHERE d.instance_id=? AND h.state IN ('held','unknown')", (instance_id,)).fetchone()[0]
+            return balance - reserved - compute - compute_held
+        patch.setattr(commerce_module.MockCommerceService, "_balance", historical_balance)
         with historical_budget_fixture(build_env) as historical_build:
             env, service, auth, inst, _ = ready(historical_build)
             approved_purchase(service, auth, inst.id)

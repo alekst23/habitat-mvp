@@ -20,6 +20,7 @@ MAX_CALLS = 5
 
 
 def allowance(db, cap):
+    """Global operator exposure, unchanged by agent attribution or setup waivers."""
     with db.reader() as conn:
         row = conn.execute("SELECT COALESCE(SUM(CASE WHEN state='settled' THEN cost_micro_usd ELSE 0 END),0) spent, "
                            "COALESCE(SUM(CASE WHEN state IN ('held','unknown') THEN reserved_micro_usd ELSE 0 END),0) held, "
@@ -27,6 +28,13 @@ def allowance(db, cap):
                            "FROM assistant_inference_attempt").fetchone()
         return {"spent_micro_usd": row["spent"], "held_micro_usd": row["held"],
                 "cap_micro_usd": cap, "unknown": bool(row["unknown"])}
+
+
+def workspace_allowance(db, workspace_id):
+    """Owner-facing setup usage; the global underwriting cap is not a balance."""
+    from aicl.agent_workspace.setup_accounting import usage
+    with db.reader() as conn:
+        return usage(conn, workspace_id)
 
 
 class AssistantMeter:

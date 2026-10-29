@@ -24,8 +24,8 @@ STARTUP_FAILURES = (AiclError, SettingsError, ValueError, OSError, sqlite3.Error
 def historical_budget_fixture(build_env):
     """Seed old-schema fixtures using current budget code, then restore the schema.
 
-    The added counters are only a fixture-construction bridge. Removing them
-    before migration ensures the test still exercises genuinely historical rows.
+    The added counters and empty workspace lookup are only a construction
+    bridge. Removing them before migration preserves genuinely historical rows.
     """
     databases = []
     columns = (("budget_hold", "est_web_search_calls"), ("budget_usage", "web_search_calls"))
@@ -35,6 +35,8 @@ def historical_budget_fixture(build_env):
             for table, column in columns:
                 assert column not in {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} INTEGER NOT NULL DEFAULT 0")
+            assert not conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='agent_workspace'").fetchone()
+            conn.execute("CREATE TABLE agent_workspace (id TEXT PRIMARY KEY, instance_id TEXT)")
         databases.append(env.db)
         return env
     try:
@@ -42,6 +44,8 @@ def historical_budget_fixture(build_env):
     finally:
         for db in databases:
             with db.transaction() as conn:
+                assert conn.execute("SELECT COUNT(*) FROM agent_workspace").fetchone()[0] == 0
+                conn.execute("DROP TABLE agent_workspace")
                 for table, column in columns:
                     assert conn.execute(f"SELECT COUNT(*) FROM {table} WHERE {column} != 0").fetchone()[0] == 0
                     conn.execute(f"ALTER TABLE {table} DROP COLUMN {column}")

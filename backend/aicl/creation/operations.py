@@ -210,6 +210,14 @@ class SqliteInstanceOperations:
     def set_lifecycle(self, auth, instance_id, expected_version, action):
         def apply(conn, instance):
             target = next_lifecycle(instance.lifecycle, action)
+            if action in {"activate", "resume"}:
+                # Owner activation through either the workspace or older
+                # controls settles this agent's setup exactly once.
+                workspace = conn.execute("SELECT id FROM agent_workspace WHERE instance_id=?", (instance_id,)).fetchone()
+                if workspace:
+                    from types import SimpleNamespace
+                    from aicl.agent_workspace.setup_accounting import WorkspaceSetupAccounting
+                    WorkspaceSetupAccounting(SimpleNamespace(db=self.db, clock=self.clock)).charge(auth, workspace["id"])
             self._bump(conn, auth, instance_id, lifecycle=target)
             event = self._event(conn, auth, instance_id, "instance.lifecycle_changed",
                                 {"from": instance.lifecycle, "to": target, "action": action})

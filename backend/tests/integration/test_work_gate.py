@@ -75,6 +75,20 @@ def attach_gmail(env, ops, auth, inst, caps=("gmail.send",)):
     return svc, conn
 
 
+def test_unknown_network_policy_cannot_silently_dispatch_search(build_env):
+    env = build_env()
+    resolver = FakeResolver({"api.search.example": ["93.184.216.34"]})
+    gate, executor = build_gate(env, resolver=resolver)
+    auth, inst, _ = active(env, caps=("network.search",))
+    attempted = req(inst, 900, "network.search", {"query": "private-canary"},
+                    url="https://api.search.example/search")
+    assert denial(gate, auth, attempted) == "network_denied"
+    assert resolver.calls == []
+    assert executor.started == frozenset()
+    assert holds(env, inst) == 0
+    assert "private-canary" not in repr(env.audit.list_for_owner(auth))
+
+
 @pytest.mark.ac("E11-2.AC1", code="backend/aicl/work/ports.py:FakeWorkExecutor")
 def test_fake_executor_records_started_first_is_deterministic_and_looks_up_honestly(build_env):
     env = build_env()

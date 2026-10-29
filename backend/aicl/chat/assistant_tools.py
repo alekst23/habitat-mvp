@@ -56,7 +56,7 @@ _TOOLS = {
     "get_supported_capabilities": (_Input, "Read the supported worker, limitations and owner-only controls before interviewing or proposing an agent."),
     "list_agents": (_Input, "List up to 10 of this owner's agents with status and workflow links."),
     "inspect_agent": (_Inspect, "Read an owned agent's saved configuration, limits, credit, recent work, deliverables and purchase requests. This never runs work."),
-    "save_agent_proposal": (_Create, "Prepare a general agent with 1–6 custom text deliverables and criteria. Infer needed tools from the owner's goal and the available tool catalog; select web_search when public information is needed, or [] for supplied context only. The agent chooses its queries and sources during execution, within the supported tool limits. Budget notes are informational. Owner review creates a draft; this tool never creates or activates work."),
+    "save_agent_proposal": (_Create, "Prepare a general agent with 1–6 custom text deliverables and criteria. Use only the available tool catalog; live hosted search has been withdrawn. Public research must be configured through the shared workspace's separate AICL disclosure release. Budget notes are informational. Owner review creates a draft; this tool never creates or activates work."),
     "validate_agent_proposal": (_Input, "Validate the current proposal and explain the owner confirmation and remaining setup steps; does not commit."),
     "propose_schedule_change": (_Schedule, "Prepare an exact pause/enable schedule change for an owned agent. Only an owner confirmation button applies it; this tool never runs or schedules work."),
 }
@@ -123,13 +123,21 @@ class AssistantTools:
     def _get_supported_capabilities(self):
         from aicl.workflow.agent_tools import TOOL_CATALOG
         live = self.ctx.settings.inference_mode == "openai"
+        interactive = getattr(self.ctx, "agent_runtime", None) is not None
         return {
             "worker": {"id": "general", "name": "General agent",
                        "purpose": "Complete owner-defined text deliverables using the saved goal, supplied context and approved tools.",
                        "deliverables": "1–6 custom named text outputs with explicit completion criteria",
                        "inference_mode": "openai" if live else "unavailable",
-                       "limitations": "When approved, public web search is limited to one invocation per deliverable. The agent chooses queries and sources; results are not exhaustive or independently verified. No shell or code execution, messaging, publishing, payments or private account access. Checks are model self-assessment; results appear in Habitat. If inference is unavailable, drafts can be saved but work cannot run."},
-            "tools": list(TOOL_CATALOG),
+                       "limitations": "Live hosted search is withdrawn. Public research requires the shared workspace AICL broker, verified containment, and an exact owner-approved disclosure release. No shell or code execution, messaging, publishing, payments or private account access. Checks are model self-assessment; results appear in Habitat. If scheduled inference is unavailable, scheduled work cannot run; interactive session availability is reported separately."},
+            "interactive_session": {
+                "available": interactive,
+                "purpose": "Multi-step text work with a saved plan, evidence, outputs, owner questions and pause/resume controls; the local background worker continues an admitted session.",
+                "admission": "After confirming a general agent draft, the owner uses Start work in chat. Requires funding, inference permission and limits, and a paused schedule. External research requires the shared workspace public research release; domain permission alone is insufficient.",
+                "tools": [],
+                "limitations": "Direct public page reads and hosted search are withdrawn in this legacy session path. Use the shared workspace disclosure controls. No rendered browser, private accounts or scheduled delivery in this session path. Execution is unavailable when available is false.",
+            },
+            "tools": [] if live else list(TOOL_CATALOG),
             "schedule": {"cadences": ["hourly", "daily"], "daily_time": "09:00 in the configured timezone"},
             "execution": "Automatic scheduling uses the configured Render worker." if self.ctx.settings.workflow_execution_mode == "render" else "This server uses local execution: an owner must advance the schedule; there is no automatic background delivery.",
             "creation": "An owner-confirmed proposal authorizes its selected tools and creates a draft with inference permission, zero budgets, no funding and a disabled schedule.",

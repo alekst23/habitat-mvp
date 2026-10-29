@@ -99,7 +99,7 @@ def load_version(conn: Connection, version: str) -> PriceTableVersion:
     return loaded
 
 
-def import_price_table(conn: Connection, path: Path) -> PriceTableVersion:
+def import_price_table(conn: Connection, path: Path, *, explicit_only: bool = False) -> PriceTableVersion:
     """Insert-only import; same version with a different hash is a startup failure."""
     from aicl.db import to_iso
     parsed = parse_price_table(Path(path).read_bytes())
@@ -107,9 +107,16 @@ def import_price_table(conn: Connection, path: Path) -> PriceTableVersion:
     if existing is not None:
         if existing.sha256 != parsed.sha256:
             raise AiclError("conflict", f"price table version {parsed.version} already imported with different content")
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(price_table_version)")}
+        flag = conn.execute("SELECT explicit_only FROM price_table_version WHERE version=?", (parsed.version,)).fetchone()[0] if "explicit_only" in columns else 0
+        if bool(flag) != explicit_only:
+            raise AiclError("conflict", "Price table selection policy changed.")
         return existing
-    conn.execute("INSERT INTO price_table_version (version, effective_from, sha256, imported_at) VALUES (?,?,?,?)",
-                 (parsed.version, to_iso(parsed.effective_from), parsed.sha256, to_iso(datetime.now(timezone.utc))))
+    values = (parsed.version, to_iso(parsed.effective_from), parsed.sha256, to_iso(datetime.now(timezone.utc)))
+    if explicit_only:
+        conn.execute("INSERT INTO price_table_version (version, effective_from, sha256, imported_at, explicit_only) VALUES (?,?,?,?,1)", values)
+    else:
+        conn.execute("INSERT INTO price_table_version (version, effective_from, sha256, imported_at) VALUES (?,?,?,?)", values)
     for rate in parsed.rates:
         conn.execute("INSERT INTO price_rate (version, meter, unit_size, micro_usd) VALUES (?,?,?,?)",
                      (parsed.version, rate.meter, rate.unit_size, rate.micro_usd))

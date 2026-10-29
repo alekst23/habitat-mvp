@@ -203,3 +203,13 @@ def test_credential_initialization_is_explicit_and_redacted():
         OpenAIInferenceAdapter("test\ncredential")
     adapter, _ = adapter_for()
     assert "sk-test-only" not in repr(adapter)
+
+
+def test_live_hosted_search_is_withdrawn_before_request_construction_or_http(monkeypatch):
+    def forbidden(*args, **kwargs):
+        pytest.fail("Hosted search must be denied before HTTP or request construction")
+    adapter = OpenAIInferenceAdapter("fixture-key-never-sent")
+    monkeypatch.setattr(adapter, "_request", forbidden)
+    monkeypatch.setattr(httpx, "HTTPTransport", forbidden)
+    with pytest.raises(InferenceNoChargeError, match="hosted_search_withdrawn"):
+        adapter.generate({**SNAPSHOT, "scenario": "general", "tools": ["web_search"]}, SPEC)

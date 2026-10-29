@@ -1,0 +1,33 @@
+"""Read-only durable evidence, without inventing validation or owner approval."""
+
+TEMPLATES = {
+    "workflow/runtime_job": """{% extends 'base' %}{% set page_key='audit' %}
+{% block subtitle %}{{ job.agent_name }} · Saved run and its evidence{% endblock %}
+{% block header_actions %}{% if job.source_url %}<a class="button secondary" href="{{ job.source_url }}">Open agent workspace</a>{% endif %}{% endblock %}
+{% block body %}{% include 'workflow/common' %}{% include 'audit/navigation' %}
+<link rel="stylesheet" href="{{ action_detail_asset('action-details.css') }}"><script src="{{ action_detail_asset('action-details.js') }}" defer></script>
+<div class="workflow-meta"><span class="status-badge draft">{{ label(job.state) }}</span><span>Started {{ date_label(job.created_at) }}</span><span>Recorded usage: ${{ credit(job.cost_summary.settled_micro_usd) }}</span><span>Estimated: ${{ credit(job.cost_summary.estimated_micro_usd) }}</span>{% if job.held_micro_usd %}<span>Reserved: ${{ credit(job.held_micro_usd) }}</span>{% endif %}</div>
+{% if job.reason %}<p class="notice info">{{ label(job.reason) }}</p>{% endif %}
+<div class="workflow-layout"><div class="workflow-stack">
+<section class="card"><div class="card-header"><h2>Saved outputs</h2></div><div class="card-body">{% for item in job.deliverables if item.latest %}<div class="workflow-history"><a href="{{ record_url('/audit/deliverables/' ~ item.id) }}">{{ item.name }} · Version {{ item.version }}</a><p class="field-hint">{{ label(item.state) }} · {{ date_label(item.created_at) }}</p></div>{% else %}<p>No output was saved for this run.</p>{% endfor %}<p class="field-hint">Drafts remain available even when a run is cancelled. Completed outputs have not been accepted by the owner.</p></div></section>
+<section class="card"><div class="card-header"><div><h2>Actions and usage</h2><p class="muted">Every recorded model decision and tool step, in execution order.</p></div></div><div class="card-body">
+{% for step in job.steps %}<details class="audit-run-step" id="step-{{ step.id }}">
+<summary>{{ step.sequence }} · {{ label(step.tool_name or step.kind) }} · {{ label(step.state) }}</summary>
+<p class="field-hint">{{ date_label(step.created_at) }}</p>
+{% if step.usage %}<p class="field-hint">{{ step.usage.input_tokens }} input tokens · {{ step.usage.output_tokens }} output tokens · Recorded usage ${{ credit(step.cost_summary.settled_micro_usd) }} · Estimated ${{ credit(step.cost_summary.estimated_micro_usd) }}</p>{% endif %}
+{% if step.error %}<p class="notice info">{{ step.error }}</p>{% endif %}
+{% if step.details_url %}<p><a class="button secondary" href="{{ step.details_url }}" data-action-details="{{ step.details_url }}" aria-haspopup="dialog">View request and result</a></p>{% endif %}
+{% if step.receipt_metadata.model %}<p class="field-hint">Model: {{ step.receipt_metadata.model }}</p>{% endif %}
+</details>{% else %}<p>No execution steps were recorded.</p>{% endfor %}</div></section>
+</div><aside class="workflow-stack"><section class="card"><div class="card-header"><h2>Run objective</h2></div><div class="card-body"><p>{{ job.goal }}</p>{% if job.plan %}<h3>Plan progress</h3><ol>{% for task in job.plan %}<li>{{ task.title }} · {{ label(task.state) }}</li>{% endfor %}</ol>{% endif %}</div></section>
+<section class="card"><div class="card-header"><h2>Run history</h2></div><div class="card-body">{% for event in job.events %}<div class="workflow-history"><strong>{{ label(event.action or event.kind or event.event_type) }}</strong>{% if event.outcome %} · {{ label(event.outcome) }}{% endif %}<p class="field-hint">{{ date_label(event.occurred_at or event.created_at) }}{% if event.reason %} · {{ label(event.reason) }}{% endif %}</p></div>{% endfor %}</div></section></aside></div>{% include 'workflow/job_costs' %}{% endblock %}""",
+    "workflow/runtime_deliverable": """{% extends 'base' %}{% set page_key='audit' %}
+{% block subtitle %}{{ item.agent_name }} · Saved output{% endblock %}
+{% block header_actions %}<a class="button secondary" href="{{ audit_url('deliverables', instance_id, date_from, date_to) }}">All deliverables</a>{% endblock %}
+{% block body %}{% include 'workflow/common' %}{% include 'audit/navigation' %}
+<div class="workflow-meta"><span class="status-badge draft">{{ label(item.state) }}</span><span>Version {{ item.version }}</span><span>{{ date_label(item.created_at) }}</span><a href="{{ record_url('/audit/jobs/' ~ item.run_id) }}">View source run &amp; usage</a></div>
+<div class="workflow-layout"><div class="workflow-stack"><section class="card"><div class="card-header"><h2>{{ item.name }}</h2></div><div class="card-body"><div class="workflow-output">{{ item.content }}</div></div></section><p class="notice info">{{ 'The agent marked this output complete.' if item.state == 'completed' else 'This is a saved draft; the agent did not mark this version complete.' }} Review its sources, accuracy and completeness. Completion is not owner acceptance.{% if item.source_url %} <a href="{{ item.source_url }}">Open the agent workspace to guide further work.</a>{% endif %}</p></div>
+<aside class="workflow-stack"><section class="card"><div class="card-header"><h2>Requirements &amp; assessment</h2></div><div class="card-body"><p class="field-hint">Saved requirements and the agent’s assessment. These are not independent verification.</p>{% for requirement in item.requirements %}<div class="workflow-history"><strong>{{ requirement.text }}</strong>{% for assessment in item.criterion_assessments if assessment.requirement_id == requirement.id %}<p>{{ label(assessment.status) }} · {{ assessment.explanation }}</p>{% else %}<p class="field-hint">No saved assessment for this requirement.</p>{% endfor %}</div>{% else %}<p>No requirements were saved.</p>{% endfor %}</div></section>
+<section class="card"><div class="card-header"><h2>Source evidence</h2></div><div class="card-body">{% for evidence in item.evidence %}<p>{% if evidence.step_id %}<a href="{{ record_url('/audit/jobs/' ~ item.run_id) }}#step-{{ evidence.step_id }}">{{ label(evidence.tool_name or evidence.kind or 'Recorded step') }}</a>{% else %}Saved run evidence · {{ evidence.ref }}{% endif %}</p>{% else %}<p>No source evidence is attached to this output.</p>{% endfor %}</div></section>
+<section class="card"><div class="card-header"><h2>Version history</h2></div><div class="card-body">{% for v in item.versions %}<div class="workflow-history"><a href="{{ record_url('/audit/deliverables/' ~ v.id) }}">Version {{ v.version }}</a> · {{ label(v.state) }}<p class="field-hint">{{ date_label(v.created_at) }}</p></div>{% endfor %}</div></section></aside></div>{% endblock %}""",
+}

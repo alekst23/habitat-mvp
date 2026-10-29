@@ -9,8 +9,10 @@ from __future__ import annotations
 import json
 import re
 import uuid
+from contextlib import nullcontext
 from datetime import timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from urllib.parse import quote
 
 from aicl.commerce.service import MockCommerceService, _canonical
 from aicl.control.errors import AiclError
@@ -18,6 +20,9 @@ from aicl.creation.operations import SqliteInstanceOperations
 from aicl.db import from_iso, to_iso
 from aicl.workflow.ad_scenario import AdWorkflowMixin, SCENARIO, ad_content
 from aicl.workflow.inference_service import WorkflowInference, provenance, uses_model
+from aicl.workflow.runtime_projection import RuntimeAuditProjection, audit_reader
+from aicl.workflow.cost_projection import project_costs, cost_summary
+from aicl.agent_workspace.setup_accounting import attempts as setup_attempts
 from aicl.browser.task_config import BROWSER_SCENARIO, normalize_browser_task
 
 _MAX_VERSIONS = 5
@@ -197,6 +202,11 @@ class MockWorkflowService(AdWorkflowMixin):
             self.commerce._event(conn, auth, instance_id, "commerce.policy_changed", action="workflow_configured", version=version)
             return self._config(conn, auth, instance_id)
 
+    def _require_no_runtime(self, conn, instance_id):
+        if conn.execute("SELECT 1 FROM agent_run WHERE instance_id=? AND status NOT IN ('completed','cancelled','failed')",
+                        (instance_id,)).fetchone():
+            raise AiclError("conflict", "Finish or cancel the interactive session before starting scheduled work.")
+
     def schedule(self, auth, instance_id, enabled, expected_version=None, expected_instance_version=None):
         if type(enabled) is not bool:
             raise AiclError("validation_failed", "Enabled must be true or false.")
@@ -211,6 +221,7 @@ class MockWorkflowService(AdWorkflowMixin):
             if config["enabled"] == enabled:
                 return config
             if enabled:
+                self._require_no_runtime(conn, instance_id)
                 self._require_demo_active(conn, auth)
                 if config.get("scenario") == "general" and self.inference is None:
                     raise AiclError("validation_failed", "General agents require configured model inference before their schedule can run.")
@@ -415,6 +426,7 @@ class MockWorkflowService(AdWorkflowMixin):
     def advance(self, auth, instance_id, expected_due, *, defer_inference=False, config_snapshot=None, manage_schedule=True):
         with self.db.transaction() as conn:
             current = self._config(conn, auth, instance_id)
+            self._require_no_runtime(conn, instance_id)
             config = config_snapshot or current
             existing = conn.execute("SELECT * FROM mock_workflow_occurrence WHERE instance_id=? AND scheduled_for=?", (instance_id, expected_due)).fetchone()
             if existing:
@@ -533,6 +545,9 @@ class MockWorkflowService(AdWorkflowMixin):
             self._continue(conn, auth, job)
 
     def review(self, auth, deliverable_id, decision, feedback, expected_version):
+        if isinstance(deliverable_id, str) and deliverable_id.startswith("runtime:"):
+            self.deliverable(auth, deliverable_id)
+            raise AiclError("invalid_transition", "Saved agent outputs are read-only here. Continue the source work to give feedback.")
         if isinstance(deliverable_id, str) and deliverable_id.startswith("legacy:"):
             self.deliverable(auth, deliverable_id)
             raise AiclError("invalid_transition", "Earlier task results are read-only; configure completion criteria for future work.")
@@ -739,7 +754,9 @@ class MockWorkflowService(AdWorkflowMixin):
 
     def job(self, auth, run_id):
         """Read one owned scheduled job, including replaced quotes and output versions."""
-        with self.db.reader() as conn:
+        with audit_reader(self.db) as conn:
+            if isinstance(run_id, str) and run_id.startswith("runtime:"):
+                return RuntimeAuditProjection(self.db, self.clock).job(conn, auth, run_id.removeprefix("runtime:"))
             row = self._job(conn, auth, run_id)
             result = self._run_projection(conn, auth, row)
             result["purchases"] = [self._purchase_review_projection(conn, auth, purchase) for purchase in conn.execute(
@@ -750,6 +767,9 @@ class MockWorkflowService(AdWorkflowMixin):
                 "SELECT * FROM browser_purchase_proposal WHERE workflow_run_id=? ORDER BY rowid DESC", (run_id,)))
             result["deliverables"] = [self._deliverable_projection(conn, auth, output) for output in conn.execute(
                 "SELECT * FROM mock_workflow_deliverable WHERE workflow_run_id=? ORDER BY version DESC", (run_id,))]
+            costs = self.overview(auth, row["instance_id"], _conn=conn)["cost_rows"]
+            result["cost_rows"] = [item for item in costs if item["job_id"] == run_id]
+            result["cost_summary"] = cost_summary(result["cost_rows"])
             return result
 
     def _deliverable_projection(self, conn, auth, row):
@@ -780,7 +800,9 @@ class MockWorkflowService(AdWorkflowMixin):
                 "latest": True, "legacy": True, "next_due": None}
 
     def deliverable(self, auth, deliverable_id):
-        with self.db.reader() as conn:
+        with audit_reader(self.db) as conn:
+            if isinstance(deliverable_id, str) and deliverable_id.startswith("runtime:"):
+                return RuntimeAuditProjection(self.db, self.clock).deliverable(conn, auth, deliverable_id)
             if isinstance(deliverable_id, str) and deliverable_id.startswith("legacy:"):
                 row = self.commerce._owned_resource(conn, auth, "mock_commerce_run", deliverable_id.removeprefix("legacy:"))
                 linked = conn.execute("SELECT 1 FROM mock_workflow_run WHERE commerce_run_id=? UNION SELECT 1 FROM mock_workflow_purchase w JOIN mock_commerce_purchase p ON p.id=w.purchase_id WHERE p.run_id=?", (row["id"], row["id"])).fetchone()
@@ -796,14 +818,15 @@ class MockWorkflowService(AdWorkflowMixin):
                 "SELECT * FROM mock_workflow_deliverable WHERE workflow_run_id=? ORDER BY version DESC", (row["workflow_run_id"],))]
             return result
 
-    def overview(self, auth, instance_id=None):
+    def overview(self, auth, instance_id=None, *, _conn=None):
         self._auth(auth)
-        with self.db.reader() as conn:
+        with (nullcontext(_conn) if _conn is not None else audit_reader(self.db)) as conn:
             if instance_id:
                 self._instance(conn, auth, instance_id)
             instances = conn.execute("SELECT * FROM agent_instance WHERE tenant_id=? AND owner_id=? AND (? IS NULL OR id=?) ORDER BY rowid DESC",
                                      (auth.tenant_id, auth.owner_id, instance_id, instance_id)).fetchall()
             agents, runs, purchases, deliverables, cost_rows, events, campaigns = [], [], [], [], [], [], []
+            runtime_projection = RuntimeAuditProjection(self.db, self.clock)
             totals = {"service_balance_micro_usd": 0, "inference_cost_micro_usd": 0, "funding_micro_usd": 0,
                       "purchase_spent_minor": 0, "purchase_held_minor": 0, "run_count": 0,
                       "submitted_count": 0, "accepted_count": 0, "needs_work_count": 0,
@@ -827,6 +850,41 @@ class MockWorkflowService(AdWorkflowMixin):
                     "AND NOT EXISTS (SELECT 1 FROM mock_workflow_run w WHERE w.commerce_run_id=r.id) "
                     "AND NOT EXISTS (SELECT 1 FROM mock_workflow_purchase w JOIN mock_commerce_purchase p ON p.id=w.purchase_id WHERE p.run_id=r.id) ORDER BY r.rowid DESC", (iid,))]
                 outputs.extend(legacy_outputs)
+                for runtime in conn.execute("SELECT id FROM agent_run WHERE instance_id=? AND tenant_id=? AND owner_id=? ORDER BY rowid DESC",
+                                            (iid, auth.tenant_id, auth.owner_id)):
+                    runtime_job = runtime_projection.job(conn, auth, runtime["id"])
+                    runs.append(runtime_job)
+                    outputs.extend(runtime_job["deliverables"])
+                    events.extend(runtime_job["events"])
+                for runtime_cost in runtime_projection.costs(conn, auth, iid, name):
+                    cost_rows.append(runtime_cost)
+                    field = {"Inference usage": "inference_cost_micro_usd", "Compute usage": "compute_estimate_micro_usd"}.get(runtime_cost["category"])
+                    if field:
+                        totals[field] += runtime_cost["amount_micro_usd"]
+                workspace = conn.execute("SELECT id FROM agent_workspace WHERE instance_id=? AND tenant_id=? AND owner_id=?",
+                                         (iid, auth.tenant_id, auth.owner_id)).fetchone()
+                if workspace:
+                    workspace_url = "/agent-workspaces/" + quote(workspace["id"], safe="")
+                    for attempt in setup_attempts(conn, workspace["id"]):
+                        events.append({"id": "setup:" + attempt["id"], "occurred_at": attempt["created_at"],
+                            "event_type": "assistant.setup_inference", "action": "Agent setup model call", "instance_id": iid,
+                            "agent_name": name, "run_id": None, "purchase_id": None, "reason": None,
+                            "outcome": attempt["state"], "evidence_url": workspace_url})
+                        if attempt["state"] not in ("settled", "held", "unknown"):
+                            continue
+                        settled, waived = attempt["state"] == "settled", bool(attempt["waived_attempt_id"])
+                        amount = attempt["cost_micro_usd"] if settled else attempt["reserved_micro_usd"]
+                        category = ("Setup waived" if waived else "Setup inference") if settled else "Setup reservation"
+                        status = ("waived" if waived else "charged" if attempt["charged_attempt_id"] else "pending_attribution") if settled else attempt["state"]
+                        if settled and not waived:
+                            totals["inference_cost_micro_usd"] += amount
+                        cost_rows.append({"id": "setup:" + attempt["id"],
+                            "created_at": attempt["updated_at"] if settled else attempt["created_at"],
+                            "agent_name": name, "instance_id": iid, "category": category, "amount_usd": amount / 1_000_000,
+                            "amount_micro_usd": amount, "status": status, "run_id": None, "model": attempt["model"],
+                            "input_tokens": attempt["input_tokens"], "output_tokens": attempt["output_tokens"],
+                            "price_table_version": attempt["price_version"],
+                            "provenance": "provider_reported" if attempt["model"] else "application_record", "evidence_url": workspace_url})
                 outputs.sort(key=lambda item: item["created_at"], reverse=True)
                 deliverables.extend(outputs)
                 all_purchases = conn.execute("SELECT p.*, w.workflow_run_id FROM mock_commerce_purchase p LEFT JOIN mock_workflow_purchase w ON w.purchase_id=p.id WHERE p.instance_id=? ORDER BY p.rowid DESC", (iid,)).fetchall()
@@ -840,31 +898,61 @@ class MockWorkflowService(AdWorkflowMixin):
                 totals["service_balance_micro_usd"] += balance
                 totals["purchase_spent_minor"] += policy["spent_minor"]
                 totals["purchase_held_minor"] += policy["held_minor"]
+                commerce_jobs = {job["commerce_run_id"]: job["id"] for job in jobs if job["commerce_run_id"]}
+                commerce_jobs.update({purchase["run_id"]: purchase["workflow_run_id"] for purchase in all_purchases if purchase["workflow_run_id"]})
                 for ledger in conn.execute("SELECT * FROM mock_commerce_ledger WHERE instance_id=? ORDER BY rowid DESC", (iid,)):
                     funding = ledger["kind"] == "service_topup"
+                    attempt = conn.execute("SELECT workflow_run_id,model FROM workflow_inference_attempt WHERE hold_id=?", (ledger["hold_id"],)).fetchone() if ledger["hold_id"] else None
+                    reference = ledger["reference"].split(":")
+                    source_job_id = (attempt["workflow_run_id"] if attempt else commerce_jobs.get(reference[1]) if len(reference) > 1 else None) if not funding else None
+                    usage = conn.execute("SELECT * FROM budget_usage WHERE hold_id=? AND instance_id=?", (ledger["hold_id"], iid)).fetchone() if ledger["hold_id"] else None
+                    receipt = conn.execute("SELECT order_id FROM mock_commerce_receipt WHERE id=? AND instance_id=?",
+                                           (ledger["receipt_id"], iid)).fetchone() if ledger["receipt_id"] else None
+                    evidence_url = ("/audit/jobs/" + quote(source_job_id, safe="") if source_job_id else
+                                    "/commerce/orders/" + quote(receipt["order_id"], safe="") if receipt else
+                                    "/instances/" + quote(iid, safe="") + "/commerce")
                     totals["funding_micro_usd" if funding else "inference_cost_micro_usd"] += abs(ledger["delta_micro_usd"])
                     cost_rows.append({"id": ledger["id"], "created_at": ledger["created_at"], "agent_name": name, "instance_id": iid,
                                       "category": "Service funding" if funding else "Inference usage", "amount_usd": abs(ledger["delta_micro_usd"]) / 1_000_000,
-                                      "status": "Recorded", "run_id": ledger["reference"].split(":")[1] if not funding else None})
+                                      "amount_micro_usd": abs(ledger["delta_micro_usd"]), "hold_id": ledger["hold_id"],
+                                      "input_tokens": usage["inference_input_tokens"] if usage else None,
+                                      "output_tokens": usage["inference_output_tokens"] if usage else None,
+                                      "web_search_calls": usage["web_search_calls"] if usage else None,
+                                      "price_table_version": usage["price_table_version"] if usage else None,
+                                      "model": attempt["model"] if attempt else None,
+                                      "provenance": "provider_reported" if attempt else "fixture",
+                                      "status": "Recorded", "run_id": source_job_id, "evidence_url": evidence_url})
                 for purchase in all_purchases:
                     if purchase["quota_state"] in ("held", "spent"):
                         ads = bool(json.loads(purchase["quote_json"]).get("campaign"))
                         cost_rows.append({"id": purchase["id"], "created_at": purchase["created_at"], "agent_name": name, "instance_id": iid,
                                           "category": ("Ad funding" if ads else "Merchant purchase") if purchase["quota_state"] == "spent" else "Purchase reservation",
                                           "amount_usd": purchase["amount_minor"] / 100, "status": purchase["state"],
-                                          "run_id": purchase["workflow_run_id"] or purchase["run_id"]})
-                for runtime in conn.execute("SELECT u.*,d.task_run_id,d.occurrence_id FROM render_compute_usage u JOIN render_dispatch d ON d.id=u.dispatch_id WHERE u.instance_id=? ORDER BY u.created_at DESC", (iid,)):
+                                          "amount_micro_usd": purchase["amount_minor"] * 10_000,
+                                          "run_id": purchase["workflow_run_id"] or purchase["run_id"],
+                                          "evidence_url": "/audit/jobs/" + quote(purchase["workflow_run_id"], safe="") if purchase["workflow_run_id"] else
+                                                          "/requests?selected=" + quote("purchase:" + purchase["id"], safe="")})
+                for runtime in conn.execute("SELECT u.*,d.task_run_id,d.occurrence_id,d.continuation_run_id FROM render_compute_usage u JOIN render_dispatch d ON d.id=u.dispatch_id WHERE u.instance_id=? ORDER BY u.created_at DESC", (iid,)):
                     totals["compute_estimate_micro_usd"] += runtime["cost_micro_usd"]
-                    source_job = conn.execute("SELECT id FROM mock_workflow_run WHERE occurrence_id=? ORDER BY rowid LIMIT 1", (runtime["occurrence_id"],)).fetchone()
+                    candidates = [job["id"] for job in jobs if job["occurrence_id"] == runtime["occurrence_id"]]
+                    source_job_id = runtime["continuation_run_id"] if any(job["id"] == runtime["continuation_run_id"] for job in jobs) else candidates[0] if len(candidates) == 1 else None
                     cost_rows.append({"id": runtime["dispatch_id"], "created_at": runtime["created_at"], "agent_name": name,
                                       "instance_id": iid, "category": "Render compute estimate", "amount_usd": runtime["cost_micro_usd"] / 1_000_000,
-                                      "status": "Estimated runtime", "run_id": source_job[0] if source_job else None})
+                                      "amount_micro_usd": runtime["cost_micro_usd"], "hold_id": runtime["hold_id"],
+                                      "compute_minutes": runtime["charged_minutes"], "provenance": "runtime_estimate",
+                                      "status": "Estimated runtime", "run_id": source_job_id,
+                                      "evidence_url": "/audit/jobs/" + quote(source_job_id, safe="") if source_job_id else "/instances/" + quote(iid, safe="")})
                 for event in conn.execute("SELECT * FROM audit_event WHERE tenant_id=? AND owner_id=? AND instance_id=? ORDER BY seq DESC", (auth.tenant_id, auth.owner_id, iid)):
                     details = json.loads(event["details"])
+                    source_job = conn.execute(
+                        "SELECT id FROM mock_workflow_run WHERE instance_id=? AND (id=? OR commerce_run_id=? OR id IN "
+                        "(SELECT w.workflow_run_id FROM mock_workflow_purchase w JOIN mock_commerce_purchase p ON p.id=w.purchase_id WHERE p.run_id=?))",
+                        (iid, details.get("run_id"), details.get("run_id"), details.get("run_id"))).fetchone()
                     events.append({"id": event["id"], "occurred_at": event["occurred_at"], "event_type": event["event_type"],
                                    "action": details.get("action", event["event_type"].replace(".", " ").replace("_", " ")),
                                    "instance_id": iid, "agent_name": name, "run_id": details.get("run_id"),
-                                   "purchase_id": details.get("purchase_id"), "reason": event["reason"], "outcome": event["outcome"]})
+                                   "purchase_id": details.get("purchase_id"), "reason": event["reason"], "outcome": event["outcome"],
+                                   "evidence_url": "/audit/jobs/" + quote(source_job["id"], safe="") if source_job else None})
                 pending_count = sum(p["state"] in ("awaiting_approval", "awaiting_checkout", "payment_pending") for p in all_purchases)
                 pending_count += sum(proposal["state"] == "pending" for proposal in browser_proposals)
                 agents.append({"id": iid, **config, "balance_micro_usd": balance, "pending_purchase_count": pending_count,
@@ -872,7 +960,11 @@ class MockWorkflowService(AdWorkflowMixin):
             totals["run_count"] = len(runs)
             for state in ("submitted", "accepted", "needs_work"):
                 totals[state + "_count"] = sum(item["latest"] and item["state"] == state for item in deliverables)
+            projected_costs = project_costs(sorted(cost_rows, key=lambda item: item["created_at"], reverse=True), runs)
+            for run in runs:
+                run["cost_rows"] = [row for row in projected_costs["cost_rows"] if row["job_id"] == run["id"]]
+                run["cost_summary"] = cost_summary(run["cost_rows"])
             return {"mode": "local_simulation", "payment_transport": self.commerce.payment_transport,
                     "agents": agents, "runs": runs, "purchases": purchases, "campaigns": campaigns,
                     "deliverables": deliverables, "events": sorted(events, key=lambda item: item["occurred_at"], reverse=True),
-                    "totals": totals, "cost_rows": sorted(cost_rows, key=lambda item: item["created_at"], reverse=True)}
+                    "totals": totals, **projected_costs}

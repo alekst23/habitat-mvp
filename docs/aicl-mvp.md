@@ -19,7 +19,16 @@ email was sent or a Reddit post was created.
 ## Local demonstration
 
 Follow the [README setup](../README.md#run-locally) for the persistent local demo.
-The separate `aicl.test_server` described in this baseline walkthrough binds only to
+`aicl.demo_server` defaults to private-link entry: the home page is locked, and
+the launcher saves the complete loopback link in
+`.ctx/mock-commerce/demo.db.private-access-url` (or beside the selected
+`--database`). Open that private URL and use the sign-in form; no email is sent
+or verified and no SMTP configuration is needed. The token and URL files are
+owner-only (`0600`), the token survives restarts, and logs show only the file path.
+Test sign-in endpoints are disabled in this mode. Pass `--entry email` explicitly
+to use the previous captured-email flow instead.
+
+The separate `aicl.test_server` described in the baseline walkthrough below binds only to
 `127.0.0.1:4173`, creates a temporary database below `backend/.ctx/tmp/`, supplies
 test secrets and captures sign-in mail in memory. Its `__test__` endpoints are
 available only with both `AICL_ENVIRONMENT=test` and `AICL_TEST_MODE=1`. Do not use
@@ -58,6 +67,9 @@ resolver table still fails resolution. This does not prove transport-level
 enforcement for a future real HTTP client.
 
 ## Persistent local configuration and sign-in mail
+
+The default private-link demo above needs no SMTP settings. This section is an
+alternative for deliberately configuring email delivery in local development.
 
 The `.env.example` values are placeholders and startup rejects them. There is no
 automatic dotenv loader. For persistent local development, create an ignored

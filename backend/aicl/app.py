@@ -5,7 +5,8 @@ from __future__ import annotations
 import secrets
 import sqlite3
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from contextlib import asynccontextmanager
 from datetime import timedelta
 from pathlib import Path
 
@@ -37,6 +38,8 @@ class AppContext:
     csrf_verifier: CsrfVerifier
     ports: Ports
     sign_in: object = None
+    agent_runtime: object = None
+    public_research: object = None
 
 
 FIXTURE_OWNERS = {"owner-a": "00000000-0000-4000-8000-0000000000a1",
@@ -97,9 +100,27 @@ def create_app(settings: Settings, ports: Ports | None = None) -> FastAPI:
         CompositeCsrfVerifier(HmacCsrfVerifier(settings.session_secret, settings.public_base_url),
                               FixedCsrfVerifier(FIXTURE_CSRF_TOKEN, frozenset(), settings.public_base_url)),
         built, sign_in)
-    app = FastAPI(title="Habitat AICL control plane")
+    from aicl.agent_runtime.factory import build_runtime
+    from aicl.network.research_service import build_public_research
+    from aicl.agent_runtime.worker import LocalRuntimeWorker
+    ctx = replace(ctx, public_research=build_public_research(ctx))
+    ctx = replace(ctx, agent_runtime=build_runtime(ctx))
+    runtime_worker = LocalRuntimeWorker(ctx.agent_runtime) if ctx.agent_runtime else None
+
+    @asynccontextmanager
+    async def lifespan(_app):
+        if runtime_worker:
+            runtime_worker.start()
+        try:
+            yield
+        finally:
+            if runtime_worker:
+                runtime_worker.stop()
+
+    app = FastAPI(title="Habitat AICL control plane", lifespan=lifespan)
     app.add_middleware(FormCsrfShim)
     app.state.ctx = ctx
+    app.state.runtime_worker = runtime_worker
     if settings.workflow_enabled:
         from fastapi.staticfiles import StaticFiles
 
@@ -125,7 +146,7 @@ def create_app(settings: Settings, ports: Ports | None = None) -> FastAPI:
 
     for factory in ROUTE_FACTORIES:
         app.include_router(factory(ctx))
-    if settings.test_mode and settings.environment == "test":
+    if settings.test_mode and settings.environment == "test" and not settings.private_entry_enabled:
         _register_test_routes(app, ctx)
     for hook in STARTUP_HOOKS:
         hook(ctx)
